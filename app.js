@@ -1,3 +1,4 @@
+const hasKey = (object,key) => Object.prototype.hasOwnProperty.call(object,key);
 const el = id => document.getElementById(id);
 function link(label, hash, className) {
   const a = document.createElement('a');
@@ -12,7 +13,7 @@ let storageOK = true;
 let language = 'ru';
 try {
   const saved = localStorage.getItem('yogaspace.language');
-  if (Object.hasOwn(lessonsByLanguage, saved)) language = saved;
+  if (hasKey(lessonsByLanguage, saved)) language = saved;
 } catch { storageOK = false; }
 const t = key => phrases[key][['ru','az','en'].indexOf(language)];
 let library = lessonsByLanguage[language];
@@ -25,7 +26,7 @@ function renderProfile() {
       if (!key?.startsWith(sessionPrefix)) continue;
       try {
         const entry = JSON.parse(localStorage.getItem(key));
-        if (Object.hasOwn(library,entry.group) && Number.isInteger(entry.index) && library[entry.group].lessons[entry.index] &&
+        if (hasKey(library,entry.group) && Number.isInteger(entry.index) && library[entry.group].lessons[entry.index] &&
           [1,3,5,10,15].includes(entry.minutes) && Number.isSafeInteger(entry.date) &&
           Number.isFinite(new Date(entry.date).getTime())) sessions.set(key,entry);
       } catch { /* Skip an incomplete history entry. */ }
@@ -105,8 +106,8 @@ function route(translateOnly = false) {
   }
   document.title = 'Yoga Space · ' + t(showFounder?(currentTeacher.profileLabel || 'teacher'):'page');
   if (showFounder && translateOnly !== true) {el('founderTitle').focus();el('founder').scrollIntoView();}
-  if (wasFounder && !showFounder && !Object.hasOwn(library,id)) document.getElementById(id)?.scrollIntoView();
-  if (!Object.hasOwn(library,id)) {
+  if (wasFounder && !showFounder && !hasKey(library,id)) document.getElementById(id)?.scrollIntoView();
+  if (!hasKey(library,id)) {
     if (deadline) draw();
     stop();
     activeRoute = '';
@@ -181,4 +182,4 @@ window.addEventListener('storage', e=>{
 });
 setupStudio();
 translate();
-if (activeRoute) route();
+if (activeRoute || location.hash === '#founder') route();

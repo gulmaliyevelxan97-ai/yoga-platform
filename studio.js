@@ -122,7 +122,6 @@ function renderBrand() {
   el('pillars').replaceChildren(...['harmony','strength','spirit'].map(key=>{
     const item=node('section');item.append(node('h3',t(key)),node('p',t(key+'Text')));return item;
   }));
-  renderTeacherStory(teachers.elxan);
 }
 function renderTeacherStory(teacher) {
   const intro=node('div'),copy=node('div'),photo=node('img');

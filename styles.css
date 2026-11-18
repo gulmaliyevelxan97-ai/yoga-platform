@@ -62,3 +62,7 @@ header nav{gap:6px 20px;justify-content:center}header nav a{font-size:.9rem}.her
 #founder{padding-block:20px 56px}.founder-intro{margin:20px 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,.65fr);align-items:center;gap:24px;background:var(--sand);border-radius:16px;padding:clamp(18px,4vw,56px)}.founder-intro img{width:100%;height:auto;max-height:380px;object-fit:contain}.founder-intro h1{font-size:clamp(36px,5.6vw,80px);overflow-wrap:anywhere}.story-copy{max-width:730px;margin:40px auto}.story-copy h2{font-size:clamp(28px,3.5vw,44px);margin-top:36px}.story-copy p{line-height:1.75}.story-copy a{display:inline-block;padding:10px 0}
 @media(max-width:850px){header nav{order:3;width:100%;justify-content:flex-start}#pillars{grid-template-columns:1fr}}
 @media(max-width:600px){.founder-intro{grid-template-columns:1fr}.founder-intro img{max-height:280px}.hero h1{font-size:clamp(36px,8.5vw,46px)}}
+
+/* Allow the directly linked biography to be read before scripts initialise. */
+#founder:target[hidden]{display:block!important}
+main:has(> #founder:target) > section:not(#founder){display:none!important}
