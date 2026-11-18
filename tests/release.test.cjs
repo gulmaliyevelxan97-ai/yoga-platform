@@ -6,6 +6,7 @@ const {createHash}=require('node:crypto');
 const vm=require('node:vm');
 const root=resolve(__dirname,'..');
 const read=file=>readFileSync(join(root,file),'utf8');
+const readStudio=name=>read('releases/stages-4-5/'+name);
 const html=read('index.html');
 test('Each script and stylesheet carries its content fingerprint',()=>{
   const urls=[...html.matchAll(/(?:src|href)="\.\/([^"?]+\.(?:js|css))\?v=([a-f0-9]+)"/g)];
@@ -18,7 +19,7 @@ test('Static fallback contains the founder and all local images exist',()=>{
   for(const [,file] of html.matchAll(/src="\.\/(assets\/[^"]+)"/g))assert.ok(existsSync(join(root,file)),file);
 });
 test('Every programme references available modules, translations and a real teacher',()=>{
-  const data=vm.runInNewContext(['languages.js','studio.js','pathways.js'].map(read).join('\n')+'\n;({programmes,practices,teachers,phrases,lessonsByLanguage})');
+  const data=vm.runInNewContext(['languages.js','studio.js','pathways.js'].map(readStudio).join('\n')+'\n;({programmes,practices,teachers,phrases,lessonsByLanguage})');
   const ids=new Set(data.practices.map(p=>p.id));
   assert.equal(ids.size,6);assert.equal(new Set(data.programmes.map(c=>c.area)).size,7);
   for(const row of Object.values(data.phrases)){assert.equal(row.length,3);assert.ok(row.every(v=>typeof v==='string'&&v.trim()));}
@@ -33,13 +34,13 @@ test('Every programme references available modules, translations and a real teac
 });
 test('Weekly planner honours all filters and an empty intersection',()=>{
   const context=vm.createContext({});
-  vm.runInContext(['languages.js','studio.js','pathways.js'].map(read).join('\n'),context);
+  vm.runInContext(['languages.js','studio.js','pathways.js'].map(readStudio).join('\n'),context);
   assert.equal(vm.runInContext("matchesPlan({area:'yoga',level:'basic',goal:'movement'})[0].id",context),'yoga/1');
   assert.equal(vm.runInContext("matchesPlan({area:'yoga',level:'basic',goal:'release'}).length",context),0);
   assert.equal(vm.runInContext('monday(new Date(2026,10,22,15)).getDate()',context),16);
 });
 test('Completion counts only modules finished within that programme',()=>{
-  const scripts=['languages.js','studio.js','pathways.js'].map(read).join('\n');
+  const scripts=['languages.js','studio.js','pathways.js'].map(readStudio).join('\n');
   const expression="courseDone(programmes[0],[{group:'yoga',index:0},{group:'yoga',index:1,course:'yoga'},{group:'yoga',index:1,course:'yoga'}])";
   assert.deepEqual(Array.from(vm.runInNewContext(scripts+'\n'+expression)),['yoga/2']);
 });
