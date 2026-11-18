@@ -1,136 +1,65 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YOQA — йога, медитация и осознанность</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yoga Space — пространство гармонии</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f6f4ef;color:#283e36}
+header{padding:20px 6%;display:flex;justify-content:space-between;align-items:center;background:#fff}
+.logo{font-weight:bold;font-size:22px}
+nav a{color:#283e36;text-decoration:none;margin-left:15px}
+.hero{text-align:center;padding:85px 20px;background:linear-gradient(135deg,#dce9df,#f6f4ef)}
+h1{font-size:clamp(32px,6vw,56px);margin:0 0 20px}
+.hero p{font-size:18px;line-height:1.6}
+button{border:0;border-radius:30px;padding:14px 24px;background:#477765;color:white;cursor:pointer;font-size:16px}
+button:hover{background:#315848}
+section{max-width:1050px;margin:auto;padding:55px 20px}
+h2{text-align:center;font-size:30px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.card{background:white;border-radius:20px;padding:30px;box-shadow:0 5px 20px #0000000a}
+.card .emoji{font-size:42px}
+.card p{line-height:1.6}
+.practice{display:none;text-align:center;background:#e5eee7;border-radius:20px;padding:35px 15px;margin-top:30px}
+#timer{font-size:58px;font-weight:bold;margin:25px}
+footer{text-align:center;padding:30px;background:#283e36;color:white}
+</style>
 </head>
-
 <body>
-
 <header>
-  <a class="logo" href="#">YOQA</a>
-
-  <nav>
-    <a href="#practices">Практики</a>
-    <a href="#about">О YOQA</a>
-    <a class="nav-button" href="#start">Начать</a>
-  </nav>
+<div class="logo">🌿 Yoga Space</div>
+<nav><a href="#classes">Практики</a><a href="#about">О нас</a></nav>
 </header>
-
-<main>
-
-<section class="hero" id="start">
-  <div>
-    <div class="eyebrow">ЙОГА · МЕДИТАЦИЯ · ОСОЗНАННОСТЬ</div>
-
-    <h1>Вернись<br><span>к себе.</span></h1>
-
-    <p class="hero-text">
-      YOQA — пространство для спокойствия, движения и внутреннего баланса.
-      Практики, которые можно начать в любой момент.
-    </p>
-
-    <div class="buttons">
-      <button class="button primary" data-message="Добро пожаловать в YOQA">
-        Начать практику
-      </button>
-
-      <a class="button secondary" href="#practices">
-        Посмотреть практики
-      </a>
-    </div>
-  </div>
-
-  <div class="orb">
-    <div class="om">ॐ</div>
-  </div>
+<div class="hero">
+<h1>Найди гармонию внутри себя</h1>
+<p>Йога, дыхание и медитация — твоё пространство спокойствия и силы.</p>
+<button onclick="document.getElementById('classes').scrollIntoView({behavior:'smooth'})">Начать практику</button>
+</div>
+<section id="classes">
+<h2>Выбери свою практику</h2>
+<div class="cards">
+<div class="card"><div class="emoji">🧘</div><h3>Йога</h3><p>Мягкие движения, гибкость и баланс.</p><button onclick="openPractice('Йога',600)">Начать</button></div>
+<div class="card"><div class="emoji">🌬️</div><h3>Дыхание</h3><p>Осознанное дыхание и расслабление.</p><button onclick="openPractice('Дыхание',300)">Начать</button></div>
+<div class="card"><div class="emoji">🌸</div><h3>Медитация</h3><p>Тишина, присутствие и внутренний покой.</p><button onclick="openPractice('Медитация',600)">Начать</button></div>
+</div>
+<div class="practice" id="practice">
+<h2 id="practiceTitle"></h2>
+<p>Устройся удобно. Начни в своём ритме.</p>
+<div id="timer" aria-live="off">10:00</div>
+<button id="toggle" onclick="toggleTimer()">Старт</button>
+<button onclick="resetTimer()">Сброс</button>
+</div>
 </section>
-
-
-<section id="practices">
-
-  <div class="section-title">
-    <div class="eyebrow">ВЫБЕРИ СВОЁ СОСТОЯНИЕ</div>
-
-    <h2>Практика начинается с одного шага.</h2>
-  </div>
-
-  <div class="cards">
-
-    <article class="card">
-      <div class="icon">◌</div>
-
-      <h3>Йога</h3>
-
-      <p>
-        Мягкие и осознанные практики движения
-        для тела, дыхания и энергии.
-      </p>
-
-      <button data-message="Раздел «Йога» скоро будет доступен">
-        Открыть →
-      </button>
-    </article>
-
-
-    <article class="card">
-      <div class="icon">◉</div>
-
-      <h3>Медитация</h3>
-
-      <p>
-        Найди тишину внутри и научись возвращать
-        внимание в настоящий момент.
-      </p>
-
-      <button data-message="Раздел «Медитация» скоро будет доступен">
-        Открыть →
-      </button>
-    </article>
-
-
-    <article class="card">
-      <div class="icon">✦</div>
-
-      <h3>Осознанность</h3>
-
-      <p>
-        Небольшие практики, которые помогают
-        глубже чувствовать себя и окружающий мир.
-      </p>
-
-      <button data-message="Раздел «Осознанность» скоро будет доступен">
-        Открыть →
-      </button>
-    </article>
-
-  </div>
-</section>
-
-
-<section class="quote" id="about">
-
-  <p>
-    «Не нужно искать тишину.<br>
-    Нужно научиться её слышать.»
-  </p>
-
-  <small>YOQA</small>
-
-</section>
-
-</main>
-
-
-<footer>
-  <span>© 2026 YOQA</span>
-  <span>Йога · Медитация · Осознанность</span>
-</footer>
-
-
-<script src="app.js"></script>
-
+<section id="about"><h2>Пространство для себя</h2><p style="text-align:center;line-height:1.8">Каждая практика — возможность вернуться к себе, почувствовать тело и обрести внутреннее равновесие.</p></section>
+<footer>© 2026 Yoga Space</footer>
+<script>
+let seconds=600,initial=600,interval=null,running=false;
+function draw(){document.getElementById('timer').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')}
+function stop(){clearInterval(interval);interval=null;running=false;document.getElementById('toggle').textContent='Старт'}
+function openPractice(name,duration){stop();seconds=initial=duration;document.getElementById('practiceTitle').textContent=name;document.getElementById('practice').style.display='block';draw();document.getElementById('practice').scrollIntoView({behavior:'smooth'})}
+function toggleTimer(){if(running){stop();return}if(seconds===0)seconds=initial;running=true;document.getElementById('toggle').textContent='Пауза';interval=setInterval(()=>{if(seconds>0){seconds--;draw()}if(seconds===0){stop();document.getElementById('toggle').textContent='Завершено'}},1000)}
+function resetTimer(){stop();seconds=initial;draw()}
+</script>
 </body>
 </html>
