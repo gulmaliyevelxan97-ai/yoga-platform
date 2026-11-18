@@ -25,7 +25,7 @@ function buildShell(locale){
  navRoot.querySelector('.all-links').innerHTML=Object.keys(restartPages).map(key=>n(key)).join('');
  navRoot.querySelector('.all-menu summary').textContent=['Разделы','Bölmələr','Sections'][i];
  const footer=document.querySelector('[data-school-footer]');
- if(footer)footer.innerHTML='<a href="./">RESTART</a><div>'+['code','journal','signup'].map(key=>n(key)).join('')+'<a href="./assets/brand/yoga-space-archive.jpg">'+['Архив Yoga Space','Yoga Space arxivi','Yoga Space archive'][i]+'</a></div>';
+ if(footer)footer.innerHTML='<a href="./">RESTART</a><div>'+['code','journal','signup'].map(key=>n(key)).join('')+'<a href="./assets/brand/yoga-space-archive.jpg">'+['Фотоархив','Fotoarxiv','Photo archive'][i]+'</a></div>';
 }
 const programmeHashes=new Set(['restart56']);
 const aboutHashes=new Set(['philosophy','foundations','ph-mind','ph-body','ph-nutrition','ph-life','directions']);

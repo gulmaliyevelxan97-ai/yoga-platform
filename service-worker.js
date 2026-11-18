@@ -1,11 +1,11 @@
-const VERSION = 'fc84642c9f1440';
+const VERSION = '9144a5bea8a665';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
   "./releases/stages-4-5/studio.js?v=4745727b5f64",
   "./releases/restart/pathways.js?v=d5120e5cfa50",
   "./video-labels.js?v=4325b0b4b98a",
-  "./releases/restart/labels.js?v=ef30c373b80c",
+  "./releases/restart/labels.js?v=a70983924300",
   "./releases/restart/philosophy.js?v=5dafaf54c441",
   "./releases/pwa/labels.js?v=ca053aa1ddd3",
   "./releases/restart/app.js?v=6fc1f65a03b8",
@@ -39,7 +39,7 @@ const ASSETS = [
   "./releases/week/assessment.js?v=ed5ac0e60ae2",
   "./releases/week/school.js?v=0bcf366fff85",
   "./releases/navigation/design.css?v=a4bfa5236c93",
-  "./releases/navigation/shell.js?v=f1f42483ab2a",
+  "./releases/navigation/shell.js?v=b5e137ab26b7",
   "./releases/navigation/pages.js?v=a4912df76dc9",
   "./about.html",
   "./philosophy.html",
@@ -51,7 +51,7 @@ const ASSETS = [
   "./participation.html",
   "./week-one.html",
   "./practices.html",
-  "./releases/navigation/studio-shell.js?v=5d9a29e6d541",
+  "./releases/navigation/studio-shell.js?v=d14087e4962f",
   "./activity.html",
   "./releases/week/content.js",
   "./releases/week/week.js",

@@ -32,7 +32,7 @@ Object.assign(phrases, {
   restartQ3: ['Кто ведёт занятия?','Dərsləri kim aparır?','Who teaches the sessions?'],
   restartA3: ['Основатель платформы — Elxan Gülmalıyev. У каждого стороннего видео в библиотеке указаны преподаватель и оригинальный источник.', 'Platformanın təsisçisi Elxan Gülmalıyevdir. Kitabxanadakı hər bir kənar videoda müəllim və orijinal mənbə göstərilir.', 'Elxan Gülmalıyev is the founder. Each independently produced video credits its teacher and links to the original source.'],
   restartFinal: ['Начните с одного занятия','Bir məşqlə başlayın','Start with one session'],
-  restartArchive: ['Архив Yoga Space','Yoga Space arxivi','Yoga Space archive']
+  restartArchive: ['Фотоархив','Fotoarxiv','Photo archive']
 });
 Object.assign(phrases, {
   goal_yoga: ['Улучшить подвижность с помощью двух последовательностей йоги.', 'İki yoqa ardıcıllığı ilə hərəkətliliyi artırmaq.', 'Build mobility with two yoga sequences.'],

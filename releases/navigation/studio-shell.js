@@ -12,10 +12,12 @@ if(filter){
  filter.onchange=()=>{document.body.dataset.practiceFilter=filter.value};
  document.getElementById('language').addEventListener('change',updatePracticeFilter);
  updatePracticeFilter();
- window.addEventListener('hashchange',()=>{
+ function syncPracticeFilter(){
    if(location.hash==='#library'||location.hash.startsWith('#watch/'))filter.value='video';
    else if(location.hash==='#practices'||location.hash==='#courses')filter.value='guided';
    else filter.value='all';
-   document.body.dataset.practiceFilter=filter.value;
- });
+   filter.onchange();
+ }
+ syncPracticeFilter();
+ window.addEventListener('hashchange',syncPracticeFilter);
 }
