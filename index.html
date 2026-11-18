@@ -1,65 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Yoga Space — пространство гармонии</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f6f4ef;color:#283e36}
-header{padding:20px 6%;display:flex;justify-content:space-between;align-items:center;background:#fff}
-.logo{font-weight:bold;font-size:22px}
-nav a{color:#283e36;text-decoration:none;margin-left:15px}
-.hero{text-align:center;padding:85px 20px;background:linear-gradient(135deg,#dce9df,#f6f4ef)}
-h1{font-size:clamp(32px,6vw,56px);margin:0 0 20px}
-.hero p{font-size:18px;line-height:1.6}
-button{border:0;border-radius:30px;padding:14px 24px;background:#477765;color:white;cursor:pointer;font-size:16px}
-button:hover{background:#315848}
-section{max-width:1050px;margin:auto;padding:55px 20px}
-h2{text-align:center;font-size:30px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
-.card{background:white;border-radius:20px;padding:30px;box-shadow:0 5px 20px #0000000a}
-.card .emoji{font-size:42px}
-.card p{line-height:1.6}
-.practice{display:none;text-align:center;background:#e5eee7;border-radius:20px;padding:35px 15px;margin-top:30px}
-#timer{font-size:58px;font-weight:bold;margin:25px}
-footer{text-align:center;padding:30px;background:#283e36;color:white}
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8f6ef"><title>Yoga Space · Студия практик</title>
+<link rel="stylesheet" href="./styles.css"><script defer src="./app.js"></script>
 </head>
 <body>
-<header>
-<div class="logo">🌿 Yoga Space</div>
-<nav><a href="#classes">Практики</a><a href="#about">О нас</a></nav>
-</header>
-<div class="hero">
-<h1>Найди гармонию внутри себя</h1>
-<p>Йога, дыхание и медитация — твоё пространство спокойствия и силы.</p>
-<button onclick="document.getElementById('classes').scrollIntoView({behavior:'smooth'})">Начать практику</button>
-</div>
-<section id="classes">
-<h2>Выбери свою практику</h2>
-<div class="cards">
-<div class="card"><div class="emoji">🧘</div><h3>Йога</h3><p>Мягкие движения, гибкость и баланс.</p><button onclick="openPractice('Йога',600)">Начать</button></div>
-<div class="card"><div class="emoji">🌬️</div><h3>Дыхание</h3><p>Осознанное дыхание и расслабление.</p><button onclick="openPractice('Дыхание',300)">Начать</button></div>
-<div class="card"><div class="emoji">🌸</div><h3>Медитация</h3><p>Тишина, присутствие и внутренний покой.</p><button onclick="openPractice('Медитация',600)">Начать</button></div>
-</div>
-<div class="practice" id="practice">
-<h2 id="practiceTitle"></h2>
-<p>Устройся удобно. Начни в своём ритме.</p>
-<div id="timer" aria-live="off">10:00</div>
-<button id="toggle" onclick="toggleTimer()">Старт</button>
-<button onclick="resetTimer()">Сброс</button>
-</div>
-</section>
-<section id="about"><h2>Пространство для себя</h2><p style="text-align:center;line-height:1.8">Каждая практика — возможность вернуться к себе, почувствовать тело и обрести внутреннее равновесие.</p></section>
-<footer>© 2026 Yoga Space</footer>
-<script>
-let seconds=600,initial=600,interval=null,running=false;
-function draw(){document.getElementById('timer').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')}
-function stop(){clearInterval(interval);interval=null;running=false;document.getElementById('toggle').textContent='Старт'}
-function openPractice(name,duration){stop();seconds=initial=duration;document.getElementById('practiceTitle').textContent=name;document.getElementById('practice').style.display='block';draw();document.getElementById('practice').scrollIntoView({behavior:'smooth'})}
-function toggleTimer(){if(running){stop();return}if(seconds===0)seconds=initial;running=true;document.getElementById('toggle').textContent='Пауза';interval=setInterval(()=>{if(seconds>0){seconds--;draw()}if(seconds===0){stop();document.getElementById('toggle').textContent='Завершено'}},1000)}
-function resetTimer(){stop();seconds=initial;draw()}
-</script>
-</body>
-</html>
+<header><a class="brand" href="#top"><i aria-hidden="true">✳</i> Yoga Space</a><nav aria-label="Основное меню"><a href="#practices">Практики</a><a href="#about">О студии</a></nav></header>
+<main id="top">
+<section class="hero"><div><p class="eyebrow">Онлайн-студия Эльхана</p><h1>В своём<br><em>ритме.</em></h1><p>Йога, дыхание и медитация. Выберите занятие и уделите несколько минут себе.</p><a class="primary" href="#practices">Выбрать практику <span>↓</span></a></div><img src="./assets/lake.jpg" alt="Горы отражаются в тихой воде озера"></section>
+<section id="classes"><div id="practices"><h2>Коллекция практик</h2><div id="categories" class="grid"></div></div></section>
+<section id="studio" hidden><a href="#practices">← Все направления</a><h2 id="category"></h2><div id="lessons" aria-label="Занятия"></div>
+<article><div><h3 id="title"></h3><p id="intro"></p><ol id="steps"></ol></div><div class="player"><label for="length">Продолжительность</label><select id="length"></select><div id="time" role="timer"></div><p id="status" role="status"></p><button class="primary" id="toggle">Начать</button> <button id="reset">Сброс</button></div></article></section>
+<section id="about"><h2>О студии</h2><p>Я Эльхан, преподаватель йоги. Здесь можно начать утро с движения, сделать дыхательную паузу среди дня или провести несколько минут в тишине. Выбирайте удобную длительность и следуйте подсказкам таймера.</p></section>
+</main><footer>Yoga Space <a href="#top">Наверх ↑</a></footer>
+</body></html>
