@@ -1,0 +1,40 @@
+@media (min-width: 761px) {
+  .restart-hero h1 { font-size: clamp(44px, 5.1vw, 74px); }
+}
+.ph-prose { max-width: 68ch; margin-inline: auto; }
+.ph-prose p { line-height: 1.68; }
+.ph-prose h2 { font-size: clamp(37px, 5vw, 65px); }
+#foundations { margin: clamp(28px, 5vw, 58px) 0 16px; }
+.ph-cards, .ph-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ph-card {
+  display: grid; gap: 6px; position: relative; min-width: 0;
+  padding: clamp(17px, 3vw, 29px) 44px clamp(17px, 3vw, 29px) clamp(17px, 3vw, 29px);
+  border: 1px solid #c9c8b7; border-radius: 12px; background: #fdfbf4; color: var(--ink);
+  text-decoration: none; transition: border-color .2s, background-color .2s;
+}
+.ph-card:nth-child(even) { background: #e9ede3; }
+.ph-card:hover { border-color: var(--ink); background: #f4ead9; }
+.ph-card:hover strong { text-decoration: underline; text-underline-offset: .15em; }
+.ph-card-word { color: #6b4c2d; font-size: .76rem; font-weight: 750; letter-spacing: .11em; }
+.ph-card strong { font: 400 clamp(26px, 3.2vw, 42px)/1.1 Georgia, serif; }
+.ph-card-summary { line-height: 1.46; }
+.ph-arrow { position: absolute; top: 16px; right: 17px; }
+.ph-panels { margin-block: 20px 0; }
+.ph-panel {
+  display: flex; flex-direction: column; align-items: flex-start;
+  border: 1px solid #d3cdba; border-radius: 12px; background: #faf8f1; padding: clamp(17px, 3vw, 27px);
+}
+.ph-panel:target { border-color: #496959; box-shadow: inset 0 0 0 2px #496959; }
+.ph-panel h3 { margin: 0; }
+.ph-note { color: var(--muted-ink); }
+.ph-back { align-content: center; min-height: 44px; margin-top: auto; }
+.ph-closing { margin-top: clamp(25px, 5vw, 50px); }
+.ph-closing blockquote { margin: 24px 0 12px; padding: 4px 0 4px 15px; border-left: 3px solid #8d653e; font: 400 clamp(23px, 3.1vw, 35px)/1.22 Georgia, serif; }
+.ph-today { font-size: 1.1rem; font-weight: 700; }
+.ph-legacy { margin-top: 24px; }
+.ph-legacy summary { cursor: pointer; min-height: 44px; align-content: center; }
+.restart-plans > div:last-child .pill { display: inline-flex; align-items: center; }
+@media (max-width: 600px) {
+  .ph-cards, .ph-panels { grid-template-columns: minmax(0, 1fr); }
+  .restart-hero h1 { font-size: clamp(35px, 8.6vw, 56px); }
+}
