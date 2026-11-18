@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8f6ef"><title>Yoga Space · Студия практик</title>
-<link rel="stylesheet" href="./styles.css"><script defer src="./app.js"></script>
+<link rel="stylesheet" href="./styles.css"><script defer src="./languages.js"></script><script defer src="./app.js"></script>
 </head>
 <body>
-<header><a class="brand" href="#top"><i aria-hidden="true">✳</i> Yoga Space</a><nav aria-label="Основное меню"><a href="#practices">Практики</a><a href="#about">О студии</a></nav></header>
+<header><a class="brand" href="#top"><i aria-hidden="true">✳</i> Yoga Space</a><nav><a href="#practices" data-t="practices"></a><a href="#about" data-t="about"></a><a href="#profile" data-t="profile"></a></nav><select id="language" aria-label="Язык"><option value="ru" lang="ru">Русский</option><option value="az" lang="az">Azərbaycan dili</option><option value="en" lang="en">English</option></select></header>
 <main id="top">
-<section class="hero"><div><p class="eyebrow">Онлайн-студия Эльхана</p><h1>В своём<br><em>ритме.</em></h1><p>Йога, дыхание и медитация. Выберите занятие и уделите несколько минут себе.</p><a class="primary" href="#practices">Выбрать практику <span>↓</span></a></div><img src="./assets/lake.jpg" alt="Горы отражаются в тихой воде озера"></section>
-<section id="classes"><div id="practices"><h2>Коллекция практик</h2><div id="categories" class="grid"></div></div></section>
-<section id="studio" hidden><a href="#practices">← Все направления</a><h2 id="category"></h2><div id="lessons" aria-label="Занятия"></div>
-<article><div><h3 id="title"></h3><p id="intro"></p><ol id="steps"></ol></div><div class="player"><label for="length">Продолжительность</label><select id="length"></select><div id="time" role="timer"></div><p id="status" role="status"></p><button class="primary" id="toggle">Начать</button> <button id="reset">Сброс</button></div></article></section>
-<section id="about"><h2>О студии</h2><p>Я Эльхан, преподаватель йоги. Здесь можно начать утро с движения, сделать дыхательную паузу среди дня или провести несколько минут в тишине. Выбирайте удобную длительность и следуйте подсказкам таймера.</p></section>
-</main><footer>Yoga Space <a href="#top">Наверх ↑</a></footer>
-</body></html>
+<section class="hero"><div><p class="eyebrow" data-t="studio"></p><h1><span data-t="headline"></span> <em data-t="accent"></em></h1><p data-t="lead"></p><a class="primary" href="#practices"><span data-t="choose"></span> ↘</a></div><figure><img src="./assets/hero.webp" alt="Elxan" fetchpriority="high"></figure></section>
+<section id="classes"><div id="practices"><h2 data-t="collection"></h2><div id="categories" class="grid"></div></div></section>
+<section id="studio" hidden><a href="#practices" data-t="back"></a><h2 id="category"></h2><div id="lessons" aria-label="Занятия"></div>
+<article><div><h3 id="title"></h3><p id="intro"></p><ol id="steps"></ol></div><div class="player"><label for="length" data-t="length"></label><select id="length"></select><div id="time" role="timer"></div><progress id="elapsed" max="1" value="0" aria-hidden="true"></progress><div id="breathCue" hidden></div><p id="status" role="status"></p><button class="primary" id="toggle">Начать</button> <button id="reset" data-t="reset"></button></div></article></section>
+<section id="profile"><div><h2 data-t="profile"></h2><p id="storageNote"></p><div class="stats"><div><strong id="sessionCount">0</strong><span data-t="sessions"></span></div><div><strong id="minuteCount">0</strong><span data-t="minutes"></span></div></div></div><div class="recent"><h3 data-t="history"></h3><p id="empty" data-t="empty"></p><ul id="history"></ul></div></section>
+<section id="about"><img src="./assets/author.webp" loading="lazy" alt="Elxan"><div><h2 data-t="about"></h2><p data-t="bio"></p><a href="https://www.instagram.com/elxanaze001/">@elxanaze001 ↗</a></div></section>
+</main><footer>Yoga Space <a href="#top" data-t="top"></a></footer></body></html>
