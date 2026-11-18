@@ -1,11 +1,11 @@
-const VERSION = '54574d15f77334';
+const VERSION = 'fc84642c9f1440';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
   "./releases/stages-4-5/studio.js?v=4745727b5f64",
   "./releases/restart/pathways.js?v=d5120e5cfa50",
   "./video-labels.js?v=4325b0b4b98a",
-  "./releases/restart/labels.js?v=538a9d1149a6",
+  "./releases/restart/labels.js?v=ef30c373b80c",
   "./releases/restart/philosophy.js?v=5dafaf54c441",
   "./releases/pwa/labels.js?v=ca053aa1ddd3",
   "./releases/restart/app.js?v=6fc1f65a03b8",
@@ -32,7 +32,31 @@ const ASSETS = [
   "./assets/brand/restart-640.webp",
   "./assets/lake.jpg",
   "./assets/pwa/restart-512.png",
-  "./assets/pwa/restart-maskable.png"
+  "./assets/pwa/restart-maskable.png",
+  "./releases/week/index.html",
+  "./releases/week/content.js?v=5c5213ed331e",
+  "./releases/week/week.js?v=313b7021114b",
+  "./releases/week/assessment.js?v=ed5ac0e60ae2",
+  "./releases/week/school.js?v=0bcf366fff85",
+  "./releases/navigation/design.css?v=a4bfa5236c93",
+  "./releases/navigation/shell.js?v=f1f42483ab2a",
+  "./releases/navigation/pages.js?v=a4912df76dc9",
+  "./about.html",
+  "./philosophy.html",
+  "./code.html",
+  "./programme.html",
+  "./my-path.html",
+  "./journal.html",
+  "./progress.html",
+  "./participation.html",
+  "./week-one.html",
+  "./practices.html",
+  "./releases/navigation/studio-shell.js?v=5d9a29e6d541",
+  "./activity.html",
+  "./releases/week/content.js",
+  "./releases/week/week.js",
+  "./releases/week/assessment.js",
+  "./releases/week/school.js"
 ];
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'restart-shell:' + scope.pathname + ':';
@@ -61,8 +85,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
-  if (request.mode === 'navigate' && (url.pathname === scope.pathname || url.pathname === new URL(home).pathname)) {
-    event.respondWith(fetch(request).catch(async () => caches.match(home,{cacheName:CACHE})));
+  if (request.mode === 'navigate') {
+    url.search = '';
+    const page = url.pathname === scope.pathname ? home : url.href;
+    if (urls.has(page)) event.respondWith(fetch(request).catch(() => caches.match(page,{cacheName:CACHE})));
   } else if (urls.has(url.href)) {
     event.respondWith(caches.match(request,{cacheName:CACHE}).then(hit => hit || fetch(request)));
   }
@@ -71,7 +97,7 @@ function localLink(path) {
   if (typeof path !== 'string') return scope.href;
   try {
     const target = new URL(path,scope);
-    if (target.origin === scope.origin && [scope.pathname, new URL(home).pathname].includes(target.pathname)) return target.href;
+    if (target.origin === scope.origin && (target.pathname === scope.pathname || (target.pathname.endsWith('.html') && urls.has(target.origin + target.pathname)))) return target.href;
   } catch {}
   return scope.href;
 }

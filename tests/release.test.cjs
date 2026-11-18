@@ -7,7 +7,7 @@ const vm=require('node:vm');
 const root=resolve(__dirname,'..');
 const read=file=>readFileSync(join(root,file),'utf8');
 const readStudio=name=>read('releases/'+(name==='pathways.js'?'restart':'stages-4-5')+'/'+name);
-const html=read('index.html');
+const html=read('practices.html');
 test('Each script and stylesheet carries its content fingerprint',()=>{
   const urls=[...html.matchAll(/(?:src|href)="\.\/([^"?]+\.(?:js|css))\?v=([a-f0-9]+)"/g)];
   const assets = [...html.matchAll(/(?:src|href)="\.\/[^"]+\.(?:js|css)(?:\?[^"]*)?"/g)];

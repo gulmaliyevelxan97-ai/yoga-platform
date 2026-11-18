@@ -45,3 +45,6 @@ for (const key of ['founderBio','founder','role','originalsIntro','premium']) {
   phrases[key] = phrases[key].map(text => text.replaceAll('Yoga Space','RESTART'));
 }
 phrases.page = ['Движение и осознанность','Hərəkət və fərqindəlik','Movement and mindfulness'];
+
+phrases.weekApply = ['Предзапись на 56 дней','56 günlük proqrama ilkin qeydiyyat','56-day programme pre-registration'];
+phrases.weekResume = ['Первая неделя и мой отчёт','İlk həftə və hesabatım','Week one and my report'];
