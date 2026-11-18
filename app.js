@@ -18,6 +18,7 @@ try {
 const t = key => phrases[key][['ru','az','en'].indexOf(language)];
 let library = lessonsByLanguage[language];
 let remaining = 0, deadline = 0, interval, activeRoute = '', lesson;
+let currentSessions=[], contextCourse='', planSlot='', currentPath='', savedSecond=-1;
 function renderProfile() {
   const sessions = new Map(memorySessions);
   try {
@@ -36,7 +37,9 @@ function renderProfile() {
   el('sessionCount').textContent = sorted.length;
   const totalMinutes = sorted.reduce((sum,s)=>sum+s.minutes,0);
   el('minuteCount').textContent = totalMinutes;
+  currentSessions=sorted;
   renderExtras(sorted,totalMinutes);
+  dashboard(sorted);
   el('storageNote').textContent = t(storageOK?'local':'unavailable');
   el('empty').hidden = !!sorted.length;
   el('history').replaceChildren(...sorted.map(s=>{
@@ -51,9 +54,16 @@ function complete() {
   const date = Date.now();
   const key = sessionPrefix + date + '.' + Math.random().toString(36).slice(2);
   const entry = {group,index:Number(index)-1,date,minutes:Number(el('length').value)};
+  if(contextCourse) entry.course=contextCourse;
+  if(planSlot) entry.planSlot=planSlot;
+  saveSetting('resume',null);
   memorySessions.set(key,entry);
   try { localStorage.setItem(key,JSON.stringify(entry)); } catch { storageOK = false; }
   renderProfile();
+}
+function checkpoint(){
+  if(!activeRoute || remaining<=0 || remaining>=duration()) return;
+  saveSetting('resume',{id:activeRoute,minutes:Number(el('length').value),left:remaining,course:contextCourse,slot:planSlot});
 }
 function duration() { return Number(el('length').value) * 60000; }
 function stop() {
@@ -65,6 +75,7 @@ function draw() {
   if (!remaining && deadline) { stop(); complete(); }
   const seconds = Math.ceil(remaining / 1000);
   el('time').textContent = [Math.floor(seconds/60),seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
+  if(deadline && seconds!==savedSecond){savedSecond=seconds;if(seconds%5===0) checkpoint();}
   const step = Math.min(2,Math.floor(3*(1-remaining/duration())));
   Array.from(el('steps').children).forEach((item,i)=>item.classList.toggle('current',Boolean(deadline) && i===step));
   const elapsed = duration() - remaining;
@@ -83,7 +94,7 @@ function reset() {
 }
 el('toggle').onclick = () => {
   if (deadline) {
-    draw();
+    draw();checkpoint();
     stop();
   } else {
     if (!remaining) remaining = duration();
@@ -92,35 +103,43 @@ el('toggle').onclick = () => {
   }
   draw();
 };
-el('reset').onclick = reset;
-el('length').onchange = reset;
-document.addEventListener('visibilitychange',()=>{ if (deadline) draw(); });
+function userReset(){saveSetting('resume',null);reset();renderProfile();}
+el('reset').onclick = userReset;
+el('length').onchange = userReset;
+document.addEventListener('visibilitychange',()=>{ if (deadline) {draw();checkpoint();} });
+window.addEventListener('pagehide',()=>{if(deadline){draw();checkpoint();}});
 function route(translateOnly = false) {
-  const [id,index='1',suggested] = location.hash.slice(1).split('/');
+  const [id,index='1',suggested,source,slot] = location.hash.slice(1).split('/');
+  el('moreNav').open=false;
   const currentTeacher = Object.values(teachers).find(teacher=>teacher.profile===id);
   const showFounder = Boolean(currentTeacher);
   if (showFounder) renderTeacherStory(currentTeacher);
+  const programme = id==='course' && programmes.find(c=>c.id===index);
+  const wasDetail = !el('coursePage').hidden;
+  if(programme) renderProgramme(programme,currentSessions);
   const wasFounder = !el('founder').hidden;
   for (const section of document.querySelectorAll('main > section')) {
-    if (section.id !== 'studio') section.hidden = section.id === 'founder' ? !showFounder : showFounder;
+    if (section.id !== 'studio') section.hidden = section.id === 'coursePage' ? !programme : section.id === 'founder' ? !showFounder : (showFounder || Boolean(programme));
   }
   document.title = 'Yoga Space · ' + t(showFounder?(currentTeacher.profileLabel || 'teacher'):'page');
+  if(programme){document.title=t(programme.title)+' · Yoga Space';if(translateOnly!==true){el('courseTitle').focus();el('coursePage').scrollIntoView();}}
   if (showFounder && translateOnly !== true) {el('founderTitle').focus();el('founder').scrollIntoView();}
-  if (wasFounder && !showFounder && !hasKey(library,id)) document.getElementById(id)?.scrollIntoView();
+  if ((wasFounder || wasDetail) && !programme && !showFounder && !hasKey(library,id)) document.getElementById(id)?.scrollIntoView();
   if (!hasKey(library,id)) {
-    if (deadline) draw();
+    if (deadline) {draw();checkpoint();}
     stop();
-    activeRoute = '';
+    if(activeRoute) renderProfile();
+    activeRoute = '';currentPath='';
     el('studio').hidden = true;
     return;
   }
   const group = library[id];
   const selected = Number(index) > 0 && group.lessons[Number(index)-1] ? Number(index)-1 : 0;
   const key = id + '/' + (selected+1);
-  const changed = key !== activeRoute;
+  const changed = location.hash !== currentPath;
   if (changed || translateOnly === true) {
-    if (changed && deadline) { draw(); stop(); }
-    activeRoute = key;
+    if (changed && deadline) { draw();checkpoint();stop(); }
+    activeRoute = key;currentPath=location.hash;
     el('category').textContent = group.name;
     el('lessons').replaceChildren(...group.lessons.map(([name],i)=>{
       const a = link(name,id+'/'+(i+1),'pill');
@@ -137,7 +156,14 @@ function route(translateOnly = false) {
     }));
     if (changed) {
       el('length').value = ['1','3','5','10','15'].includes(suggested) ? suggested : (id==='yoga'?'10':'5');
+      const snapshot=source==='resume'?readSetting('resume'):null;
+      const restore=snapshot?.id===key && durations.includes(snapshot.minutes) && Number.isFinite(snapshot.left) && snapshot.left>0;
+      const requested=restore?snapshot.course:source;
+      contextCourse=programmes.find(c=>c.id===requested&&c.lessons.includes(key))?.id || '';
+      planSlot=restore?snapshot.slot||'':source==='plan'?slot?.replace(/%2F/gi,'/')||'':'';
       reset();
+      if(restore){el('length').value=String(snapshot.minutes);remaining=Math.min(duration(),snapshot.left);draw();}
+
     } else draw();
   }
   el('studio').hidden = false;
@@ -168,6 +194,7 @@ function translate() {
   renderTeachers();
   renderBrand();
   renderSchedule();
+  renderExpansion();
   renderProfile();
   route(true);
 }
@@ -182,4 +209,4 @@ window.addEventListener('storage', e=>{
 });
 setupStudio();
 translate();
-if (activeRoute || location.hash === '#founder') route();
+if (activeRoute || location.hash === '#founder' || location.hash.startsWith('#course/')) route();

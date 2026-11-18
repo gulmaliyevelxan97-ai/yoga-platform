@@ -1,6 +1,6 @@
 // Teacher IDs and practice routes are stable references for profiles, bookmarks and videos.
 const teachers = {
-  elxan:{name:'Elxan Gülmalıyev',photo:'author.webp',instagram:'https://www.instagram.com/elxanaze001/',handle:'@elxanaze001',bio:'founderBio',distinctions:[],role:'role',profile:'founder',profileLabel:'aboutFounder',chapters:[['origins','origins1','origins2','origins3','origins4'],['why','why1','why2'],['myPhilosophy','belief1','belief2','belief3']]}
+  elxan:{name:'Elxan Gülmalıyev',photo:'author.webp',instagram:'https://www.instagram.com/elxanaze001/',handle:'@elxanaze001',bio:'founderBio',distinctions:[],role:'role',profile:'founder',profileLabel:'aboutFounder',chapters:[['way','origins1','origins2'],['transition','origins3','origins4'],['why','why1','why2'],['myPhilosophy','belief1','belief2','belief3']]}
 };
 const practices = [
   {id:'yoga/1',teacher:'elxan',level:'basic',minutes:10,goal:'movement'},
@@ -136,6 +136,7 @@ function renderTeacherStory(teacher) {
     story.append(node('h2',t(heading)),...paragraphs.map(key=>node('p',t(key))));
   }
   if (teacher.distinctions.length) story.append(node('h2',t('distinctions')),...teacher.distinctions.map(key=>node('p',t(key))));
+  if (teacher===teachers.elxan) addArchive(story);
   if (teacher.instagram) {
     const account=node('a',teacher.handle);account.href=teacher.instagram;story.append(account);
   }
@@ -155,6 +156,8 @@ function renderExtras(sessions,totalMinutes) {
 }
 function renderSchedule() {
   el('scheduleState').textContent = t(el('format').value==='group'?'noGroup':'noIndividual');
+  try { el('cancelDraft').hidden = !localStorage.getItem(draftKey+el('format').value); }
+  catch { el('cancelDraft').hidden=true; }
   el('draftStatus').textContent = draftMessage?t(draftMessage):'';
 }
 function loadDraft() {
@@ -173,7 +176,7 @@ function setupStudio() {
     e.preventDefault();
     const value=el('desired').value.trim();
     if (!value) {el('desired').value='';el('desired').reportValidity();return;}
-    try { localStorage.setItem(draftKey+el('format').value,value);draftMessage='draftSaved'; }
+    try { localStorage.setItem(draftKey+el('format').value,value);draftMessage='draftSaved';recordRequest(draftMessage); }
     catch { draftMessage='draftFail'; }
     renderSchedule();
   };
