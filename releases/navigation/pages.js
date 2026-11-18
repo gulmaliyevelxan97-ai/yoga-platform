@@ -31,7 +31,8 @@ function schoolWeeks(){
  return '<ol class="cards">'+pathway.map((phase,i)=>'<li class="card"><details '+(i===0?'open':'')+'><summary>'+t('Неделя','Həftə','Week')+' '+(i+1)+' · '+t(...phase)+'</summary><p>'+t(...pathwayGoals[i])+'</p></details>'+(i===0?go('calendar',pageName('calendar')):'<small>'+t('Будущий этап','Gələcək mərhələ','Upcoming stage')+'</small>')+'</li>').join('')+'</ol>';
 }
 function aboutPage(){
- return '<div class="cards">'+directions.map((d,i)=>'<article><h2 id="ph-'+tracks[i].toLowerCase()+'">'+tracks[i]+'</h2><p>'+t(...d)+'</p></article>').join('')+'</div><h2>'+t('Восемь этапов','Səkkiz mərhələ','Eight stages')+'</h2>'+schoolWeeks();
+ const founder='<p><a class="cta" href="'+pageUrl('practices')+'#founder">'+t('Познакомиться с основателем','Təsisçi ilə tanış olun','Meet the founder')+'</a></p>';
+ return founder+'<div class="cards">'+directions.map((d,i)=>'<article><h2 id="ph-'+tracks[i].toLowerCase()+'">'+tracks[i]+'</h2><p>'+t(...d)+'</p></article>').join('')+'</div><h2>'+t('Восемь этапов','Səkkiz mərhələ','Eight stages')+'</h2>'+schoolWeeks();
 }
 function myPath(){
  const next=nextDay(),day=next<0?6:next;

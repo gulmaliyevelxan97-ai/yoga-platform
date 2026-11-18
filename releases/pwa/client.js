@@ -91,7 +91,7 @@
   async function initialize() {
     if (location.protocol === 'file:' || !('serviceWorker' in navigator)) return;
     const root = new URL('./', document.baseURI);
-    await navigator.serviceWorker.register(new URL('service-worker.js',root));
+    await navigator.serviceWorker.register(new URL('service-worker.js',root),{updateViaCache:'none'});
     if (!restartPushApi) return;
     if (!('PushManager' in window && 'Notification' in window)) { setStatus('pushUnsupported'); return; }
     registration = await navigator.serviceWorker.ready;

@@ -4,6 +4,8 @@
     search: ['Поиск по названию или автору','Ad və ya müəllif üzrə axtarış','Search by title or teacher'],
     topic: ['Направление','İstiqamət','Style'], length: ['Длительность','Müddət','Duration'],
     level: ['Уровень','Səviyyə','Level'], language: ['Язык занятия','Dərsin dili','Spoken language'],
+    sort: ['Порядок','Sıralama','Sort by'], curated: ['Подборка','Seçim','Curated order'],
+    shortest: ['Сначала короткие','Əvvəl qısa dərslər','Shortest first'], longest: ['Сначала длинные','Əvvəl uzun dərslər','Longest first'],
     any: ['Любой вариант','Hamısı','Any'], beginner: ['Для начинающих','Yeni başlayanlar üçün','For beginners'],
     intermediate: ['Средний','Orta','Intermediate'], all: ['Для всех уровней','Bütün səviyyələr üçün','All levels'],
     morning: ['Утренняя йога','Səhər yoqası','Morning yoga'], hatha: ['Хатха-йога','Hatha yoqası','Hatha yoga'],
@@ -43,14 +45,14 @@
     movement: ['balance','stretch'], recovery: ['relax','meditation']
   };
   const topics = ['beginner','morning','hatha','stretch','meditation','breath','relax','balance'];
-  const filters = {search:'',topic:'',length:'',level:'',language:''};
+  const filters = {search:'',topic:'',length:'',level:'',language:'',sort:''};
   const pageSize = 6;
   let limit = pageSize;
   let currentVideo = '';
   let currentLanguage = '';
   const index = new Map(curatedVideoLessons.map(video => [video.id,video]));
   const words = key => labels[key][['ru','az','en'].indexOf(language)];
-  const fold = value => value.toLocaleLowerCase(language).normalize('NFKD').replace(/\p{M}/gu,'');
+  const fold = value => value.toLowerCase().normalize('NFKD').replace(/\p{M}/gu,'').replace(/ı/g,'i').replace(/ə/g,'e');
   const watchLink = (label,id,cls='') => link(label,'watch/'+id,cls);
   const runtime = seconds => Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
   const lengthGroup = seconds => seconds <= 900 ? 'short' : seconds <= 1800 ? 'medium' : 'long';
@@ -133,11 +135,17 @@
     item.append(anchor,actions);
     return item;
   }
-  function resultList(){
-    const query=fold(filters.search.trim());
+  function matchingVideos(){
+    const terms=fold(filters.search.trim()).split(/\s+/).filter(Boolean);
     const matches=curatedVideoLessons.filter(v=>(!filters.topic||filters.topic===v.topic)&&
       (!filters.length||filters.length===lengthGroup(v.seconds))&&(!filters.level||filters.level===v.level)&&
-      (!filters.language||filters.language===v.language)&&(!query||fold([v.title,v.author,words(v.topic)].join(' ')).includes(query)));
+      (!filters.language||filters.language===v.language)&&terms.every(term=>
+        fold([v.title,v.author,...labels[v.topic]].join(' ')).includes(term)));
+    if(filters.sort) matches.sort((a,b)=>filters.sort==='shortest'?a.seconds-b.seconds:b.seconds-a.seconds);
+    return matches;
+  }
+  function resultList(){
+    const matches=matchingVideos();
     el('videoCount').textContent=matches.length?words('results')+' · '+matches.length:words('empty');
     el('videoGrid').replaceChildren(...matches.slice(0,limit).map(card));
     const more=el('videoMore');
@@ -149,13 +157,13 @@
     const form=el('videoFilters');
     form.replaceChildren();
     form.onsubmit=e=>e.preventDefault();
-    const choices={topic:topics,length:['short','medium','long'],level:['beginner','intermediate','all'],language:[...new Set(curatedVideoLessons.map(v=>v.language))]};
+    const choices={topic:topics,length:['short','medium','long'],level:['beginner','intermediate','all'],language:[...new Set(curatedVideoLessons.map(v=>v.language))],sort:['shortest','longest']};
     for(const field of Object.keys(filters)){
       const label=element('label',field==='search'?'film-search':'');
       const control=element(field==='search'?'input':'select','');
       control.id='video-'+field;
       if(field==='search') control.type='search';
-      else control.append(...['',...choices[field]].map(v=>new Option(words(v||'any'),v)));
+      else control.append(...['',...choices[field]].map(v=>new Option(words(v||(field==='sort'?'curated':'any')),v)));
       control.value=filters[field];
       control.addEventListener(field==='search'?'input':'change',()=>{filters[field]=control.value;limit=pageSize;resultList();});
       label.append(element('span','',words(field)),control);

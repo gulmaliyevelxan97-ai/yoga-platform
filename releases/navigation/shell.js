@@ -24,6 +24,12 @@ function buildShell(locale){
  navRoot.querySelector('.dock').innerHTML=['home','path','practices','progress'].map(key=>n(key)).join('');
  navRoot.querySelector('.all-links').innerHTML=Object.keys(restartPages).map(key=>n(key)).join('');
  navRoot.querySelector('.all-menu summary').textContent=['Разделы','Bölmələr','Sections'][i];
+ const labels=[['Основная навигация','Əsas naviqasiya','Main navigation'],['Быстрые ссылки','Sürətli keçidlər','Quick links'],['Все разделы','Bütün bölmələr','All sections']];
+ for(const [index,selector] of ['.top-links','.dock','.all-links'].entries()){
+   navRoot.querySelector(selector).setAttribute('aria-label',labels[index][i]);
+ }
+ const skip=document.querySelector('.school-skip');
+ if(skip) skip.textContent=['К содержанию','Məzmuna keç','Skip to content'][i];
  const footer=document.querySelector('[data-school-footer]');
  if(footer)footer.innerHTML='<a href="./">RESTART</a><div>'+['code','journal','signup'].map(key=>n(key)).join('')+'<a href="./assets/brand/yoga-space-archive.jpg">'+['Фотоархив','Fotoarxiv','Photo archive'][i]+'</a></div>';
 }
@@ -40,7 +46,14 @@ function legacyRoute(hash){
  return '';
 }
 if(restartPage==='home'&&legacyRoute(location.hash))location.replace(legacyRoute(location.hash));
+const allMenu=navRoot.querySelector('.all-menu');
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||!allMenu.open)return;
+ allMenu.open=false;
+ allMenu.querySelector('summary').focus();
+});
 document.addEventListener('click',event=>{
+ if(allMenu.open&&!allMenu.contains(event.target)) allMenu.open=false;
  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
  const anchor=event.target.closest('a[href^="#"]');
  if(!anchor||!['practices','activity'].includes(restartPage))return;
@@ -50,5 +63,5 @@ document.addEventListener('click',event=>{
 });
 
 if ('serviceWorker' in navigator && !['practices','activity'].includes(restartPage)) {
- navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+ navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'}).catch(()=>{});
 }

@@ -19,10 +19,12 @@ function nextDay(){return weekdays.findIndex((_,i)=>count(i)<4)}
 const title=()=>t('Неделя 1 — Пробуждение','1-ci həftə — Oyanış','Week 1 — Awakening');
 const tabs=()=>[t('Предзапись','İlkin qeydiyyat','Pre-registration'),t('Первая неделя','Birinci həftə','Week one'),t('Мой прогресс','İrəliləyişim','My progress'),...schoolTabs()];
 const dayWord=()=>t('День','Gün','Day');
-function go(route,label){
+function routeURL(route){
  const standalone=!document.body.dataset.page;
- const url=standalone?'#'+route:route.startsWith('day-')?pageUrl('calendar')+'#'+route:pageUrl(route);
- return '<a class="cta" href="'+url+'">'+label+'</a>';
+ return standalone?'#'+route:route.startsWith('day-')?pageUrl('calendar')+'#'+route:pageUrl(route);
+}
+function go(route,label){
+ return '<a class="cta" href="'+routeURL(route)+'">'+label+'</a>';
 }
 const local=()=>t('Отметки сохраняются в этом браузере.','Qeydlər bu brauzerdə saxlanılır.','Your checkmarks are saved in this browser.');
 function signup(){
@@ -46,7 +48,7 @@ function priorProgress(){
 }
 function report(){
  const rows=weekdays.flatMap((_,d)=>tracks.map((name,k)=>({name,d,time:done[id(d,k)]}))).filter(v=>Number.isFinite(v.time)).sort((a,b)=>b.time-a.time);
- return '<h2>'+t('Недельный отчёт','Həftəlik hesabat','Weekly report')+'</h2><p>'+local()+'</p>'+priorProgress()+'<article><h3>'+rows.length+' / 28</h3><progress aria-label="'+tabs()[2]+'" max="28" value="'+rows.length+'"></progress><p>'+t('Полностью пройдено дней','Tamamlanan günlər','Days completed')+' · '+weekdays.filter((_,i)=>count(i)===4).length+' / 7</p>'+go(nextDay()<0?'calendar':'day-'+(nextDay()+1),nextDay()<0?tabs()[1]:t('К текущему дню','Cari günə keç','Go to current day'))+'</article><div class="cards">'+tracks.map(n=>'<article><h3>'+n+'</h3>'+rows.filter(r=>r.name===n).length+' / 7</article>').join('')+'</div><h3>'+t('История недели','Həftənin tarixçəsi','Week history')+'</h3>'+(rows.length?'<ul>'+rows.map(r=>'<li><a href="#day-'+(r.d+1)+'">'+dayWord()+' '+(r.d+1)+' · '+r.name+'</a> · '+new Date(r.time).toLocaleDateString(lang)+'</li>').join('')+'</ul>':t('Здесь появятся отмеченные задания.','Tamamladığınız tapşırıqlar burada görünəcək.','Your completed tasks will appear here.'));
+ return '<h2>'+t('Недельный отчёт','Həftəlik hesabat','Weekly report')+'</h2><p>'+local()+'</p>'+priorProgress()+'<article><h3>'+rows.length+' / 28</h3><progress aria-label="'+tabs()[2]+'" max="28" value="'+rows.length+'"></progress><p>'+t('Полностью пройдено дней','Tamamlanan günlər','Days completed')+' · '+weekdays.filter((_,i)=>count(i)===4).length+' / 7</p>'+go(nextDay()<0?'calendar':'day-'+(nextDay()+1),nextDay()<0?tabs()[1]:t('К текущему дню','Cari günə keç','Go to current day'))+'</article><div class="cards">'+tracks.map(n=>'<article><h3>'+n+'</h3>'+rows.filter(r=>r.name===n).length+' / 7</article>').join('')+'</div><h3>'+t('История недели','Həftənin tarixçəsi','Week history')+'</h3>'+(rows.length?'<ul>'+rows.map(r=>'<li><a href="'+routeURL('day-'+(r.d+1))+'">'+dayWord()+' '+(r.d+1)+' · '+r.name+'</a> · '+new Date(r.time).toLocaleDateString(lang)+'</li>').join('')+'</ul>':t('Здесь появятся отмеченные задания.','Tamamladığınız tapşırıqlar burada görünəcək.','Your completed tasks will appear here.'));
 }
 function renderLegacy(){
  document.documentElement.lang=lang;$('#lang').value=lang;document.title='RESTART · '+title();

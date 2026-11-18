@@ -56,8 +56,8 @@ for file, (page,title) in entries.items():
     actions = '<div class="school-actions" id="home-actions"></div>' if page=='home' else ''
     (ROOT/file).write_text(f'''<!doctype html>
 <html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{design}{scripts}</head>
-<body data-page="{page}">{header.replace('LANG_ID','lang')}
-<main class="school-main" id="top">
+<body data-page="{page}"><a class="school-skip" href="#top">К содержанию</a>{header.replace('LANG_ID','lang')}
+<main class="school-main" id="top" tabindex="-1">
 <div class="school-mast"><div><small id="kicker"></small><h1 id="headline">{title}</h1><p id="lead"></p>{actions}</div>{hero_image}</div>
 <p id="notice" role="status"></p><section id="view"></section>
 </main>{footer}</body></html>

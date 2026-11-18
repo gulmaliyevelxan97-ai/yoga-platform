@@ -63,3 +63,30 @@ test('Offline requests use the requested page in a GitHub Pages subdirectory', a
   handlers.fetch({request:{ url:'https://example.test/progress.html',method:'GET',mode:'navigate' },respondWith: p=>reply=p});
   assert.equal(reply,undefined);
 });
+
+test('Navigation revalidates HTML and keeps an offline fallback for temporary server errors', async () => {
+  const handlers = {};
+  const origin = 'https://example.test/yoga-platform/';
+  let status = 200;
+  let storedPage = 'offline page';
+  let cacheMode;
+  require('node:vm').runInNewContext(read('service-worker.js').toString(), {
+    URL,
+    self: {registration:{scope:origin},addEventListener:(event,handler)=>handlers[event]=handler},
+    caches: {match:async()=>storedPage},
+    fetch: async (_,options)=>{cacheMode=options.cache;return {status};}
+  });
+  const navigate = () => {
+    let reply;
+    handlers.fetch({request:{url:origin+'week-one.html',method:'GET',mode:'navigate'},respondWith:p=>reply=p});
+    return reply;
+  };
+  assert.equal((await navigate()).status,200);
+  assert.equal(cacheMode,'no-cache');
+  status=404;
+  assert.equal((await navigate()).status,404);
+  status=503;
+  assert.equal(await navigate(),'offline page');
+  storedPage=undefined;
+  assert.equal((await navigate()).status,503);
+});

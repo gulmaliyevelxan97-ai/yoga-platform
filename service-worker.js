@@ -1,4 +1,4 @@
-const VERSION = '9144a5bea8a665';
+const VERSION = 'a2db9f0f931568';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -11,7 +11,7 @@ const ASSETS = [
   "./releases/restart/app.js?v=6fc1f65a03b8",
   "./stage-6.css?v=24337244debc",
   "./video-data.js?v=ea5f73532e52",
-  "./releases/restart/video-library.js?v=c12a07112ee5",
+  "./releases/restart/video-library.js?v=8878e31f4155",
   "./releases/restart/restart.css?v=ac66e15fcc92",
   "./releases/restart/media.js?v=4d074b67daae",
   "./releases/restart/philosophy.css?v=361fd3ebe1b4",
@@ -19,7 +19,7 @@ const ASSETS = [
   "./assets/pwa/restart-192.png",
   "./assets/pwa/restart-apple.png",
   "./releases/pwa/config.js?v=3c4c71d549d0",
-  "./releases/pwa/client.js?v=8f0fe5807980",
+  "./releases/pwa/client.js?v=d544b3231377",
   "./assets/brand/restart-1188.webp",
   "./assets/yoga.webp",
   "./assets/meditation.webp",
@@ -35,12 +35,12 @@ const ASSETS = [
   "./assets/pwa/restart-maskable.png",
   "./releases/week/index.html",
   "./releases/week/content.js?v=5c5213ed331e",
-  "./releases/week/week.js?v=313b7021114b",
+  "./releases/week/week.js?v=51de9b3e3d82",
   "./releases/week/assessment.js?v=ed5ac0e60ae2",
   "./releases/week/school.js?v=0bcf366fff85",
-  "./releases/navigation/design.css?v=a4bfa5236c93",
-  "./releases/navigation/shell.js?v=b5e137ab26b7",
-  "./releases/navigation/pages.js?v=a4912df76dc9",
+  "./releases/navigation/design.css?v=28ef601f9a69",
+  "./releases/navigation/shell.js?v=b6e579d73695",
+  "./releases/navigation/pages.js?v=bf93fc89a59a",
   "./about.html",
   "./philosophy.html",
   "./code.html",
@@ -88,11 +88,22 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     url.search = '';
     const page = url.pathname === scope.pathname ? home : url.href;
-    if (urls.has(page)) event.respondWith(fetch(request).catch(() => caches.match(page,{cacheName:CACHE})));
+    if (urls.has(page)) event.respondWith(navigationResponse(request,page));
   } else if (urls.has(url.href)) {
     event.respondWith(caches.match(request,{cacheName:CACHE}).then(hit => hit || fetch(request)));
   }
 });
+async function navigationResponse(request,page) {
+  try {
+    const response = await fetch(request,{cache:'no-cache'});
+    if (response.status < 500) return response;
+    return (await caches.match(page,{cacheName:CACHE})) || response;
+  } catch (error) {
+    const offlinePage = await caches.match(page,{cacheName:CACHE});
+    if (offlinePage) return offlinePage;
+    throw error;
+  }
+}
 function localLink(path) {
   if (typeof path !== 'string') return scope.href;
   try {
