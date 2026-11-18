@@ -16,27 +16,6 @@ try {
 } catch { storageOK = false; }
 const t = key => phrases[key][['ru','az','en'].indexOf(language)];
 let library = lessonsByLanguage[language];
-function renderCards() {
-el('categories').replaceChildren();
-for (const [id, group] of Object.entries(library)) {
-  const card = link('', id, 'card');
-  const arrow = document.createElement('span');
-  arrow.textContent = '↗';
-  arrow.setAttribute('aria-hidden','true');
-  const title = document.createElement('b');
-  title.textContent = group.name;
-  const desc = document.createElement('p');
-  desc.textContent = group.description;
-  const figure = document.createElement('figure');
-  const photo = document.createElement('img');
-  photo.src = './assets/' + id + '.webp';
-  photo.alt = '';
-  photo.loading = 'lazy';
-  figure.append(photo);
-  card.append(figure,arrow,title,desc);
-  el('categories').append(card);
-}
-}
 let remaining = 0, deadline = 0, interval, activeRoute = '', lesson;
 function renderProfile() {
   const sessions = new Map(memorySessions);
@@ -46,7 +25,7 @@ function renderProfile() {
       if (!key?.startsWith(sessionPrefix)) continue;
       try {
         const entry = JSON.parse(localStorage.getItem(key));
-        if (Object.hasOwn(library,entry.group) && [0,1].includes(entry.index) &&
+        if (Object.hasOwn(library,entry.group) && Number.isInteger(entry.index) && library[entry.group].lessons[entry.index] &&
           [1,3,5,10,15].includes(entry.minutes) && Number.isSafeInteger(entry.date) &&
           Number.isFinite(new Date(entry.date).getTime())) sessions.set(key,entry);
       } catch { /* Skip an incomplete history entry. */ }
@@ -54,10 +33,12 @@ function renderProfile() {
   } catch { storageOK = false; }
   const sorted = [...sessions.values()].sort((a,b)=>b.date-a.date);
   el('sessionCount').textContent = sorted.length;
-  el('minuteCount').textContent = sorted.reduce((sum,s)=>sum+s.minutes,0);
+  const totalMinutes = sorted.reduce((sum,s)=>sum+s.minutes,0);
+  el('minuteCount').textContent = totalMinutes;
+  renderExtras(sorted,totalMinutes);
   el('storageNote').textContent = t(storageOK?'local':'unavailable');
   el('empty').hidden = !!sorted.length;
-  el('history').replaceChildren(...sorted.slice(0,5).map(s=>{
+  el('history').replaceChildren(...sorted.map(s=>{
     const li = document.createElement('li');
     const date = new Intl.DateTimeFormat(language,{day:'numeric',month:'short'}).format(s.date);
     li.textContent = library[s.group].lessons[s.index][0] + ' · ' + s.minutes + ' ' + t('minute') + ' · ' + date;
@@ -114,7 +95,17 @@ el('reset').onclick = reset;
 el('length').onchange = reset;
 document.addEventListener('visibilitychange',()=>{ if (deadline) draw(); });
 function route(translateOnly = false) {
-  const [id,index='1'] = location.hash.slice(1).split('/');
+  const [id,index='1',suggested] = location.hash.slice(1).split('/');
+  const currentTeacher = Object.values(teachers).find(teacher=>teacher.profile===id);
+  const showFounder = Boolean(currentTeacher);
+  if (showFounder) renderTeacherStory(currentTeacher);
+  const wasFounder = !el('founder').hidden;
+  for (const section of document.querySelectorAll('main > section')) {
+    if (section.id !== 'studio') section.hidden = section.id === 'founder' ? !showFounder : showFounder;
+  }
+  document.title = 'Yoga Space · ' + t(showFounder?(currentTeacher.profileLabel || 'teacher'):'page');
+  if (showFounder && translateOnly !== true) {el('founderTitle').focus();el('founder').scrollIntoView();}
+  if (wasFounder && !showFounder && !Object.hasOwn(library,id)) document.getElementById(id)?.scrollIntoView();
   if (!Object.hasOwn(library,id)) {
     if (deadline) draw();
     stop();
@@ -123,7 +114,7 @@ function route(translateOnly = false) {
     return;
   }
   const group = library[id];
-  const selected = index === '2' ? 1 : 0;
+  const selected = Number(index) > 0 && group.lessons[Number(index)-1] ? Number(index)-1 : 0;
   const key = id + '/' + (selected+1);
   const changed = key !== activeRoute;
   if (changed || translateOnly === true) {
@@ -144,7 +135,7 @@ function route(translateOnly = false) {
       return li;
     }));
     if (changed) {
-      el('length').value = id==='yoga' ? '10' : '5';
+      el('length').value = ['1','3','5','10','15'].includes(suggested) ? suggested : (id==='yoga'?'10':'5');
       reset();
     } else draw();
   }
@@ -155,8 +146,9 @@ function route(translateOnly = false) {
 }
 el('category').tabIndex=-1;
 window.addEventListener('hashchange',route);
-document.querySelector('#categories').addEventListener('click', e=>{
-  if (e.target.closest('a')?.hash === location.hash) route();
+document.addEventListener('click',e=>{
+  const target=e.target.closest('a');
+  if (target && activeRoute && target.hash===location.hash) route();
 });
 function translate() {
   library = lessonsByLanguage[language];
@@ -170,7 +162,11 @@ function translate() {
   const value = el('length').value || '5';
   el('length').replaceChildren(...[1,3,5,10,15].map(n=>new Option(n+' '+t('minute'),n)));
   el('length').value = value;
-  renderCards();
+  renderFilters();
+  renderVideos();
+  renderTeachers();
+  renderBrand();
+  renderSchedule();
   renderProfile();
   route(true);
 }
@@ -180,7 +176,9 @@ el('language').onchange = () => {
   translate();
 };
 window.addEventListener('storage', e=>{
-  if (!e.key || e.key.startsWith(sessionPrefix)) renderProfile();
+  if (!e.key || e.key.startsWith(favoritePrefix)) renderCatalog();
+  if (!e.key || e.key.startsWith(sessionPrefix) || e.key.startsWith(favoritePrefix)) renderProfile();
 });
+setupStudio();
 translate();
 if (activeRoute) route();
