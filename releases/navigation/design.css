@@ -84,3 +84,16 @@ body[data-practice-filter=video] main>section:is(#directions,#courses,#classes,#
  .school-bar .all-links{width:min(13rem,calc(100vw - 4rem))}
  .school-main .school-actions .cta{width:100%;justify-content:center;text-align:center}
 }
+
+.week-status {display:block;margin:.65rem 0;font-size:.88rem;color:#456152}
+.week-status progress {display:block;height:.7rem;margin:.4rem 0 .8rem}
+#filters .practice-search {grid-column:1/-1;max-width:32rem}
+#practice-query {width:100%;min-height:44px;padding:.6rem;font-size:1rem}
+[data-page=home] .school-mast {grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+[data-page=home] .school-mast h1 {font-size:clamp(2.1rem,5.5vw,4.5rem);max-width:16ch;text-wrap:balance}
+[data-page=home] .school-mast img {max-width:23rem}
+@media(max-width:640px){
+  [data-page=home] .school-mast {grid-template-columns:minmax(0,1fr);gap:1.5rem}
+  [data-page=home] .school-mast img {max-width:min(78vw,21rem)}
+  [data-page=practices] :is(#filters,#videoFilters,#studio) :is(input[type=search],select) {font-size:1rem;min-height:44px}
+}

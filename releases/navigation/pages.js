@@ -27,17 +27,31 @@ function homePage(){
  ['Каталог, видеотека и таймеры.','Kataloq, videokitabxana və taymerlər.','A catalogue, video library and timers.']][i])+'</p></article>').join('')+'</div></section>';
 }
 function pageName(key){return t(...restartPages[key].slice(1))}
+function weekStatus(){
+ const completed=weekdays.reduce((sum,_,day)=>sum+count(day),0);
+ const total=weekdays.length*tracks.length;
+ return '<label class="week-status">'+t('Задания','Tapşırıqlar','Tasks')+' · '+completed+' / '+total+'<progress value="'+completed+'" max="'+total+'"></progress></label>';
+}
+function weekAction(){
+ const next=nextDay();
+ if(next<0)return go('progress',t('Открыть отчёт','Hesabatı aç','View your report'));
+ const text=weekdays.some((_,day)=>count(day)>0)?
+   t('Продолжить с дня','Bu gündən davam et','Continue from day')+' '+(next+1):
+   t('Начать первую неделю','İlk həftəyə başla','Start week one');
+ return go('day-'+(next+1),text);
+}
 function schoolWeeks(){
- return '<ol class="cards">'+pathway.map((phase,i)=>'<li class="card"><details '+(i===0?'open':'')+'><summary>'+t('Неделя','Həftə','Week')+' '+(i+1)+' · '+t(...phase)+'</summary><p>'+t(...pathwayGoals[i])+'</p></details>'+(i===0?go('calendar',pageName('calendar')):'<small>'+t('Будущий этап','Gələcək mərhələ','Upcoming stage')+'</small>')+'</li>').join('')+'</ol>';
+ return '<ol class="cards">'+pathway.map((phase,i)=>'<li class="card"><details '+(i===0?'open':'')+'><summary>'+t('Неделя','Həftə','Week')+' '+(i+1)+' · '+t(...phase)+'</summary><p>'+t(...pathwayGoals[i])+'</p></details>'+(i===0?weekStatus()+weekAction()+' <a href="'+pageUrl('calendar')+'">'+pageName('calendar')+'</a>':'<small>'+t('Будущий этап','Gələcək mərhələ','Upcoming stage')+'</small>')+'</li>').join('')+'</ol>';
 }
 function aboutPage(){
  const founder='<p><a class="cta" href="'+pageUrl('practices')+'#founder">'+t('Познакомиться с основателем','Təsisçi ilə tanış olun','Meet the founder')+'</a></p>';
  return founder+'<div class="cards">'+directions.map((d,i)=>'<article><h2 id="ph-'+tracks[i].toLowerCase()+'">'+tracks[i]+'</h2><p>'+t(...d)+'</p></article>').join('')+'</div><h2>'+t('Восемь этапов','Səkkiz mərhələ','Eight stages')+'</h2>'+schoolWeeks();
 }
 function myPath(){
- const next=nextDay(),day=next<0?6:next;
+ const day=nextDay();
+ if(day<0)return '<article><h2>'+t('Первая неделя завершена','İlk həftə tamamlandı','You finished week one')+'</h2>'+weekStatus()+weekAction()+' <a href="'+pageUrl('calendar')+'">'+pageName('calendar')+'</a></article>';
  const upcoming=[0,2,4].find(i=>i>=day&&!done[id(i,1)]);
- return '<div class="cards"><article><small>'+title()+'</small><h2>'+t(...weekdays[day])+'</h2><p>'+t(...themes[day])+'</p>'+go('day-'+(day+1),t('Открыть день','Günü aç','Open day'))+'</article><article><h2>'+t('Ближайшее очное занятие','Növbəti əyani məşğələ','Next in-person session')+'</h2><p>'+(upcoming===undefined?t('Все очные занятия этой недели отмечены или пройдены по календарю.','Bu həftənin əyani məşğələləri qeyd olunub və ya təqvimdə geridə qalıb.','This week’s in-person sessions are marked complete or earlier in the calendar.'):t(...weekdays[upcoming])+' · 90 '+t('мин','dəq','min'))+'</p>'+go('progress',pageName('progress'))+'</article></div><h2>'+t('Практики дня','Günün məşqləri','Today’s practices')+'</h2><div class="cards">'+window.weekTasks[day].map((task,k)=>'<article><small>'+tracks[k]+' · '+task.min+' '+t('мин','dəq','min')+'</small><h3>'+task[lang][0]+'</h3><p>'+(done[id(day,k)]?t('Выполнено','Tamamlandı','Completed'):t('К выполнению','İcra olunacaq','To do'))+'</p></article>').join('')+'</div>';
+ return '<div class="cards"><article><small>'+title()+'</small><h2>'+t(...weekdays[day])+'</h2><p>'+t(...themes[day])+'</p>'+weekStatus()+weekAction()+'</article><article><h2>'+t('Ближайшее очное занятие','Növbəti əyani məşğələ','Next in-person session')+'</h2><p>'+(upcoming===undefined?t('Все очные занятия этой недели отмечены или пройдены по календарю.','Bu həftənin əyani məşğələləri qeyd olunub və ya təqvimdə geridə qalıb.','This week’s in-person sessions are marked complete or earlier in the calendar.'):t(...weekdays[upcoming])+' · 90 '+t('мин','dəq','min'))+'</p>'+go('progress',pageName('progress'))+'</article></div><h2>'+t('Практики дня','Günün məşqləri','Today’s practices')+'</h2><div class="cards">'+window.weekTasks[day].map((task,k)=>'<article><small>'+tracks[k]+' · '+task.min+' '+t('мин','dəq','min')+'</small><h3>'+task[lang][0]+'</h3><p>'+(done[id(day,k)]?t('Выполнено','Tamamlandı','Completed'):t('К выполнению','İcra olunacaq','To do'))+'</p></article>').join('')+'</div>';
 }
 function participation(){
  return '<div class="cards"><article><h2>STANDARD</h2><p>'+t('Базовый формат участия в программе.','Proqramda əsas iştirak formatı.','The core programme option.')+'</p></article><article><h2>PREMIUM</h2><p>'+t('Расширенный формат участия. Состав пакета и даты набора будут объявлены отдельно.','Genişləndirilmiş iştirak formatı. Paketə daxil olan xidmətlər və qəbul tarixləri ayrıca elan ediləcək.','An extended option. Services included and enrolment dates will be announced separately.')+'</p></article></div>'+signup();
@@ -47,7 +61,7 @@ function schoolHeader(page){
  $('#lead').textContent=pageIntros[page]?t(...pageIntros[page]):'';
  $('#kicker').textContent=page==='home'?'RESTART':pageName(page);
  const actions=$('#home-actions');
- if(actions)actions.innerHTML=go('path',t('Начать путь','Yola başla','Start your path'))+go('method',t('Изучить философию','Fəlsəfəni kəşf et','Explore the philosophy')).replace('class="cta"','class="cta secondary"')+go('programme',t('Посмотреть программу','Proqrama bax','View the programme')).replace('class="cta"','class="cta secondary"');
+ if(actions)actions.innerHTML=go('path',t('Мой путь','Mənim yolum','My path'))+go('method',t('Изучить философию','Fəlsəfəni kəşf et','Explore the philosophy')).replace('class="cta"','class="cta secondary"')+go('programme',t('Посмотреть программу','Proqrama bax','View the programme')).replace('class="cta"','class="cta secondary"');
  document.title=$('#headline').textContent+' · RESTART';
 }
 function routePage(page,dayMatch){

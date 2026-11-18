@@ -62,13 +62,24 @@ function renderFilters() {
   setOptions('filterGoal',['movement','release','focus'],t);
   renderCatalog();
 }
+function practiceMatchesQuery(query, fields, locale) {
+  const normalize = value => value.toLocaleLowerCase(locale).normalize('NFD').replace(/\p{M}/gu,'').replace(/ı/g,'i').replace(/ə/g,'e');
+  const haystack = normalize(fields.join(' '));
+  return normalize(query.trim()).split(/\s+/).every(word => haystack.includes(word));
+}
 function renderCatalog() {
   const group = el('filterGroup').value, level = el('filterLevel').value;
   const minutes = el('filterTime').value, goal = el('filterGoal').value;
+  const query = el('practice-query')?.value.trim() || '';
   const visible = practices.filter(p=>(!group || p.id.startsWith(group+'/')) &&
-    (!level || p.level===level) && (!minutes || p.minutes===Number(minutes)) && (!goal || p.goal===goal));
+    (!level || p.level===level) && (!minutes || p.minutes===Number(minutes)) && (!goal || p.goal===goal) &&
+    (!query || practiceMatchesQuery(query,[lessonInfo(p.id)[0],library[p.id.split('/')[0]].name,t(p.goal)],language)));
   el('matches').textContent = t('found')+visible.length;
-  el('clearFilters').hidden = !(group || level || minutes || goal);
+  el('clearFilters').hidden = !(query || group || level || minutes || goal);
+  if (!visible.length && el('practice-query')) {
+    el('catalog').replaceChildren(node('p',t('practiceNoResults')));
+    return;
+  }
   el('catalog').replaceChildren(...visible.map(p=>{
     const [group] = p.id.split('/');
     const item = node('section');
@@ -170,6 +181,8 @@ function loadDraft() {
 }
 function setupStudio() {
   el('filters').addEventListener('change',renderCatalog);
+  el('filters').addEventListener('submit',event=>event.preventDefault());
+  el('practice-query')?.addEventListener('input',renderCatalog);
   el('clearFilters').onclick=()=>{el('filters').reset();renderCatalog();el('filterGroup').focus();};
   el('format').onchange=loadDraft;
   el('desired').oninput=()=>{draftMessage='';renderSchedule();el('demoRequest').hidden=true;};

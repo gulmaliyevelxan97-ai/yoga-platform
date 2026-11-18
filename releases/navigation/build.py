@@ -72,6 +72,7 @@ for file,page in studio.items():
     text = text.replace('./releases/week/index.html#signup','./participation.html').replace('./releases/week/index.html#progress','./progress.html')
     if page == 'practices':
         text = text.replace('<main id="top">','<main id="top"><div class="studio-switch"><label for="practice-type" id="practice-type-label">Тип занятия</label><select id="practice-type"><option value="all">Все</option><option value="guided">Практики с таймером</option><option value="video">Видео</option></select></div>',1)
+    text = re.sub(r"\./([^\"?]+\.(?:js|css))\?v=[a-f0-9]+", lambda match: tag_path(match[1]), text)
     (ROOT/file).write_text(text)
 
 sw = ROOT/'service-worker.js'

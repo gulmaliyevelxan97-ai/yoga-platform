@@ -48,3 +48,6 @@ phrases.page = ['Движение и осознанность','Hərəkət və f
 
 phrases.weekApply = ['Предзапись на 56 дней','56 günlük proqrama ilkin qeydiyyat','56-day programme pre-registration'];
 phrases.weekResume = ['Первая неделя и мой отчёт','İlk həftə və hesabatım','Week one and my report'];
+
+phrases.practiceSearch = ['Поиск практики','Məşq axtarışı','Find a practice'];
+phrases.practiceNoResults = ['Подходящих практик нет. Измени запрос или сбрось фильтры.','Uyğun məşq tapılmadı. Sorğunu dəyiş və ya filtrləri sıfırla.','No matching practices. Try a different search or reset the filters.'];

@@ -1,11 +1,11 @@
-const VERSION = 'a2db9f0f931568';
+const VERSION = '112837d54ea365';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
-  "./releases/stages-4-5/studio.js?v=4745727b5f64",
+  "./releases/stages-4-5/studio.js?v=677ccc1c2037",
   "./releases/restart/pathways.js?v=d5120e5cfa50",
   "./video-labels.js?v=4325b0b4b98a",
-  "./releases/restart/labels.js?v=a70983924300",
+  "./releases/restart/labels.js?v=7c7aecb969a5",
   "./releases/restart/philosophy.js?v=5dafaf54c441",
   "./releases/pwa/labels.js?v=ca053aa1ddd3",
   "./releases/restart/app.js?v=6fc1f65a03b8",
@@ -38,9 +38,9 @@ const ASSETS = [
   "./releases/week/week.js?v=51de9b3e3d82",
   "./releases/week/assessment.js?v=ed5ac0e60ae2",
   "./releases/week/school.js?v=0bcf366fff85",
-  "./releases/navigation/design.css?v=28ef601f9a69",
+  "./releases/navigation/design.css?v=b0adf81b36ef",
   "./releases/navigation/shell.js?v=b6e579d73695",
-  "./releases/navigation/pages.js?v=bf93fc89a59a",
+  "./releases/navigation/pages.js?v=c4cc40234ce2",
   "./about.html",
   "./philosophy.html",
   "./code.html",

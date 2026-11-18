@@ -29,3 +29,32 @@ test('A checked task survives reload and weekly report links target the original
   assert.equal(document.documentElement.lang,'en');
   assert.equal(values.get('yogaspace.language'),'en');
 });
+
+test('Programme links point to the first incomplete day or the completed report', () => {
+  const counts = [4,4,2,0,0,0,0];
+  const context = {
+    weekdays: counts, tracks: ['MIND','BODY','NUTRITION','LIFE'],
+    count: day => counts[day], restartPages: {calendar:['week-one.html','Первая неделя']},
+    nextDay: () => counts.findIndex(n=>n<4),
+    t: label => label,
+    go: (path,label) => path+' · '+label,
+    pageUrl: key => './'+key+'.html'
+  };
+  const run = expression => runInNewContext('(()=>{'+read('releases/navigation/pages.js')+'\nreturn '+expression+';})()', context);
+  assert.equal(run('weekAction()'),'day-3 · Продолжить с дня 3');
+  assert.match(run('weekStatus()'), /10 \/ 28/);
+  counts.fill(4);
+  assert.equal(run('weekAction()'),'progress · Открыть отчёт');
+  assert.match(run('myPath()'), /Первая неделя завершена/);
+  counts.fill(0);
+  assert.equal(run('weekAction()'),'day-1 · Начать первую неделю');
+});
+
+test('Practice search matches localized words across title and topic', () => {
+  const match = runInNewContext(read('releases/stages-4-5/studio.js')+'\npracticeMatchesQuery');
+  assert.equal(match('  NEFES   DIQQET  ',['Nəfəs məşqi','Diqqət'],'az'),true);
+  assert.equal(match('nefes diqqet',['Nəfəs məşqi','Diqqət'],'en'),true);
+  assert.equal(match('NƏFƏS DİQQƏT',['Nəfəs məşqi','Diqqət'],'az'),true);
+  assert.equal(match('relax breath',['Breathing practice','Relaxation'],'en'),true);
+  assert.equal(match('breath running',['Breathing practice','Relaxation'],'en'),false);
+});
