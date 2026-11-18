@@ -1,0 +1,63 @@
+const copy = {
+  ru: {
+    welcome:'Добро пожаловать в RESTART. Новое начало мыслей, тела, питания и жизни. RESTART — это не попытка начать жизнь заново. Это возможность начать жить по-новому. Твоё новое начало начинается сегодня.',
+    menu:'Главное меню', program:'Моя программа', progress:'Мой прогресс', reminders:'Напоминания', team:'Связь с командой', language:'Язык', site:'Открыть RESTART', back:'‹ В меню',
+    programText:'Составь недельный план на сайте. 56-дневная программа RESTART пока анонсирована. Здесь появятся задания, когда программу подключат.',
+    plan:'Мой недельный план', announced:'О программе на 56 дней',
+    mind:'Мысли и внимание. Начни с короткой практики осознанности и заметь, куда возвращается твоё внимание.',
+    body:'Тело и движение. Выбери практику йоги или движения в своём темпе.',
+    nutrition:'Питание. Познакомься с идеей осознанного питания и попробуй практику, описанную на сайте.',
+    life:'Жизнь и привычки. Начни с небольшого шага, для которого сможешь найти место в своей неделе.',
+    more:'Открыть раздел', progressText:'История практик и избранное хранятся в браузере на сайте. Открой профиль в привычном браузере, чтобы увидеть накопленный прогресс. Telegram пока не синхронизирует эти данные.',
+    teamText:'Напиши команде RESTART по ссылке или открой страницу основателя.',
+    contact:'Связаться с RESTART', founder:'Об основателе',
+    remindersText:'Ежедневное напоминание о практике включается по твоему согласию. Выбери время и проверь часовой пояс. Отключить можно здесь или командой /stop.',
+    enabled:'Включено', disabled:'Выключено', at:'Время', zone:'Часовой пояс', enable:'Включить напоминания', disable:'Выключить напоминания',
+    timeHelp:'Чтобы задать своё время, напиши /time 19:30. Для смены часового пояса: /timezone Europe/Moscow.',
+    badTime:'Укажи время в формате ЧЧ:ММ, например /time 19:30.',
+    badZone:'Укажи часовой пояс, например /timezone Asia/Baku.',
+    daily:'Время для RESTART. Выбери короткую практику и сделай один шаг к новому началу.',
+    practice:'Открыть практики', help:'Команды: /start — меню, /language — язык, /reminders — настройки, /stop — остановить напоминания.'
+  },
+  az: {
+    welcome:'RESTART-a xoş gəlmisən. Düşüncədə, bədəndə, qidalanmada və həyatda yeni başlanğıc. RESTART həyatı sıfırdan başlamaq cəhdi deyil. Bu, yeni tərzdə yaşamağa başlamaq fürsətidir. Sənin yeni başlanğıcın bu gündür.',
+    menu:'Əsas menyu', program:'Proqramım', progress:'İrəliləyişim', reminders:'Xatırlatmalar', team:'Komanda ilə əlaqə', language:'Dil', site:'RESTART-ı aç', back:'‹ Menyuya qayıt',
+    programText:'Saytda həftəlik planını qur. RESTART-ın 56 günlük proqramı hələ elan mərhələsindədir. Proqram istifadəyə veriləndə tapşırıqlar burada görünəcək.',
+    plan:'Həftəlik planım', announced:'56 günlük proqram haqqında',
+    mind:'Düşüncə və diqqət. Qısa fərqindəlik məşqi ilə başla və diqqətinin hara qayıtdığını müşahidə et.',
+    body:'Bədən və hərəkət. Öz tempinə uyğun yoqa və ya hərəkət məşqi seç.',
+    nutrition:'Qidalanma. Şüurlu qidalanma anlayışı ilə tanış ol və saytdakı məşqi sına.',
+    life:'Həyat və vərdişlər. Həftəlik planına sığan kiçik bir addımla başla.',
+    more:'Bölməni aç', progressText:'Məşq tarixçən və seçilmişlərin saytın brauzer yaddaşında saxlanılır. İrəliləyişini görmək üçün profili həmişə istifadə etdiyin brauzerdə aç. Bu məlumatlar hələ Telegram ilə sinxronlaşdırılmır.',
+    teamText:'Keçiddən RESTART komandası ilə əlaqə saxla və ya təsisçinin səhifəsini aç.',
+    contact:'RESTART ilə əlaqə', founder:'Təsisçi haqqında',
+    remindersText:'Gündəlik məşq xatırlatması yalnız razılığınla aktivləşir. Vaxtı seç və saat qurşağını yoxla. Buradan və ya /stop əmri ilə dayandıra bilərsən.',
+    enabled:'Aktivdir', disabled:'Söndürülüb', at:'Vaxt', zone:'Saat qurşağı', enable:'Xatırlatmaları aktiv et', disable:'Xatırlatmaları söndür',
+    timeHelp:'Vaxtı təyin etmək üçün /time 19:30 yaz. Saat qurşağını dəyişmək üçün /timezone Asia/Baku yaz.',
+    badTime:'Vaxtı SS:DD formatında göstər. Məsələn: /time 19:30.',
+    badZone:'Saat qurşağını göstər. Məsələn: /timezone Asia/Baku.',
+    daily:'RESTART vaxtıdır. Qısa bir məşq seç və yeni başlanğıc üçün bir addım at.',
+    practice:'Məşqləri aç', help:'Əmrlər: /start — menyu, /language — dil, /reminders — ayarlar, /stop — xatırlatmaları dayandır.'
+  },
+  en: {
+    welcome:'Welcome to RESTART. A fresh start for your mind, body, nutrition, and life. RESTART isn’t about starting life over. It’s a chance to start living differently. Your fresh start begins today.',
+    menu:'Main menu', program:'My programme', progress:'My progress', reminders:'Reminders', team:'Contact the team', language:'Language', site:'Open RESTART', back:'‹ Back to menu',
+    programText:'Build a weekly plan on the website. The RESTART 56-day programme has been announced. Daily tasks will appear here once the programme is connected.',
+    plan:'My weekly plan', announced:'About the 56-day programme',
+    mind:'Mind and attention. Begin with a short mindfulness practice and notice where your attention returns.',
+    body:'Body and movement. Choose a yoga or movement practice at your own pace.',
+    nutrition:'Nutrition. Explore mindful eating and try the exercise on the website.',
+    life:'Life and habits. Start with a small step you can fit into your week.',
+    more:'Open this section', progressText:'Your practice history and favourites are stored in the website’s browser. Open your profile in the browser you usually use to see your progress. Telegram doesn’t sync this data yet.',
+    teamText:'Use the contact link to reach RESTART, or open the founder’s page.',
+    contact:'Contact RESTART', founder:'About the founder',
+    remindersText:'Daily practice reminders are opt-in. Pick a time and check your time zone. Switch them off here or with /stop.',
+    enabled:'On', disabled:'Off', at:'Time', zone:'Time zone', enable:'Enable reminders', disable:'Disable reminders',
+    timeHelp:'Set your time with /time 19:30. Change your time zone with /timezone Europe/London.',
+    badTime:'Use HH:MM, for example /time 19:30.', badZone:'Enter a time zone such as /timezone Europe/London.',
+    daily:'Time for RESTART. Pick a short practice and take one step towards a fresh start.',
+    practice:'Open practices', help:'Commands: /start — menu, /language — language, /reminders — settings, /stop — turn off reminders.'
+  }
+};
+export const languages = Object.keys(copy);
+export const texts = language => copy[language] ?? copy.ru;
