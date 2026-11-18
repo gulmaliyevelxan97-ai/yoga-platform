@@ -1,13 +1,14 @@
 // Token appears only in the Bot API request URL, never in logs or returned errors.
-export function telegramApi(token, {fetcher=fetch} = {}) {
+export function telegramApi(token, {fetcher=fetch, signal} = {}) {
   return async function call(method, data={}) {
     let response, payload;
+    const deadline=AbortSignal.timeout(method==='getUpdates'?40000:10000);
     try {
       response=await fetcher('https://api.telegram.org/bot'+token+'/'+method,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(data),
-        signal:AbortSignal.timeout(method==='getUpdates'?40000:10000)
+        signal:signal ? AbortSignal.any([signal,deadline]) : deadline
       });
       payload=await response.json();
     } catch {

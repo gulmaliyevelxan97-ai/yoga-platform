@@ -1,0 +1,7 @@
+**
+!Dockerfile
+!package.json
+!*.mjs
+!deploy/
+!deploy/start-worker.sh
+*.test.mjs

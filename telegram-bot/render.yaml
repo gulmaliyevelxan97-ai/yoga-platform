@@ -1,0 +1,18 @@
+services:
+  - type: worker
+    name: restart-telegram
+    runtime: docker
+    plan: 0.5c-512mb
+    numInstances: 1
+    autoDeployTrigger: "off"
+    dockerfilePath: ./telegram-bot/Dockerfile
+    dockerContext: ./telegram-bot
+    disk:
+      name: restart-telegram-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: RESTART_BOT_TIMEZONE
+        value: Asia/Baku

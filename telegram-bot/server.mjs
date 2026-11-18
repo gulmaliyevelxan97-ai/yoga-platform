@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { setTimeout as pause } from 'node:timers/promises';
 import { createBot } from './bot.mjs';
 import { openStore } from './store.mjs';
+import { backupOnce } from './backups.mjs';
 import { telegramApi } from './telegram.mjs';
 
 function contactUrl(value) {
@@ -18,7 +19,10 @@ async function start() {
     throw new Error('Set TELEGRAM_BOT_TOKEN in the private environment before starting.');
   }
   const team=contactUrl(process.env.RESTART_TEAM_URL);
-  const api=telegramApi(token);
+  const shutdown=new AbortController();
+  process.once('SIGTERM',()=>shutdown.abort());
+  process.once('SIGINT',()=>shutdown.abort());
+  const api=telegramApi(token,{signal:shutdown.signal});
   const webhook=await api('getWebhookInfo');
   if (webhook.url) throw new Error('A webhook is already configured. Coordinate the switch before starting polling.');
   const directory=resolve(process.env.RESTART_BOT_DB || './data/restart.sqlite');
@@ -26,18 +30,26 @@ async function start() {
   await mkdir(dirname(directory),{recursive:true,mode:0o700});
   const store=openStore(directory,process.env.RESTART_BOT_TIMEZONE || 'Asia/Baku');
   const bot=createBot({api,store,team});
-  const shutdown=new AbortController();
-  process.once('SIGTERM',()=>shutdown.abort());
-  process.once('SIGINT',()=>shutdown.abort());
   const wait=ms=>pause(ms,undefined,{signal:shutdown.signal}).catch(()=>{});
   let remindersPausedUntil=0;
   let remindersJob;
   const timer=setInterval(()=>{
     if (shutdown.signal.aborted || remindersJob || Date.now()<remindersPausedUntil) return;
-    remindersJob=bot.remind().then(retry=>{
+    remindersJob=bot.remind(new Date(),shutdown.signal).then(retry=>{
       if (retry) remindersPausedUntil=Date.now()+retry*1000;
     }).catch(()=>console.error('Could not process reminder settings.')).finally(()=>{remindersJob=undefined;});
   },30000);
+  const backupDir=process.env.RESTART_BOT_BACKUPS;
+  let backupJob;
+  function runBackup() {
+    if (!backupDir || shutdown.signal.aborted || backupJob) return;
+    backupJob=backupOnce(store,backupDir)
+      .then(saved=>{if (saved) console.log('RESTART bot: daily backup completed.');})
+      .catch(()=>console.error('RESTART bot: backup failed.'))
+      .finally(()=>{backupJob=undefined;});
+  }
+  runBackup();
+  const backupTimer=setInterval(runBackup,3600000);
   let recovery=1000;
   try {
     console.log('RESTART bot: long polling started.');
@@ -61,14 +73,17 @@ async function start() {
           store.advance(update.update_id+1);
         }
       } catch (error) {
+        if (shutdown.signal.aborted) break;
         if ([401,404,409].includes(error.code)) throw new Error('Telegram rejected polling. Check access and run only one bot instance.');
+        if (recovery===1000) console.error('RESTART bot: polling interrupted, retrying.');
         await wait(Math.max(recovery,(error.retryAfter || 0)*1000));
         recovery=Math.min(recovery*2,30000);
       }
     }
   } finally {
     clearInterval(timer);
-    await remindersJob;
+    clearInterval(backupTimer);
+    await Promise.all([remindersJob,backupJob]);
     store.close();
   }
 }

@@ -86,8 +86,9 @@ export function createBot({api,store,site=productionSite,team=founderContact}) {
       if (!Object.hasOwn(aliases,key)) return;
       return action(chatId,aliases[key],message.from?.language_code?.split('-')[0]);
     },
-    async remind(now=new Date()) {
+    async remind(now=new Date(),signal) {
       for (const member of store.due(now)) {
+        if (signal?.aborted) { store.release(member); break; }
         const t=texts(member.lang);
         try { await send(member.chat_id,t.daily,[[web(t.practice,link('#practices'))]]); }
         catch (error) {

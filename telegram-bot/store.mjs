@@ -1,4 +1,4 @@
-import { DatabaseSync } from 'node:sqlite';
+import { DatabaseSync, backup } from 'node:sqlite';
 import { languages } from './content.mjs';
 
 export const validTime = time => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time);
@@ -61,6 +61,7 @@ export function openStore(file, defaultZone='Asia/Baku') {
     release(member) {
       prepare('UPDATE members SET last_date=? WHERE chat_id=? AND last_date=?').run(null,member.chat_id,member.last_date);
     },
+    backup(target) { return backup(db,target); },
     close() { db.close(); }
   };
 }
