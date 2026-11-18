@@ -52,14 +52,14 @@ function options(control,values,format,current) {
   control.replaceChildren(...values.map(v=>new Option(format(v),v)));
   if(values.map(String).includes(String(current)))control.value=current;
 }
-const searchState={query:'',area:'',access:'',level:''};
+const searchState={query:'',area:'',access:'',level:'',time:''};
 function renderCourses() {
   const form=el('courseSearch');form.onsubmit=e=>e.preventDefault();form.replaceChildren();
   const input=formField(form,'query','search','input');input.type='search';input.value=searchState.query;
   input.oninput=()=>{searchState.query=input.value;listCourses();};
   for(const [key,label,values,format] of [
     ['area','direction',programmes.map(c=>c.area),areaName],['access','access',['free','paidCourse','premium'],t],
-    ['level','level',['introductory','basic'],t]]){
+    ['level','level',['introductory','basic'],t],['time','recommended',[...new Set(programmes.map(courseMinutes).filter(Boolean))].sort((a,b)=>a-b),n=>n+' '+t('minute')]]){
     const control=formField(form,'course-'+key,label);
     options(control,['',...values],v=>v?format(v):t('all'),searchState[key]);
     control.onchange=()=>{searchState[key]=control.value;listCourses();};
@@ -69,7 +69,7 @@ function renderCourses() {
 function listCourses() {
   const q=searchState.query.trim().toLocaleLowerCase(language);
   const found=programmes.filter(c=>(!searchState.area||searchState.area===c.area)&&(!searchState.access||searchState.access===c.access)&&
-    (!searchState.level||searchState.level===c.level)&&[t(c.title),areaName(c.area),...c.lessons.map(id=>lessonInfo(id)[0])].join(' ').toLocaleLowerCase(language).includes(q));
+    (!searchState.level||searchState.level===c.level)&&(!searchState.time||Number(searchState.time)===courseMinutes(c))&&[t(c.title),areaName(c.area),...c.lessons.map(id=>lessonInfo(id)[0])].join(' ').toLocaleLowerCase(language).includes(q));
   el('courseCount').textContent=t('foundCourses')+found.length;
   el('courseList').replaceChildren(...found.map(c=>{
     const card=node('section');card.className='practice-entry';
@@ -161,7 +161,24 @@ function dashboard(sessions){
   el('continuePractice').replaceChildren(...(valid?[link(t('resume')+' · '+lessonInfo(snap.id)[0],snap.id+'/'+snap.minutes+'/resume','pill')]:[]));
   el('profileName').textContent=readSetting('name')||t('localProfile');
   el('alias').value=readSetting('name')||'';
+  renderDemoBookings();
   el('bookingLog').replaceChildren(...getBookingLog().map(log=>node('li',new Intl.DateTimeFormat(language,{day:'numeric',month:'short'}).format(log.time)+' · '+t(log.format==='group'?'groupClass':'individual')+' · '+t(log.action))));
+}
+function demoRequests(){
+  const rows=readSetting('demoRequests',[]);
+  return Array.isArray(rows)?rows.filter(row=>row && typeof row.id==='string' && typeof row.preference==='string'):[];
+}
+function renderDemoBookings(){
+  el('demoBookings').replaceChildren(...demoRequests().map(row=>{
+    const entry=node('div'),status=node('p',t(row.cancelled?'demoCancelled':'demoActive'));
+    entry.append(status,node('p',t(row.format==='group'?'groupClass':'individual')+' · '+row.preference));
+    if(!row.cancelled){
+      const cancel=node('button',t('cancelDemo'));
+      cancel.onclick=()=>{saveSetting('demoRequests',demoRequests().map(item=>item.id===row.id?{...item,cancelled:true}:item));renderProfile();};
+      entry.append(cancel);
+    }
+    return entry;
+  }));
 }
 function getBookingLog(){
   const rows=readSetting('bookingLog',[]);
@@ -178,6 +195,18 @@ function renderPlans(){
 function renderExpansion(){
   renderCourses();renderPlanner();renderPlans();
   el('nameForm').onsubmit=e=>{e.preventDefault();saveSetting('name',el('alias').value.trim().slice(0,50));renderProfile();};
+  el('demoRequest').onclick=()=>{
+    const format=el('format').value;
+    let preference='';
+    try{preference=localStorage.getItem(draftKey+format);}catch{draftMessage='draftFail';renderSchedule();return;}
+    if(!preference||preference!==el('desired').value.trim())return;
+    const rows=demoRequests();
+    if(!rows.some(r=>!r.cancelled && r.format===format && r.preference===preference)){
+      rows.unshift({id:Date.now()+'-'+Math.random().toString(36).slice(2),format,preference,cancelled:false});
+      saveSetting('demoRequests',rows);
+    }
+    draftMessage=storageOK?'demoActive':'unavailable';renderSchedule();renderProfile();
+  };
   el('cancelDraft').onclick=()=>{
     try {localStorage.removeItem(draftKey+el('format').value);el('desired').value='';draftMessage='draftCancelled';recordRequest(draftMessage);}
     catch{draftMessage='draftFail';}

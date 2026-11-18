@@ -166,3 +166,12 @@ Object.assign(phrases,{
  transition:['От силы к гармонии','Gücdən harmoniyaya','From strength to harmony'],
  guest:['Гость · локальный профиль','Qonaq · yerli profil','Guest · local profile']
 });
+
+phrases.backHome=['На главную','Əsas səhifəyə','Back to home'];
+
+Object.assign(phrases,{
+ demoAction:['Создать демозаявку без отправки','Göndərmədən sınaq müraciəti yarat','Create demo request without sending'],
+ demoActive:['Демозаявка · только на устройстве','Sınaq müraciəti · yalnız cihazda','Demo request · on this device only'],
+ demoCancelled:['Демозаявка отменена','Sınaq müraciəti ləğv edildi','Demo request cancelled'],
+ cancelDemo:['Отменить демозаявку','Sınaq müraciətini ləğv et','Cancel demo request']
+});

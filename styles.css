@@ -74,3 +74,5 @@ header nav{gap:0 14px}header{flex-wrap:wrap}header nav{order:3;width:100%;justif
 #priceCards{grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))}#priceCards section:first-child{background:#e8ecdc}
 #plan{padding:clamp(20px,4vw,42px);margin-top:50px;background:#e9ecdf;border-radius:20px}#coursePage>button{margin:6px 0 16px}.archive-grid figcaption a{line-height:1.45}
 @media(max-width:600px){#moreNav>div{position:static;box-shadow:none}header nav:has(details[open]) details{flex-basis:100%}}
+
+.price-back{display:none}.pricing-page .price-back{display:inline-block}.pricing-page #pricing{padding-bottom:55px}

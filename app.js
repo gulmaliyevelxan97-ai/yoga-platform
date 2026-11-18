@@ -115,13 +115,16 @@ function route(translateOnly = false) {
   const showFounder = Boolean(currentTeacher);
   if (showFounder) renderTeacherStory(currentTeacher);
   const programme = id==='course' && programmes.find(c=>c.id===index);
-  const wasDetail = !el('coursePage').hidden;
+  const showPricing=id==='pricing';
+  const wasDetail = !el('coursePage').hidden || document.body.classList.contains('pricing-page');
+  document.body.classList.toggle('pricing-page',showPricing);
   if(programme) renderProgramme(programme,currentSessions);
   const wasFounder = !el('founder').hidden;
   for (const section of document.querySelectorAll('main > section')) {
-    if (section.id !== 'studio') section.hidden = section.id === 'coursePage' ? !programme : section.id === 'founder' ? !showFounder : (showFounder || Boolean(programme));
+    if (section.id !== 'studio') section.hidden = section.id === 'coursePage' ? !programme : section.id === 'founder' ? !showFounder : (showFounder || Boolean(programme) || (showPricing && section.id!=='pricing'));
   }
   document.title = 'Yoga Space · ' + t(showFounder?(currentTeacher.profileLabel || 'teacher'):'page');
+  if(showPricing){document.title=t('pricing')+' · Yoga Space';if(translateOnly!==true)el('pricing').scrollIntoView();}
   if(programme){document.title=t(programme.title)+' · Yoga Space';if(translateOnly!==true){el('courseTitle').focus();el('coursePage').scrollIntoView();}}
   if (showFounder && translateOnly !== true) {el('founderTitle').focus();el('founder').scrollIntoView();}
   if ((wasFounder || wasDetail) && !programme && !showFounder && !hasKey(library,id)) document.getElementById(id)?.scrollIntoView();
@@ -205,7 +208,7 @@ el('language').onchange = () => {
 };
 window.addEventListener('storage', e=>{
   if (!e.key || e.key.startsWith(favoritePrefix)) renderCatalog();
-  if (!e.key || e.key.startsWith(sessionPrefix) || e.key.startsWith(favoritePrefix)) renderProfile();
+  if (!e.key || e.key.startsWith('yogaspace.v1.') || e.key.startsWith(sessionPrefix) || e.key.startsWith(favoritePrefix)) renderProfile();
 });
 setupStudio();
 translate();

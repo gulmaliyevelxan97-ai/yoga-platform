@@ -158,6 +158,7 @@ function renderSchedule() {
   el('scheduleState').textContent = t(el('format').value==='group'?'noGroup':'noIndividual');
   try { el('cancelDraft').hidden = !localStorage.getItem(draftKey+el('format').value); }
   catch { el('cancelDraft').hidden=true; }
+  el('demoRequest').hidden=el('cancelDraft').hidden;
   el('draftStatus').textContent = draftMessage?t(draftMessage):'';
 }
 function loadDraft() {
@@ -171,7 +172,7 @@ function setupStudio() {
   el('filters').addEventListener('change',renderCatalog);
   el('clearFilters').onclick=()=>{el('filters').reset();renderCatalog();el('filterGroup').focus();};
   el('format').onchange=loadDraft;
-  el('desired').oninput=()=>{draftMessage='';renderSchedule();};
+  el('desired').oninput=()=>{draftMessage='';renderSchedule();el('demoRequest').hidden=true;};
   el('request').onsubmit=e=>{
     e.preventDefault();
     const value=el('desired').value.trim();
