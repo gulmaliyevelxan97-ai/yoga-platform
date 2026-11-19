@@ -90,11 +90,11 @@ function founderPage(){
   '<div class="founder-portrait"><img src="./assets/founder-yoga.webp" width="432" height="702" loading="lazy" decoding="async" alt="'+
   t('Эльхан Гюльмалыев с поющей чашей','Elxan Gülmalıyev səs kasası ilə','Elxan Gülmalıyev with a singing bowl')+'">'+
   '<video data-src="./assets/founder-yoga.mp4" poster="./assets/founder-yoga.webp" muted playsinline autoplay loop preload="none" aria-hidden="true"></video></div></section>'+
-  '<section aria-labelledby="founder-mission" class="founder-feature"><h2 id="founder-mission">'+t(...mission.title)+'</h2><div class="founder-mission"><p class="founder-mission-lead">'+t(...mission.tagline)+'</p>'+
-  mission.paragraphs.map(paragraph=>'<p>'+t(...paragraph)+'</p>').join('')+
-  '<p class="founder-mission-lead">'+t(...mission.motto)+'</p><a href="./philosophy.html">'+pageName('method')+'</a></div></section>'+
   '<section aria-labelledby="founder-workshops" class="founder-feature"><h2 id="founder-workshops">'+t(...workshops[0])+'</h2><p>'+t(...workshops[1])+'</p>'+
   (workshopPhotos.length?'<div class="founder-gallery">'+workshopPhotos.map(photo=>founderPhoto(photo,true)).join('')+'</div>':'')+'</section>'+
   '<section class="founder-invitation" aria-labelledby="founder-invitation"><h2 id="founder-invitation">'+t('От философии к практике','Fəlsəfədən praktikaya','From philosophy to practice')+'</h2>'+
-  '<div class="school-actions">'+go('practices',t('Открыть практики','Məşqlərə keç','Explore practices'))+go('programme',t('Посмотреть программу','Proqrama bax','View the programme'))+'</div></section></div>';
+  '<div class="school-actions">'+go('practices',t('Открыть практики','Məşqlərə keç','Explore practices'))+go('programme',t('Посмотреть программу','Proqrama bax','View the programme'))+'</div></section>'+
+  '<section aria-labelledby="founder-mission" class="founder-feature"><h2 id="founder-mission">'+t(...mission.title)+'</h2><div class="founder-mission"><p class="founder-mission-lead">'+t(...mission.tagline)+'</p>'+
+  mission.paragraphs.map(paragraph=>'<p>'+t(...paragraph)+'</p>').join('')+
+  '<p class="founder-mission-lead">'+t(...mission.motto)+'</p><a href="./philosophy.html">'+pageName('method')+'</a></div></section>'+'</div>';
 }

@@ -1,4 +1,4 @@
-const VERSION = '15c704fb4bc537';
+const VERSION = 'c89cbb7319dfdc';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -56,7 +56,7 @@ const ASSETS = [
   "./releases/navigation/studio-shell.js?v=d14087e4962f",
   "./activity.html",
   "./founder.html",
-  "./releases/navigation/founder.js?v=c0cae90ca664",
+  "./releases/navigation/founder.js?v=d0c4a5f8d896",
   "./releases/navigation/founder.css?v=60ab97ecc514",
   "./releases/navigation/founder-portrait.js?v=024fc05304f0",
   "./releases/week/content.js",

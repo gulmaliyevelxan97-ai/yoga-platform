@@ -30,7 +30,7 @@ test('Each founder language has the approved title, mission and links in the new
   assert.ok(photo && fragment.indexOf(photo[0]) < fragment.indexOf(title));
   assert.ok(photo[1].includes(['с кубком и медалью','kubok və medalla','with a trophy and medal'][index]));
   assert.deepEqual([...fragment.matchAll(/<h2 id="founder-([\w-]+)"/g)].map(match=>match[1]),[
-   'karate','yoga','mission','workshops','invitation'
+   'karate','yoga','workshops','invitation','mission'
   ]);
   assert.equal((fragment.match(/class="founder-mission-lead"/g)||[]).length,2);
   if (index===0) {
