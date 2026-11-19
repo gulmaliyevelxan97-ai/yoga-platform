@@ -1,0 +1,22 @@
+.restart-analytics {
+  width: min(calc(100% - 2rem), 66rem);
+  margin: 0 auto 1.5rem;
+  padding: .35rem .85rem;
+  color: var(--pine);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+}
+.restart-analytics summary { cursor: pointer; min-height: 44px; align-content: center; }
+.restart-analytics p { max-width: 70ch; }
+.restart-analytics button {
+  min-height: 44px;
+  margin-block: .2rem;
+  padding: .5rem .8rem;
+  font: inherit;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--pine);
+  border-radius: .35rem;
+  cursor: pointer;
+}

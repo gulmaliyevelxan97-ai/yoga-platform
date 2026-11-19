@@ -29,6 +29,7 @@ def script(path):
     return f'<script defer src="{tag_path(path)}"></script>'
 
 design = f'<link rel="stylesheet" href="{tag_path(NAV+"/design.css")}">'
+analytics = f'<link rel="stylesheet" href="{tag_path(NAV+"/analytics.css")}">' + script(NAV+'/analytics.js')
 shell = script(NAV+'/shell.js')
 header = '''<header class="school-bar" data-shell>
 <a class="wordmark" href="./">RESTART</a>
@@ -95,7 +96,7 @@ for file, (page,title) in entries.items():
         page_scripts += script(NAV+'/founder-portrait.js')
 
     (ROOT/file).write_text(f'''<!doctype html>
-<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{page_design}{page_scripts}</head>
+<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{page_design}{page_scripts}{analytics}</head>
 <body data-page="{page}"><a class="school-skip" href="#top">К содержанию</a>{header.replace('LANG_ID','lang')}
 <main class="school-main" id="top" tabindex="-1">
 <div class="school-mast"><div><small id="kicker"></small><h1 id="headline">{title}</h1><p id="lead"></p>{actions}</div>{hero_image}</div>
@@ -107,7 +108,7 @@ source = (ROOT/NAV/'studio-template.html').read_text()
 for file,page in studio.items():
     text = re.sub(r'<header>.*?</header>',header.replace('LANG_ID','language'),source,count=1,flags=re.S)
     text = text.replace('<body>',f'<body data-page="{page}">')
-    text = text.replace('</head>',design+shell+script(NAV+'/studio-shell.js')+'</head>')
+    text = text.replace('</head>',design+shell+script(NAV+'/studio-shell.js')+analytics+'</head>')
     text = re.sub(r'<footer>.*?</footer>',footer,text,count=1,flags=re.S)
     if page == 'practices':
         text = text.replace('<main id="top">','<main id="top"><div class="studio-switch"><label for="practice-type" id="practice-type-label">Тип занятия</label><select id="practice-type"><option value="all">Все</option><option value="guided">Практики с таймером</option><option value="video">Видео</option></select></div>',1)
