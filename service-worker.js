@@ -1,4 +1,4 @@
-const VERSION = '3579e3f85bf204';
+const VERSION = '8615da0d7a1b5b';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -39,7 +39,7 @@ const ASSETS = [
   "./assets/pwa/restart-maskable.png",
   "./releases/navigation/design.css?v=a133c5ff8277",
   "./releases/navigation/shell.js?v=ce3879ac7c54",
-  "./releases/navigation/pages.js?v=225e366b01bf",
+  "./releases/navigation/pages.js?v=9a0e1bd07cfa",
   "./about.html",
   "./philosophy.html",
   "./code.html",
@@ -55,9 +55,9 @@ const ASSETS = [
   "./releases/navigation/founder.js?v=61ff41f268dc",
   "./releases/navigation/founder.css?v=51c01721fad4",
   "./releases/navigation/about.css?v=b4bac6134f5a",
-  "./releases/navigation/about.js?v=011ec165d6ca",
+  "./releases/navigation/about.js?v=91bb303c3c0d",
   "./releases/navigation/school-public.js?v=2f83392d5082",
-  "./releases/navigation/school-runtime.js?v=06ffaf7e19b4",
+  "./releases/navigation/school-runtime.js?v=7e610b673bca",
   "./assets/founder-nunchaku-first-frame.webp?v=002fc08f6759",
   "./releases/navigation/founder-portrait.js?v=d9db613f69c0"
 ];

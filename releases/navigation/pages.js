@@ -33,9 +33,14 @@ function schoolHeader(page){
  $('#headline').textContent=(page==='founder'?t('Эльхан Гюльмалыев','Elxan Gülmalıyev','Elxan Gülmalıyev'):headlines[page]?t(...headlines[page]):pageName(page));
  $('#lead').textContent=page==='founder'?t(...founderContent.introduction):pageIntros[page]?t(...pageIntros[page]):'';
  $('#kicker').textContent=page==='home'?'RESTART':pageName(page);
+ const philosophyJump=$('#about-philosophy-jump');
+ if(philosophyJump)philosophyJump.textContent=t('Читать философию RESTART','RESTART fəlsəfəsini oxu','Read the RESTART philosophy');
  const actions=$('#home-actions');
  if(actions)actions.innerHTML=go('path',t('Мой путь','Mənim yolum','My path'))+go('method',t('Изучить философию','Fəlsəfəni kəşf et','Explore the philosophy')).replace('class="cta"','class="cta secondary"')+go('programme',t('Посмотреть программу','Proqrama bax','View the programme')).replace('class="cta"','class="cta secondary"');
  document.title=$('#headline').textContent+' · RESTART';
+}
+function philosophyPage(){
+ return '<blockquote>'+t('Не стать другим. Раскрыть себя.','Başqasına çevrilmə. Özünü kəşf et.','Discover who you are.')+'</blockquote>'+philosophyDirections();
 }
 function routePage(page){
  if(page==='home')return homePage();
@@ -43,7 +48,7 @@ function routePage(page){
  if(page==='founder')return founderPage();
  if(page==='programme')return publicWeeks();
  if(page==='path')return myPath();
- if(page==='method')return '<blockquote>'+t('Не стать другим. Раскрыть себя.','Başqasına çevrilmə. Özünü kəşf et.','Discover who you are.')+'</blockquote>';
+ if(page==='method')return philosophyPage();
  if(page==='progress')return '<p><a href="'+pageUrl('activity')+'">'+pageName('activity')+'</a></p>'+report();
  if(page==='signup')return participation();
  return schoolPage(page);

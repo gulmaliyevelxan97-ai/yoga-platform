@@ -45,6 +45,22 @@ function render(){
 }
 $('#lang').onchange=e=>{lang=e.target.value;try{localStorage.setItem('yogaspace.language',lang)}catch{}render()};
 $('#view').addEventListener('submit',e=>{e.preventDefault();e.target.reset();$('#notice').textContent=t('Форма проверена. Заявка не отправлена.','Forma yoxlanıldı. Ərizə göndərilmədi.','Form checked. No application was sent.')});
-window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
+function revealPhilosophyAnchor(){
+ const page=document.body.dataset.page;
+ if(!['about','method'].includes(page))return false;
+ const hash=location.hash;
+ if(!/^#(?:about-directions|ph-(?:mind|body|nutrition|life))$/.test(hash))return false;
+ const target=$(hash);
+ if(!target)return false;
+ if(target.tagName==='DETAILS')target.open=true;
+ target.scrollIntoView();
+ return true;
+}
+window.addEventListener('hashchange',()=>{
+ if(revealPhilosophyAnchor())return;
+ render();
+ window.scrollTo(0,0);
+});
 window.addEventListener('storage',e=>{if(e.key===key){done=saved();render()}});
 render();
+revealPhilosophyAnchor();

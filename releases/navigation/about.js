@@ -109,19 +109,23 @@ const aboutDirections = [
  ]}
 ];
 
-function aboutPage(){
- const {title,tagline,paragraphs,motto}=restartStory;
+function philosophyDirections(){
  const directions=aboutDirections.map(({mark,lead,sections,close},i)=>`<details class="about-direction" id="ph-${tracks[i].toLowerCase()}">
   <summary><span class="about-illustration" aria-hidden="true">${mark}</span><strong>${tracks[i]}</strong><span class="about-toggle" aria-hidden="true"></span></summary>
   <div class="about-reading"><p class="about-reading-lead">${t(...lead)}</p>
   ${sections.map(section=>`<h3>${t(...section.title)}</h3><p>${t(...section.text)}</p>`).join('')}
   <p class="about-reading-close">${t(...close)}</p></div></details>`).join('');
+ return `<section class="about-pathways" aria-labelledby="about-directions"><h2 id="about-directions">${t('Философия RESTART','RESTART fəlsəfəsi','The RESTART philosophy')}</h2><div class="about-directions">${directions}</div></section>`;
+}
+
+function aboutPage(){
+ const {title,tagline,paragraphs,motto}=restartStory;
  return `<section class="about-story" aria-labelledby="about-story">
  <h2 id="about-story">${t(...title)}</h2><p class="about-story-lead">${t(...tagline)}</p>
  ${paragraphs.map(paragraph=>`<p>${t(...paragraph)}</p>`).join('')}
  <p class="about-story-lead">${t(...motto)}</p>
  <a href="${pageUrl('founder')}">${t('Познакомиться с основателем','Təsisçi ilə tanış olun','Meet the founder')}</a></section>
- <section class="about-pathways" aria-labelledby="about-directions"><h2 id="about-directions">${t('Философия RESTART','RESTART fəlsəfəsi','The RESTART philosophy')}</h2><div class="about-directions">${directions}</div></section>
+ ${philosophyDirections()}
  <section class="about-pathways" aria-labelledby="about-weeks"><h2 id="about-weeks">${t('8 недель. 8 этапов. Один путь к себе','8 həftə. 8 mərhələ. Özünə doğru bir yol','8 weeks. 8 stages. One path to yourself')}</h2>
  ${publicWeeks()}</section>`;
 }

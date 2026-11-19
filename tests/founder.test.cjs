@@ -129,6 +129,13 @@ test('About localizes the history and four directions, and lists only week numbe
   assert.equal(items.map(item=>item[0]).join(''),list);
  }
  assert.doesNotMatch(read('about.html'),/releases\/week\/content.js/);
+ for (const file of ['about.html','philosophy.html']) {
+  const html=read(file);
+  assert.match(html,/id="about-directions">Философия RESTART/);
+  assert.equal((html.match(/<details class="about-direction"/g)||[]).length,4);
+ }
+ assert.match(read('about.html'),/id="about-philosophy-jump" href="#about-directions"/);
+
  for(const width of [640,1280]){
   const image='assets/brand/restart-dawn-'+width+'.webp';
   assert.ok(fs.existsSync(path.join(root,image)));

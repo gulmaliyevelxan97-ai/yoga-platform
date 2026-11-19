@@ -3,6 +3,7 @@ from pathlib import Path
 from hashlib import sha256
 import json
 import re
+from subprocess import run
 
 ROOT = Path(__file__).resolve().parents[2]
 NAV = 'releases/navigation'
@@ -61,14 +62,24 @@ portrait_video = 'assets/founder-portrait.mp4'
 has_portrait_video = (ROOT / portrait_video).is_file()
 portrait_frame = 'assets/founder-nunchaku-first-frame.webp'
 
+# Render a Russian fallback from the same content as the language switcher.
+fallback_source = '\n'.join((ROOT / NAV / file).read_text() for file in ('school-public.js','pages.js','about.js'))
+fallback_source = """const document={addEventListener(){}};
+const t=(...labels)=>labels[0], tracks=['MIND','BODY','NUTRITION','LIFE'];
+const pageUrl=()=> './founder.html';
+""" + fallback_source + "\nconsole.log(JSON.stringify({about:aboutPage(),method:philosophyPage()}));"
+fallbacks = json.loads(run(['node'], input=fallback_source, text=True, encoding='utf-8', capture_output=True, check=True).stdout)
+
 for file, (page,title) in entries.items():
     hero_image = mast_photos.get(page, '')
     actions = '<div class="school-actions" id="home-actions"></div>' if page=='home' else ''
     page_scripts = script(NAV+'/founder.js') + scripts if page == 'founder' else scripts
     page_design = design
     if page == 'about':
+        actions = '<div class="school-actions"><a class="cta secondary" id="about-philosophy-jump" href="#about-directions">Читать философию RESTART</a></div>'
+    if page in ('about', 'method'):
         page_scripts = script(NAV+'/about.js') + scripts
-    if page in ('about', 'programme'):
+    if page in ('about', 'method', 'programme'):
         page_design += f'<link rel="stylesheet" href="{tag_path(NAV+"/about.css")}">'
     if page == 'founder':
         page_design += f'<link rel="stylesheet" href="{tag_path(NAV+"/founder.css")}">'
@@ -88,7 +99,7 @@ for file, (page,title) in entries.items():
 <body data-page="{page}"><a class="school-skip" href="#top">К содержанию</a>{header.replace('LANG_ID','lang')}
 <main class="school-main" id="top" tabindex="-1">
 <div class="school-mast"><div><small id="kicker"></small><h1 id="headline">{title}</h1><p id="lead"></p>{actions}</div>{hero_image}</div>
-<p id="notice" role="status"></p><section id="view"></section>
+<p id="notice" role="status"></p><section id="view">{fallbacks.get(page, "")}</section>
 </main>{footer}</body></html>
 ''')
 
