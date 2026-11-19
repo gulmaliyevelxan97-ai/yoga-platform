@@ -1,7 +1,7 @@
 'use strict';
 
 const headlines={
- home:['Не стать другим. Раскрыть себя.','Başqasına çevrilmə. Özünü kəşf et.','Discover who you are.'],
+ home:['Сила начинается внутри','Güc daxildən başlayır','Strength begins within'],
  about:['Четыре направления, один путь','Dörd istiqamət, bir yol','Four disciplines, one path'],
  programme:['56 дней практики','56 günlük təcrübə','56 days of practice'],
  signup:['Участие в RESTART','RESTART-da iştirak','Join RESTART'],
@@ -12,6 +12,17 @@ const pageIntros={
  method:['Классическая йога, японские традиции и авторский метод школы.','Klassik yoqa, yapon ənənələri və məktəbin öz metodu.','Classical yoga, Japanese traditions and the school’s own method.'],
  journal:['Ваши заметки сохраняются в браузере на этом устройстве.','Qeydləriniz bu cihazın brauzerində saxlanılır.','Your notes are stored in this browser on this device.']
 };
+function homeMotto(){
+ return t('Не стать другим. Раскрыть себя.','Başqasına çevrilmə. Özünü kəşf et.','Discover who you are.');
+}
+function homeFounder(){
+ return t('Elxan Gülmalıyev · основатель RESTART','Elxan Gülmalıyev · RESTART-ın təsisçisi','Elxan Gülmalıyev · founder of RESTART');
+}
+function homeActions(){
+ return go('path',t('Мой путь','Mənim yolum','My path'))+
+  go('method',t('Изучить философию','Fəlsəfəni kəşf et','Explore the philosophy')).replace('class="cta"','class="cta secondary"')+
+  go('programme',t('Посмотреть программу','Proqrama bax','View the programme')).replace('class="cta"','class="cta secondary"');
+}
 function homePage(){
  return '<section class="home-explore"><h2>'+t('Исследуйте школу','Məktəblə tanış olun','Explore the school')+'</h2><div class="cards">'+['about','founder','practices'].map((key,i)=>'<article class="card"><h3><a href="'+pageUrl(key)+'">'+pageName(key)+'</a></h3><p>'+t(...[
  ['Четыре направления целостной практики.','Bütöv təcrübənin dörd istiqaməti.','Four dimensions of an integrated practice.'],
@@ -36,7 +47,11 @@ function schoolHeader(page){
  const philosophyJump=$('#about-philosophy-jump');
  if(philosophyJump)philosophyJump.textContent=t('Читать философию RESTART','RESTART fəlsəfəsini oxu','Read the RESTART philosophy');
  const actions=$('#home-actions');
- if(actions)actions.innerHTML=go('path',t('Мой путь','Mənim yolum','My path'))+go('method',t('Изучить философию','Fəlsəfəni kəşf et','Explore the philosophy')).replace('class="cta"','class="cta secondary"')+go('programme',t('Посмотреть программу','Proqrama bax','View the programme')).replace('class="cta"','class="cta secondary"');
+ if(actions){
+  $('#home-founder').textContent=homeFounder();
+  $('#home-motto').textContent=homeMotto();
+  actions.innerHTML=homeActions();
+ }
  document.title=$('#headline').textContent+' · RESTART';
 }
 function philosophyPage(){

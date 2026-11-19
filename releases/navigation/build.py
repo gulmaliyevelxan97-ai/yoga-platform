@@ -8,7 +8,7 @@ from subprocess import run
 ROOT = Path(__file__).resolve().parents[2]
 NAV = 'releases/navigation'
 entries = {
-    'index.html': ('home', 'Не стать другим. Раскрыть себя.'),
+    'index.html': ('home', 'Сила начинается внутри'),
     'founder.html': ('founder', 'Эльхан Гюльмалыев'),
     'about.html': ('about', 'О RESTART'),
     'philosophy.html': ('method', 'Философия'),
@@ -29,6 +29,7 @@ def script(path):
     return f'<script defer src="{tag_path(path)}"></script>'
 
 design = f'<link rel="stylesheet" href="{tag_path(NAV+"/design.css")}">'
+motion_design = f'<link rel="stylesheet" href="{tag_path(NAV+"/motion.css")}">'
 analytics = f'<link rel="stylesheet" href="{tag_path(NAV+"/analytics.css")}">' + script(NAV+'/analytics.js')
 shell = script(NAV+'/shell.js')
 header = '''<header class="school-bar" data-shell>
@@ -67,15 +68,22 @@ portrait_frame = 'assets/founder-nunchaku-first-frame.webp'
 fallback_source = '\n'.join((ROOT / NAV / file).read_text() for file in ('school-public.js','pages.js','about.js'))
 fallback_source = """const document={addEventListener(){}};
 const t=(...labels)=>labels[0], tracks=['MIND','BODY','NUTRITION','LIFE'];
-const pageUrl=()=> './founder.html';
-""" + fallback_source + "\nconsole.log(JSON.stringify({about:aboutPage(),method:philosophyPage()}));"
+const routes=ROUTES;
+const pageUrl=key=> './'+routes[key];
+const go=(key,label)=> '<a class="cta" href="'+pageUrl(key)+'">'+label+'</a>';
+""".replace("ROUTES", json.dumps({page: file for file, (page, _) in entries.items()})) + fallback_source + "\nconsole.log(JSON.stringify({about:aboutPage(),method:philosophyPage(),programme:publicWeeks(),homeActions:homeActions(),homeFounder:homeFounder(),homeLead:pageIntros.home[0],homeMotto:homeMotto()}));"
 fallbacks = json.loads(run(['node'], input=fallback_source, text=True, encoding='utf-8', capture_output=True, check=True).stdout)
 
 for file, (page,title) in entries.items():
     hero_image = mast_photos.get(page, '')
-    actions = '<div class="school-actions" id="home-actions"></div>' if page=='home' else ''
+    actions = f'<div class="school-actions" id="home-actions">{fallbacks["homeActions"]}</div>' if page=='home' else ''
+    kicker = 'RESTART' if page == 'home' else ''
+    credit = f'<p id="home-founder">{fallbacks["homeFounder"]}</p>' if page == 'home' else ''
+    lead = fallbacks['homeLead'] if page == 'home' else ''
+    motto = f'<blockquote id="home-motto">{fallbacks["homeMotto"]}</blockquote>' if page == 'home' else ''
     page_scripts = script(NAV+'/founder.js') + scripts if page == 'founder' else scripts
     page_design = design
+    motion_script = script(NAV+'/motion.js') if page in ('home', 'about', 'method', 'programme', 'founder') else ''
     if page == 'about':
         actions = '<div class="school-actions"><a class="cta secondary" id="about-philosophy-jump" href="#about-directions">Читать философию RESTART</a></div>'
     if page in ('about', 'method'):
@@ -96,11 +104,11 @@ for file, (page,title) in entries.items():
         page_scripts += script(NAV+'/founder-portrait.js')
 
     (ROOT/file).write_text(f'''<!doctype html>
-<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{page_design}{page_scripts}{analytics}</head>
+<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{page_design}{motion_design}{page_scripts}{motion_script}{analytics}</head>
 <body data-page="{page}"><a class="school-skip" href="#top">К содержанию</a>{header.replace('LANG_ID','lang')}
 <main class="school-main" id="top" tabindex="-1">
-<div class="school-mast"><div><small id="kicker"></small><h1 id="headline">{title}</h1><p id="lead"></p>{actions}</div>{hero_image}</div>
-<p id="notice" role="status"></p><section id="view">{fallbacks.get(page, "")}</section>
+<div class="school-mast"><div><small id="kicker">{kicker}</small><h1 id="headline">{title}</h1>{credit}<p id="lead">{lead}</p>{actions}</div>{hero_image}</div>
+{motto}<p id="notice" role="status"></p><section id="view">{fallbacks.get(page, "")}</section>
 </main>{footer}</body></html>
 ''')
 
@@ -108,7 +116,7 @@ source = (ROOT/NAV/'studio-template.html').read_text()
 for file,page in studio.items():
     text = re.sub(r'<header>.*?</header>',header.replace('LANG_ID','language'),source,count=1,flags=re.S)
     text = text.replace('<body>',f'<body data-page="{page}">')
-    text = text.replace('</head>',design+shell+script(NAV+'/studio-shell.js')+analytics+'</head>')
+    text = text.replace('</head>',design+motion_design+shell+script(NAV+'/studio-shell.js')+analytics+'</head>')
     text = re.sub(r'<footer>.*?</footer>',footer,text,count=1,flags=re.S)
     if page == 'practices':
         text = text.replace('<main id="top">','<main id="top"><div class="studio-switch"><label for="practice-type" id="practice-type-label">Тип занятия</label><select id="practice-type"><option value="all">Все</option><option value="guided">Практики с таймером</option><option value="video">Видео</option></select></div>',1)

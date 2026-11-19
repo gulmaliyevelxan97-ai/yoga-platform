@@ -1,0 +1,57 @@
+:root { background: var(--paper); }
+#home-founder { margin-block: 1.15rem .4rem; color: #e7cda3; font-weight: 650; }
+#home-founder + #lead { margin-block-start: 0; }
+.school-bar a[aria-current="page"] { box-shadow: inset 0 -2px var(--gold); }
+.school-mast :focus-visible { outline-color: #e7cda3; }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-page] .school-main #view { animation: none; }
+  [data-page]:not([data-page=home], [data-page=founder]) #headline {
+    animation: restart-heading 240ms ease-out both;
+  }
+
+  .motion-home-intro .school-mast > img,
+  [data-page=programme] .school-mast > img { animation: restart-image 640ms ease-out both; }
+  .motion-home-intro #kicker { animation: restart-heading 400ms ease-out both; }
+  .motion-home-intro #headline { animation: restart-heading 500ms ease-out 70ms both; }
+  .motion-home-intro #home-founder,
+  .motion-home-intro #lead { animation: restart-heading 500ms ease-out 130ms both; }
+  [data-page=founder] #headline { animation: restart-heading 500ms ease-out both; }
+
+  .motion-reveal { animation: restart-reveal 490ms ease-out both; }
+  .about-weeks .motion-reveal:nth-child(2n) { animation-delay: 45ms; }
+  .about-weeks .motion-reveal:nth-child(4n) { animation-delay: 85ms; }
+  .motion-reveal:focus-within { animation: none; }
+
+  .school-bar :is(a, summary), .school-main :is(.cta, button), .about-direction {
+    transition: background-color 230ms ease, border-color 230ms ease;
+  }
+  .school-main :is(.cta, button):active, .school-bar :is(a, summary):active {
+    box-shadow: inset 0 0 0 2px currentColor;
+  }
+  .about-direction[open] { border-color: #bca386; background-color: #fcf8ef; }
+  .about-direction[open] .about-reading { animation: restart-heading 300ms ease-out both; }
+
+  @supports selector(details::details-content) and (interpolate-size: allow-keywords) {
+    .about-direction::details-content {
+      interpolate-size: allow-keywords;
+      block-size: 0;
+      overflow: clip;
+      transition: block-size 320ms ease, content-visibility 320ms allow-discrete;
+    }
+    .about-direction[open]::details-content { block-size: auto; }
+  }
+}
+
+@keyframes restart-image {
+  from { opacity: .88; transform: scale(.99); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes restart-heading {
+  from { opacity: .76; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes restart-reveal {
+  from { opacity: .72; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
