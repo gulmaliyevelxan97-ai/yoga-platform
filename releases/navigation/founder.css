@@ -1,0 +1,76 @@
+html:not([lang=ru]) .founder-motion-title [lang=ru],
+html:not([lang=az]) .founder-motion-title [lang=az],
+html:not([lang=en]) .founder-motion-title [lang=en] {
+  display: none;
+}
+.founder-motion {
+  margin: 0;
+  width: min(100%, 21rem);
+  justify-self: center;
+}
+.founder-motion figcaption {
+  margin-top: 1rem;
+  color: #e7cda3;
+}
+.school-main .founder-motion h2 {
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+}
+.founder-story > .founder-feature {
+  padding-block: clamp(1.6rem, 5vw, 4rem);
+}
+.founder-yoga {
+  display: grid;
+  align-items: center;
+  gap: clamp(1rem, 5vw, 4rem);
+}
+.founder-yoga .founder-portrait {
+  position: relative;
+  width: min(100%, 18rem);
+}
+.founder-yoga img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: .4rem;
+}
+@media (min-width: 700px) {
+  .founder-yoga {
+    grid-template-columns: 1fr minmax(0, 18rem);
+  }
+}
+.founder-feature > figure {
+  margin: 0 0 1.25rem;
+}
+.founder-feature > figure img {
+  display: block;
+  max-width: min(100%, 44rem);
+  height: auto;
+  border-radius: .65rem;
+}
+.founder-feature > figure figcaption {
+  margin-top: .4rem;
+}
+.founder-gallery {
+  align-items: start;
+}
+.founder-gallery a {
+  display: block;
+  border-radius: .35rem;
+}
+.founder-gallery img {
+  aspect-ratio: auto;
+  transition: opacity 160ms ease;
+}
+.founder-gallery a:hover img {
+  opacity: .9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .founder-gallery img { transition: none }
+}
+.founder-story > .founder-invitation {
+  margin-top: clamp(1.5rem, 5vw, 3rem);
+  padding: clamp(1.1rem, 4vw, 2.8rem);
+  background: var(--sage);
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+}

@@ -61,16 +61,21 @@ for file, (page,title) in entries.items():
     hero_image = mast_photos.get(page, '')
     actions = '<div class="school-actions" id="home-actions"></div>' if page=='home' else ''
     page_scripts = script(NAV+'/founder.js') + scripts if page == 'founder' else scripts
+    page_design = design
+    if page == 'founder':
+        page_design += f'<link rel="stylesheet" href="{tag_path(NAV+"/founder.css")}">'
     if page == 'founder' and has_portrait_video:
         hero_image = (
-            '<div class="founder-portrait">' + hero_image +
+            '<figure class="founder-motion"><div class="founder-portrait">' + hero_image +
             f'<video data-src="{tag_path(portrait_video)}" poster="./assets/author.webp" '
             'muted playsinline autoplay loop preload="none" aria-hidden="true"></video></div>'
+            '<figcaption><h2 class="founder-motion-title"><span lang="ru">Мастер владения нунчаками</span>'
+            '<span lang="az">Nunçaku ustası</span><span lang="en">Nunchaku practitioner</span></h2></figcaption></figure>'
         )
         page_scripts += script(NAV+'/founder-portrait.js')
 
     (ROOT/file).write_text(f'''<!doctype html>
-<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{design}{page_scripts}</head>
+<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{page_design}{page_scripts}</head>
 <body data-page="{page}"><a class="school-skip" href="#top">К содержанию</a>{header.replace('LANG_ID','lang')}
 <main class="school-main" id="top" tabindex="-1">
 <div class="school-mast"><div><small id="kicker"></small><h1 id="headline">{title}</h1><p id="lead"></p>{actions}</div>{hero_image}</div>
