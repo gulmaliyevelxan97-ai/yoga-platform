@@ -30,12 +30,12 @@ h2{font-size:clamp(1.24rem,4.8vw,1.65rem);margin:0 0 .5rem}
 h3{font-size:1.25rem}
 p{margin:.5rem 0 .9rem;overflow-wrap:anywhere}
 .muted,small{color:var(--muted)}
-.hero{position:relative;min-height:clamp(260px,72vw,400px);display:flex;align-items:flex-end;overflow:hidden;border-radius:18px;background:var(--pine);isolation:isolate;border:1px solid var(--line)}
-.hero img,.hero::after{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
-.hero img{object-fit:cover;object-position:50% 48%}
-.hero::after{content:"";background:linear-gradient(0deg,#0a1611 2%,#0a1611ec 22%,#111b1566 57%,transparent 88%)}
-.hero-content{padding:1.1rem clamp(1rem,5vw,2rem);width:100%}
-.hero h2{font-size:clamp(1.7rem,7vw,2.55rem);max-width:18ch;margin-bottom:.9rem}
+.today-heading .eyebrow{margin:0}
+.today-heading h1{margin-bottom:.85rem}
+.today-practice{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(110deg,#243c33,#192c23);border:1px solid #546953;border-radius:16px;padding:clamp(.95rem,4.5vw,1.8rem)}
+.today-practice::after{content:"";position:absolute;z-index:-1;right:-2.55rem;top:-4rem;width:15rem;aspect-ratio:1;border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 1.22rem,#ead0a61a 1.25rem 1.29rem,transparent 1.33rem 1.64rem);pointer-events:none}
+.today-practice .eyebrow{margin:0 0 .55rem}
+.today-practice h2{font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:.85rem}
 .cta{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;min-height:46px;background:var(--gold);color:#15241a;border:1px solid var(--gold);border-radius:10px;padding:.55rem .85rem;font-weight:690}
 .home-grid,.practice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin:1rem 0}
 .panel,.practice-card{padding:clamp(.85rem,3vw,1.2rem);border:1px solid var(--line);border-radius:14px;background:var(--surface);margin:0 0 .85rem}
@@ -43,11 +43,31 @@ p{margin:.5rem 0 .9rem;overflow-wrap:anywhere}
 .panel .eyebrow{margin-top:0}
 .next-card .eyebrow,.goal-card .eyebrow {letter-spacing:.055em}
 .next-card p:not(.eyebrow){font-size:.88rem}
-.goal-card h2{font-size:2rem}
+.goal-card h2{font-size:1.75rem;margin-bottom:0}
+.home-grid .link{font-size:.86rem}
+.next-card p:not(.eyebrow){margin:.2rem 0}
 progress{display:block;width:100%;height:.55rem;accent-color:var(--gold);margin:.7rem 0}
 .link{color:var(--gold);text-underline-offset:4px;text-decoration:underline;display:inline-flex;gap:.25rem;align-items:center;min-height:44px}
 .reflection{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap}
 .reflection h2{margin:0}
+.reflection .eyebrow{margin-bottom:.28rem}
+.mentor-link{font-size:.9rem}
+.mentor-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:center;gap:clamp(1rem,4vw,2.25rem);padding:clamp(.85rem,3vw,1.4rem);margin-bottom:1rem;border:1px solid var(--line);border-radius:16px;background:linear-gradient(125deg,#1c3227,#101c17)}
+.mentor-portrait{display:block;width:100%;max-width:340px;height:auto;border-radius:10px}
+.mentor-intro .eyebrow{margin:0 0 .45rem}
+.mentor-intro h1{margin-bottom:.5rem}
+.mentor-intro>p:last-child{margin:0;color:var(--muted)}
+.mentor-achievements{margin:.55rem 0 0;padding-inline-start:1.15rem}
+.mentor-achievements li+li{margin-top:.45rem}
+.mentor-details .panel p:last-child{margin-bottom:0}
+.mentor-pillars dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:0}
+.mentor-pillars .panel{margin:0}
+.mentor-pillars dt{color:var(--gold);font-size:.78rem;font-weight:650;letter-spacing:.12em}
+.mentor-pillars dd{margin:.35rem 0 0}
+@media(max-width:640px){
+ .mentor-hero{grid-template-columns:1fr}
+ .mentor-portrait{justify-self:center}
+}
 .tabs{position:fixed;inset:auto 0 0;z-index:5;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:900px;margin:auto;background:#142820;border-top:1px solid var(--line);padding:.38rem clamp(.4rem,2vw,1.2rem) max(.38rem,env(safe-area-inset-bottom))}
 .tabs a{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;min-height:52px;border-radius:9px;font-size:clamp(.66rem,2.9vw,.82rem);color:var(--muted);text-align:center;overflow-wrap:anywhere}
 .tabs a[aria-current],.icon-button[aria-current]{background:#304637;color:var(--gold);box-shadow:inset 0 -2px #aa8254}
@@ -94,6 +114,6 @@ textarea{resize:vertical}
 .schedule-grid button span{line-height:.6}
 @media(prefers-reduced-motion:no-preference) {
  .practice-card,.tabs a,.cta{transition:background-color .2s ease,filter .18s ease}
- .hero-content{animation:hero-in .45s ease-out}
- @keyframes hero-in{from{opacity:.7;transform:translateY(8px)}}
+ .today-practice,.mentor-hero{animation:app-intro .36s ease-out}
+ @keyframes app-intro{from{opacity:.84;transform:translateY(4px)}}
 }

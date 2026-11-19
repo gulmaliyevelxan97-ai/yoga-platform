@@ -23,6 +23,13 @@ export const categories = {
 };
 
 export const strings = {
+ mentor:['Твой наставник','Mentorun','Your mentor'],
+ meetMentor:['Познакомиться с наставником','Mentorunla tanış ol','Meet your mentor'],
+ mentorRole:['Основатель RESTART и преподаватель йоги','RESTART-ın təsisçisi və yoqa müəllimi','RESTART founder and yoga teacher'],
+ mentorStory:['История RESTART','RESTART-ın yaranması','The RESTART story'],
+ mentorSport:['Спортивный путь','İdman yolu','Athletic background'],
+ mentorTeaching:['Философия преподавания','Tədris fəlsəfəsi','Teaching philosophy'],
+ mentorPillars:['Четыре направления RESTART','RESTART-ın dörd istiqaməti','Four pillars of RESTART'],
  today:['Сегодня','Bu gün','Today'], practices:['Практики','Məşqlər','Practices'],
  path:['Мой путь','Yolum','My path'], journal:['Дневник','Gündəlik','Journal'],
  profile:['Профиль','Profil','Profile'], schedule:['Расписание','Cədvəl','Schedule'],
@@ -80,4 +87,28 @@ export const strings = {
  storageError:['Браузер не сохранил данные. Они могут пропасть при закрытии страницы.','Brauzer məlumatları saxlamadı. Səhifəni bağlayanda məlumatlar itə bilər.','The browser could not save data. It may be lost when this page closes.'],
  update:['Обновить приложение','Tətbiqi yenilə','Update app'],
  updateConfirm:['Обновить приложение? Несохранённый ввод будет сброшен.','Tətbiq yenilənsin? Yadda saxlanmamış məlumatlar itəcək.','Update the app? Unsaved changes will be cleared.']
+};
+
+
+export const mentorContent = {
+ history: [
+  'Эльхан основал RESTART, чтобы соединить физическое развитие с внутренним равновесием. Спортивная дисциплина, йога и медитация стали основой школы.',
+  'Elxan fiziki inkişafı daxili tarazlıqla birləşdirmək üçün RESTART-ı qurdu. İdman intizamı, yoqa və meditasiya məktəbin əsasını təşkil edir.',
+  'Elxan founded RESTART to bring physical development and inner balance together. The school draws on athletic discipline, yoga and meditation.'
+ ],
+ background: [
+  ['Чемпион мира и Европы по каратэ','Karate üzrə dünya və Avropa çempionu','World and European karate champion'],
+  ['Мастер владения нунчаками','Nunçaku ustası','Nunchaku practitioner']
+ ],
+ teaching: [
+  'На занятиях Эльхан соединяет движение, дыхание и внимание. Он предлагает замечать привычки тела и выбирать темп, в котором движение остаётся осознанным.',
+  'Elxan dərslərində hərəkəti, nəfəsi və diqqəti birləşdirir. O, bədənin vərdişlərini müşahidə etməyi və şüurlu hərəkət etməyə imkan verən temp seçməyi tövsiyə edir.',
+  'Elxan brings movement, breath and attention together. He encourages students to notice their movement habits and choose a pace at which they can move with awareness.'
+ ],
+ pillars: {
+  MIND:['Замечать свои реакции и делать выбор осознанно.','Reaksiyalarını sez və şüurlu seçim et.','Notice your reactions and make deliberate choices.'],
+  BODY:['Развивать силу и чувствовать, как движется тело.','Gücünü artır və bədəninin necə hərəkət etdiyini hiss et.','Build strength and pay attention to how your body moves.'],
+  NUTRITION:['Выстраивать привычки питания, которые вписываются в вашу жизнь.','Həyatına uyğun qidalanma vərdişləri qur.','Build eating habits that fit your life.'],
+  LIFE:['Находить в повседневности время для важного и для отдыха.','Gündəlik həyatda vacib işlərə və istirahətə vaxt ayır.','Make room for what matters and for rest.']
+ }
 };

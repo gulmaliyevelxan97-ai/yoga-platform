@@ -46,9 +46,11 @@ test('Journal updates one entry and local storage failures are visible to the UI
 });
 
 test('Every label and each practice has RU/AZ/EN and video IDs match the public catalogue', async () => {
- const {strings,catalog,categories} = await import('../app/content.mjs');
+ const {strings,catalog,categories,mentorContent} = await import('../app/content.mjs');
  assert.deepEqual(catalog.map(item=>item.id),Object.keys(categories));
- for (const triple of [...Object.values(strings),...Object.values(categories),...catalog.flatMap(item=>[item.title,item.description])]) {
+ assert.deepEqual(Object.keys(mentorContent.pillars),['MIND','BODY','NUTRITION','LIFE']);
+ const mentorStrings = [mentorContent.history, mentorContent.teaching, ...mentorContent.background, ...Object.values(mentorContent.pillars)];
+ for (const triple of [...mentorStrings,...Object.values(strings),...Object.values(categories),...catalog.flatMap(item=>[item.title,item.description])]) {
   assert.equal(triple.length,3);
   assert(triple.every(value=>typeof value==='string'&&value.trim().length>0));
  }
@@ -70,6 +72,10 @@ test('Manifest and worker use the app scope, use existing RESTART assets and exc
  });
  return new Promise(resolve=>handlers.install({waitUntil:resolve})).then(async ()=>{
   assert(captures.includes(scope+'index.html'));
+  const portraits = [...read('index.html').matchAll(/assets\/brand\/restart-\d+\.webp/g)];
+  assert.equal(new Set(portraits.map(match=>match[0])).size,2);
+  for (const [portrait] of portraits) assert(captures.includes(new URL('../'+portrait,scope).href));
+  assert(!captures.includes(new URL('../assets/hero.webp',scope).href));
   assert(captures.every(url=>url.startsWith(scope)||url.startsWith('https://example.test/yoga-platform/assets/')));
   let response;
   handlers.fetch({request:{method:'GET',mode:'navigate',url:scope},respondWith:value=>{response=value;}});

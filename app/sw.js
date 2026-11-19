@@ -1,12 +1,12 @@
 /* The app has an independent scope and cache. Bump VERSION when shell assets change. */
-const VERSION = '1.0.2';
+const VERSION = '2.0.0';
 const base = new URL(self.registration.scope);
 const prefix = 'restart-app:' + base.pathname + ':';
 const name = prefix + VERSION;
 const shell = new URL('./index.html',base).href;
 const resources = new Set([
  './index.html','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
- '../assets/hero.webp','../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
+ '../assets/brand/restart-640.webp','../assets/brand/restart-1188.webp','../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
  '../assets/pwa/restart-maskable.png','../assets/pwa/restart-apple.png'
 ].map(path=>new URL(path,base).href));
 

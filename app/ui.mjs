@@ -1,4 +1,4 @@
-import {catalog, categories, strings} from './content.mjs';
+import {catalog, categories, mentorContent, strings} from './content.mjs';
 import {localRepository, languages, dateKey, fromDateKey, shiftDate, weekStart, elapsed, pause, metrics, upsertEntry} from './state.mjs';
 
 const $ = selector => document.querySelector(selector);
@@ -37,7 +37,7 @@ let applyingUpdate = false;
 function route() {
  const [name, id] = location.hash.slice(1).split('/');
  if (name === 'practice' && itemFor(id)) return {name, id};
- return {name: [...tabs, 'schedule'].includes(name) ? name : 'today'};
+ return {name: [...tabs, 'schedule', 'mentor'].includes(name) ? name : 'today'};
 }
 
 function sampleClass(date) {
@@ -64,15 +64,17 @@ function today() {
  return `
  <div class="today-heading"><p class="eyebrow">${esc(dateText(now,{weekday:'long',day:'numeric',month:'long'}))}</p>
  <h1>${t('welcome')}${current.name ? ', '+esc(current.name) : ''}</h1></div>
- <article class="hero"><img src="../assets/hero.webp" width="900" height="900" alt="" fetchpriority="high">
- <div class="hero-content"><p class="eyebrow">${t('daily')} · ${suggested.minutes} ${t('min')}</p><h2>${title(suggested)}</h2>
- <a class="cta" href="#practice/${suggested.id}">${t(current.active ? 'resume' : 'start')} <span class="arrow" aria-hidden="true">${icon('arrow')}</span></a></div></article>
+ <article class="today-practice"><p class="eyebrow">${t('daily')} · ${category(suggested.id)} · ${suggested.minutes} ${t('min')}</p>
+ <h2>${title(suggested)}</h2>
+ <a class="cta" href="#practice/${suggested.id}">${t(current.active ? 'resume' : 'start')} <span class="arrow" aria-hidden="true">${icon('arrow')}</span></a></article>
  <div class="home-grid">
- ${next ? `<article class="panel next-card"><p class="eyebrow">${t('next')}</p><h2>${t('classTitle')}</h2><p>${esc(dateLabel(dateKey(next.date)))} · ${localTime(next)}</p>
- <a class="link" href="#schedule">${t('sample')} <span aria-hidden="true">→</span></a></article>` : ''}
- <article class="panel goal-card"><p class="eyebrow">${t('progress')}</p><h2>${stats.week} <span class="muted">/ ${current.goal}</span></h2><progress aria-label="${t('progress')}" value="${stats.week}" max="${current.goal}"></progress><a class="link" href="#path">${t('path')} <span aria-hidden="true">→</span></a></article>
+ <article class="panel goal-card"><p class="eyebrow">${t('progress')}</p><h2>${stats.week} <span class="muted">/ ${current.goal}</span></h2>
+ <progress aria-label="${t('progress')}" value="${stats.week}" max="${current.goal}"></progress><a class="link" href="#path">${t('goal')} <span aria-hidden="true">→</span></a></article>
+ ${next ? `<article class="panel next-card"><p class="eyebrow">${t('next')}</p><h2>${t('classTitle')}</h2>
+ <p>${esc(dateText(next.date,{day:'numeric',month:'short'}))} · ${localTime(next)}</p><a class="link" href="#schedule">${t('sample')} <span aria-hidden="true">→</span></a></article>` : ''}
  </div>
- <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>`;
+ <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
+ <a class="link mentor-link" href="#mentor">${t('meetMentor')} <span aria-hidden="true">→</span></a>`;
 }
 
 function practices() {
@@ -160,7 +162,26 @@ function profile() {
  <p><a class="link" href="../">${t('site')} ↗</a></p></article>`;
 }
 
-const screens = {today, practices, practice, path, journal, schedule, profile};
+function mentor() {
+ const {history, background, teaching, pillars} = mentorContent;
+ return `<a class="link back" href="#today">← ${t('today')}</a>
+ <div class="mentor-hero">
+ <div class="mentor-intro"><p class="eyebrow">${t('mentor')}</p><h1>Elxan Gülmalıyev</h1>
+ <p>${t('mentorRole')}</p></div>
+ <img class="mentor-portrait" src="../assets/brand/restart-1188.webp"
+      srcset="../assets/brand/restart-640.webp 640w, ../assets/brand/restart-1188.webp 1188w"
+      sizes="(max-width: 640px) 92vw, 340px" width="1188" height="1536" alt="Elxan Gülmalıyev">
+ </div>
+ <div class="mentor-details">
+ <section class="panel"><h2>${t('mentorStory')}</h2><p>${tr(history)}</p></section>
+ <section class="panel"><h2>${t('mentorSport')}</h2><ul class="mentor-achievements">${background.map(item=>`<li>${tr(item)}</li>`).join('')}</ul></section>
+ <section class="panel"><h2>${t('mentorTeaching')}</h2><p>${tr(teaching)}</p></section>
+ <section class="mentor-pillars"><h2>${t('mentorPillars')}</h2><dl>${Object.entries(pillars).map(([name,copy])=>
+  `<div class="panel"><dt>${name}</dt><dd>${tr(copy)}</dd></div>`).join('')}</dl></section>
+ </div>`;
+}
+
+const screens = {today, practices, practice, path, journal, schedule, profile, mentor};
 
 function refreshBanner() {
  const current = state();
