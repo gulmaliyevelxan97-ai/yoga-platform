@@ -1,6 +1,8 @@
 import {initialState} from './state.mjs';
 
 const pageSize = 200;
+// Notes can contain escapes that take up to six bytes per character in JSON.
+const importBatchSize = 50;
 const singletonTables = {name:'restart_profiles',goal:'restart_goals',settings:'restart_settings'};
 const profileRow = name => ({display_name:name});
 const goalRow = goal => ({weekly_count:goal});
@@ -32,7 +34,7 @@ async function allRows(client, user, table, columns) {
  }
 }
 
-export function importBatches(local, user, batchSize = 100) {
+export function importBatches(local, user, batchSize = importBatchSize) {
  const journal = local.journal.map(journalRow);
  const practices = local.sessions.map(practiceRow);
  const profile = local.name ? {profile:profileRow(local.name)} : {};

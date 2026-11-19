@@ -69,7 +69,9 @@ revoke all on function public.restart_next_revision() from public, anon, authent
 do $$
 declare
   table_name text;
-  own_record constant text := '(select auth.uid()) = user_id';
+  -- Supabase anonymous sign-ins also use the authenticated Postgres role.
+  own_record constant text :=
+    '(select auth.uid()) = user_id and (select auth.jwt()->>''is_anonymous'') is distinct from ''true''';
 begin
   foreach table_name in array array['restart_profiles','restart_goals','restart_settings','restart_practice_events','restart_journal'] loop
     execute format('alter table public.%I enable row level security', table_name);

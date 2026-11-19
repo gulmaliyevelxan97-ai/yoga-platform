@@ -11,7 +11,7 @@ declare
   imported_journal integer;
   imported_practices integer;
 begin
-  if me is null then
+  if me is null or auth.jwt()->>'is_anonymous' = 'true' then
     raise exception 'Authentication required' using errcode = '42501';
   end if;
   if jsonb_typeof(payload) is distinct from 'object'

@@ -27,14 +27,23 @@ test('PostgreSQL migrations enforce private CRUD, pilot signup and idempotent im
   create table auth.users(id uuid primary key);
   create function auth.uid() returns uuid language sql stable
     as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create function auth.jwt() returns jsonb language sql stable
+    as $$ select nullif(current_setting('request.jwt.claims', true), '')::jsonb $$;
   grant usage on schema auth to anon, authenticated;
   insert into auth.users values ('${personA}'),('${personB}');`);
+  const preflight = await readFile(new URL('../supabase/checks/preflight.sql',import.meta.url),'utf8');
+  assert.deepEqual((await db.query(preflight)).rows,[]);
+  await db.exec("create type public.restart_profiles as enum ('collision')");
+  assert.deepEqual((await db.query(preflight)).rows,[{issue:'already exists', object_name:'public.restart_profiles'}]);
+  await db.exec('drop type public.restart_profiles');
   for (const file of (await readdir(fixtures)).sort()) {
    await db.exec(await readFile(new URL(file,fixtures),'utf8'));
   }
-  const role = async (name, id='') => {
+  assert((await db.query(preflight)).rows.some(row=>row.object_name==='restart_private'));
+  const role = async (name, id='', anonymous=false) => {
    await db.exec('reset role; set role '+name);
-   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);
+   await db.query("select set_config('request.jwt.claim.sub',$1,false), set_config('request.jwt.claims',$2,false)",
+    [id,JSON.stringify({is_anonymous:anonymous})]);
   };
   const importFor = async payload => (await db.query('select public.restart_import_local($1) as imported',[JSON.stringify(payload)])).rows[0].imported;
   const records = ['profiles','goals','settings','practice_events','journal'];
@@ -46,13 +55,26 @@ test('PostgreSQL migrations enforce private CRUD, pilot signup and idempotent im
   await role('authenticated',personA);
   assert.deepEqual(await importFor(payload),{journal:1,practices:1});
   assert.deepEqual(await importFor(payload),{journal:0,practices:0});
+  await role('authenticated',personA,true);
+  for (const suffix of records) {
+   assert.deepEqual((await db.query('select * from public.restart_'+suffix)).rows,[]);
+   assert.deepEqual((await db.query('update public.restart_'+suffix+' set user_id=user_id returning user_id')).rows,[]);
+  }
+  await assert.rejects(importFor(payload),{code:'42501'});
+  await assert.rejects(db.query("insert into public.restart_journal (client_id,entry_date) values ($1,'2026-11-20')",[practiceId]),{code:'42501'});
+  await role('authenticated',personA);
   assert.equal((await db.query('select display_name from public.restart_profiles')).rows[0].display_name,'Pilot A');
   const update = await db.query("update public.restart_journal set notes='new' where revision=1 returning revision");
   assert.equal(update.rows[0].revision,2);
+  const versionAfterSpoof = await db.query('update public.restart_profiles set revision=999 returning revision');
+  assert.equal(versionAfterSpoof.rows[0].revision,2);
   assert.equal((await db.query("update public.restart_journal set notes='stale' where revision=1 returning revision")).rows.length,0);
   await assert.rejects(db.query('update public.restart_goals set user_id=$1',[personB]),{code:'42501'});
   await assert.rejects(db.query("insert into public.restart_practice_events (user_id,client_id,practice,practice_day,seconds) values ($1,$2,'yoga','2026-11-20',1)",[personB,practiceId]),{code:'42501'});
-  await db.query("update public.restart_journal set deleted=true, notes='', before_note='', after_note='', mood=0, energy=0, wellbeing=0");
+  await assert.rejects(db.query("update public.restart_journal set deleted=true"),{code:'23514'});
+  const deleted = await db.query("update public.restart_journal set deleted=true, notes='', before_note='', after_note='', mood=0, energy=0, wellbeing=0 where revision=2 returning revision");
+  assert.equal(deleted.rows[0].revision,3);
+  await assert.rejects(db.query("update public.restart_journal set client_id=$1",[practiceId]),{code:'22023'});
   assert.deepEqual(await importFor(payload),{journal:0,practices:0});
   assert.deepEqual((await db.query('select notes, deleted from public.restart_journal')).rows,[{notes:'',deleted:true}]);
   await assert.rejects(db.query("update public.restart_journal set deleted=false"),{code:'22023'});
@@ -124,4 +146,12 @@ test('Pilot Auth uses PKCE and recovery cannot read student rows before a passwo
   assert.equal(account.notice,'cloudPasswordSaved');
   assert.deepEqual(calls,['/app/#account','local-test-password','signout']);
  } finally {Object.assign(globalThis,original);}
+});
+
+test('Maximum escaped note content stays below the database import byte limit', () => {
+ const text = '\u0001'.repeat(2000);
+ const journal = Array.from({length:100},()=>({...local.journal[0],before:text,after:text,notes:text}));
+ const batches = importBatches({...local,journal},personA);
+ assert.equal(batches.length,2);
+ assert(batches.every(batch=>Buffer.byteLength(JSON.stringify(batch))<1999000));
 });
