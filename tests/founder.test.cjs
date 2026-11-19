@@ -117,6 +117,12 @@ test('About localizes the history and four directions, and lists only week numbe
   });
   assert.match(fragment,/id="about-story"/);
   assert.equal((fragment.match(/<details class="about-direction"/g)||[]).length,4);
+  for (const name of ['mind','body','nutrition','life']) {
+   const expanded=fragment.match(new RegExp('id="ph-'+name+'">([^]*?)</details>'))[1];
+   assert.equal((expanded.match(/<h3>/g)||[]).length,2);
+   assert.match(expanded,/about-reading-lead/);
+   assert.match(expanded,/about-reading-close/);
+  }
   const list=fragment.match(/<ol class="about-weeks">([^]*?)<\/ol>/)[1];
   const items=[...list.matchAll(/<li><span>(0[1-8])<\/span><strong>[^<]+<\/strong><\/li>/g)];
   assert.deepEqual(items.map(item=>item[1]),['01','02','03','04','05','06','07','08']);

@@ -26,3 +26,30 @@
 @media (prefers-reduced-motion: reduce) {
   .about-directions .about-direction summary { transition: none; }
 }
+
+.about-reading {
+  border-top: 1px solid var(--line);
+  padding: .75rem 0 .2rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.about-reading h3 {
+  margin: 1.15rem 0 .3rem;
+  font-size: 1.05rem;
+}
+.about-reading .about-reading-lead {
+  font: 1.22rem/1.45 var(--display);
+}
+.about-reading .about-reading-close {
+  margin-top: 1.15rem;
+  padding-inline-start: .8rem;
+  border-inline-start: 2px solid #b8986a;
+  font-style: italic;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .about-direction[open] .about-reading { animation: about-reading-in .18s ease-out; }
+}
+@keyframes about-reading-in {
+  from { opacity: .4; }
+  to { opacity: 1; }
+}
