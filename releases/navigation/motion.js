@@ -4,17 +4,35 @@
  const motion = matchMedia('(prefers-reduced-motion: no-preference)');
  if (!motion.matches) return;
 
- const page = document.body.dataset.page;
- if (page === 'home') {
+ const body = document.body;
+ const page = body.dataset.page;
+ function firstVisit(part) {
   try {
-   const key = 'restart.motion.home-seen';
-   if (!sessionStorage.getItem(key)) {
-    sessionStorage.setItem(key, '1');
-    document.body.classList.add('motion-home-intro');
-   }
+   const key = 'restart.motion.home.' + part + '.v2';
+   if (sessionStorage.getItem(key)) return false;
+   sessionStorage.setItem(key, '1');
+   return true;
   } catch {
-   // Keep the introduction still when session storage is unavailable.
+   return false;
   }
+ }
+ if (page === 'home' && firstVisit('text')) body.classList.add('motion-home-intro');
+ if (!('IntersectionObserver' in window)) return;
+ // The bottom navigation overlaps the scrollport on phones.
+ const dockHeight = document.querySelector('.dock')?.getBoundingClientRect().height || 0;
+ const rootMargin = '0px 0px -' + Math.ceil(dockHeight + 12) + 'px 0px';
+
+ // Observe the untransformed frames. A below-fold photo can finish loading long
+ // before the visitor gets to it, so loading alone must not start its motion.
+ const photo = document.querySelector('.motion-photo');
+ if (photo) {
+  const image = photo.querySelector('img');
+  const photoObserver = new IntersectionObserver(([entry]) => {
+   if (!entry.isIntersecting || entry.intersectionRatio < 0.12) return;
+   photoObserver.disconnect();
+   if (motion.matches && (page !== 'home' || firstVisit('photo'))) photo.classList.add('motion-photo-enter');
+  }, {threshold: 0.12, rootMargin});
+  image.decode().then(() => photoObserver.observe(photo)).catch(() => {});
  }
 
  const selector = {
@@ -23,18 +41,24 @@
   programme: '.about-weeks li',
   founder: '.founder-feature h2, .founder-feature p, .founder-feature figure, .founder-invitation'
  }[page];
- if (!selector || !('IntersectionObserver' in window)) return;
+ if (!selector) return;
 
  const view = document.getElementById('view');
  const seen = new Set();
  const observer = new IntersectionObserver(entries => {
-  for (const {target, isIntersecting} of entries) {
-   if (!isIntersecting) continue;
+  let order = 0;
+  for (const {target, isIntersecting, intersectionRatio} of entries) {
+   if (!isIntersecting || intersectionRatio < 0.08 || !target.isConnected) continue;
+   const index = target.dataset.revealIndex;
    observer.unobserve(target);
-   seen.add(target.dataset.revealIndex);
-   if (motion.matches && target.isConnected) target.classList.add('motion-reveal');
+   if (seen.has(index)) continue;
+   seen.add(index);
+   if (!motion.matches || target.matches(':focus-within, :target, [open]')) continue;
+   // Stagger only a group entering together. A card arriving on its own starts now.
+   target.style.setProperty('--motion-delay', Math.min(order++, 2) * 115 + 'ms');
+   target.classList.add('motion-reveal');
   }
- }, {threshold: 0.12});
+ }, {threshold: 0.08, rootMargin});
 
  const observe = () => {
   observer.disconnect();
@@ -44,6 +68,6 @@
   });
  };
  observe();
- // The language picker replaces the content without navigating away.
+ // A language change replaces the nodes, but does not replay a seen group.
  new MutationObserver(observe).observe(view, {childList: true});
 })();

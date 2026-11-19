@@ -1,4 +1,4 @@
-const VERSION = '46a2e1f49d7072';
+const VERSION = '5ae93fead3ab58';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -60,8 +60,8 @@ const ASSETS = [
   "./releases/navigation/school-runtime.js?v=7e610b673bca",
   "./releases/navigation/analytics.css?v=1f979a080ace",
   "./releases/navigation/analytics.js?v=8a391170c35b",
-  "./releases/navigation/motion.css?v=3bcb85d39bbe",
-  "./releases/navigation/motion.js?v=84d413f4a679",
+  "./releases/navigation/motion.css?v=d868e80ff9e6",
+  "./releases/navigation/motion.js?v=2888af3b39da",
   "./assets/founder-nunchaku-first-frame.webp?v=002fc08f6759",
   "./releases/navigation/founder-portrait.js?v=d9db613f69c0"
 ];

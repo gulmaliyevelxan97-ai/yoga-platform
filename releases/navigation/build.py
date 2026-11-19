@@ -76,6 +76,8 @@ fallbacks = json.loads(run(['node'], input=fallback_source, text=True, encoding=
 
 for file, (page,title) in entries.items():
     hero_image = mast_photos.get(page, '')
+    if page in ('home', 'programme'):
+        hero_image = f'<div class="motion-photo">{hero_image}</div>'
     actions = f'<div class="school-actions" id="home-actions">{fallbacks["homeActions"]}</div>' if page=='home' else ''
     kicker = 'RESTART' if page == 'home' else ''
     credit = f'<p id="home-founder">{fallbacks["homeFounder"]}</p>' if page == 'home' else ''

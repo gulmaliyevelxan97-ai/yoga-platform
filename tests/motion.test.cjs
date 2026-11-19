@@ -6,7 +6,7 @@ const { runInNewContext } = require('node:vm');
 const read = file => readFileSync(new URL('../' + file, 'file://' + __filename), 'utf8');
 const script = read('releases/navigation/motion.js');
 
-function mount(page, nodes, session = new Map(), reducedMotion = false) {
+function mount(page, nodes, session = new Map(), reducedMotion = false, photo = null) {
  const bodyClasses = new Set();
  const view = { querySelectorAll: () => nodes };
  const motion = { matches: !reducedMotion };
@@ -24,7 +24,8 @@ function mount(page, nodes, session = new Map(), reducedMotion = false) {
  }
  const document = {
   body: { dataset: { page }, classList: bodyClasses },
-  getElementById: () => view
+  getElementById: () => view,
+  querySelector: selector => selector === '.motion-photo' ? photo : null
  };
  runInNewContext(script, {
   document, matchMedia: () => motion, window: { IntersectionObserver }, IntersectionObserver,
@@ -43,24 +44,46 @@ test('Home introduction runs once per session and honors reduced motion', () => 
 });
 
 test('Scroll animation adds a class only on intersection and does not replay after a translation', () => {
- const makeNode = () => ({ dataset: {}, isConnected: true, classList: new Set() });
- const nodes = [makeNode(), makeNode()];
+ const makeTarget = () => ({
+  dataset: {}, isConnected: true, classList: new Set(), matches: () => false, style: {setProperty() {}}
+ });
+ const nodes = [makeTarget(), makeTarget()];
  const { observer, render, motion } = mount('about', nodes);
  observer.callback([{target: nodes[0], isIntersecting: false}]);
  assert.equal(nodes[0].classList.size, 0);
- observer.callback([{target: nodes[0], isIntersecting: true}]);
+ observer.callback([{target: nodes[0], isIntersecting: true, intersectionRatio: 0.1}]);
  assert(nodes[0].classList.has('motion-reveal'));
  assert(!observer.targets.has(nodes[0]));
 
- nodes[0] = makeNode();
+ nodes[0] = makeTarget();
  render();
  assert(!observer.targets.has(nodes[0]));
  assert(observer.targets.has(nodes[1]));
  assert.equal(nodes[0].classList.size, 0);
 
  motion.matches = false;
- observer.callback([{target: nodes[1], isIntersecting: true}]);
+ observer.callback([{target: nodes[1], isIntersecting: true, intersectionRatio: 0.1}]);
  assert.equal(nodes[1].classList.size, 0);
+});
+
+test('The home photograph waits for decode and its own viewport entry once per tab', async () => {
+ const session = new Map();
+ const photo = {classList: new Set(), querySelector: () => ({ decode: () => Promise.resolve() })};
+ const { observer } = mount('home', [], session, false, photo);
+ assert(!observer.targets.has(photo));
+ await Promise.resolve();
+ assert(observer.targets.has(photo));
+ observer.callback([{isIntersecting:true, intersectionRatio:0.04}]);
+ assert.equal(photo.classList.size, 0);
+ observer.callback([{isIntersecting:true, intersectionRatio:0.2}]);
+ assert(photo.classList.has('motion-photo-enter'));
+ assert(!observer.targets.has(photo));
+
+ photo.classList.clear();
+ const repeated = mount('home', [], session, false, photo);
+ await Promise.resolve();
+ repeated.observer.callback([{isIntersecting:true, intersectionRatio:0.2}]);
+ assert.equal(photo.classList.size, 0);
 });
 
 test('About has four native disclosures and programme has eight plain stages in static HTML', () => {
