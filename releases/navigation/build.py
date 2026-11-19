@@ -56,7 +56,7 @@ mast_photos = {
         'width="1280" height="720" alt="" fetchpriority="high">'
     ),
     'method': '<img src="./assets/hero.webp" width="900" height="900" alt="" decoding="async">',
-    'programme': '<img src="./assets/performance.webp" width="640" height="800" alt="" decoding="async">',
+    'programme': '<img src="./assets/hero.webp" width="900" height="900" alt="Elxan Gülmalıyev" fetchpriority="high">',
 }
 # A video is rendered only when the owner-supplied original has been processed.
 portrait_video = 'assets/founder-portrait.mp4'

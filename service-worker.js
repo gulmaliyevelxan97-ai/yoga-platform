@@ -1,4 +1,4 @@
-const VERSION = '378de303d0b297';
+const VERSION = '037aef6f6c0669';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
