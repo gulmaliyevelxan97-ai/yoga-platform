@@ -38,7 +38,7 @@ test('School destinations use real project-relative offline pages', () => {
   const rootHTML = read('index.html').toString();
   assert.match(rootHTML, /Не стать другим\. Раскрыть себя/);
   const worker = read('service-worker.js').toString();
-  for (const page of ['about','philosophy','code','programme','my-path','practices','journal','progress','participation','week-one','activity']) {
+  for (const page of ['about','philosophy','code','programme','my-path','practices','journal','progress','participation','activity']) {
     assert.ok(read(page+'.html').length>100);
     assert.ok(worker.includes('"./'+page+'.html"'));
   }
@@ -54,7 +54,7 @@ test('Offline requests use the requested page in a GitHub Pages subdirectory', a
     caches: { match: async url => url },
     fetch: async () => { throw Error('offline'); }
   });
-  for (const page of ['','week-one.html','journal.html','progress.html','practices.html']) {
+  for (const page of ['','programme.html','journal.html','progress.html','practices.html']) {
     let reply;
     handlers.fetch({request:{ url:prefix+page+'?test=1',method:'GET',mode:'navigate' },respondWith: p=>reply=p});
     assert.equal(await reply,prefix+(page||'index.html'));
@@ -78,7 +78,7 @@ test('Navigation revalidates HTML and keeps an offline fallback for temporary se
   });
   const navigate = () => {
     let reply;
-    handlers.fetch({request:{url:origin+'week-one.html',method:'GET',mode:'navigate'},respondWith:p=>reply=p});
+    handlers.fetch({request:{url:origin+'programme.html',method:'GET',mode:'navigate'},respondWith:p=>reply=p});
     return reply;
   };
   assert.equal((await navigate()).status,200);
@@ -89,4 +89,14 @@ test('Navigation revalidates HTML and keeps an offline fallback for temporary se
   assert.equal(await navigate(),'offline page');
   storedPage=undefined;
   assert.equal((await navigate()).status,503);
+});
+
+test('Private programme files are absent from the published tree and offline manifest', () => {
+ const retired = ['week-one.html','releases/week/index.html','releases/week/content.js','releases/week/assessment.js','releases/week/school.js','releases/week/week.js','docs/week-one.md','docs/restart-school-3.md','docs/restart-instructor-3.md'];
+ const worker = read('service-worker.js').toString();
+ for (const file of retired) {
+  assert.equal(existsSync(join(root,file)),false,file);
+  assert.ok(!worker.includes(file),file);
+ }
+ for (const file of ['about.html','programme.html','my-path.html','progress.html','journal.html','participation.html']) assert.doesNotMatch(read(file).toString(),/releases\/week\//);
 });

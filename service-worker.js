@@ -1,4 +1,4 @@
-const VERSION = 'c89cbb7319dfdc';
+const VERSION = '54a9f0ff4d054a';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -32,17 +32,14 @@ const ASSETS = [
   "./assets/brand/yoga-space-archive.jpg",
   "./index.html",
   "./assets/brand/restart-640.webp",
+  "./assets/brand/restart-dawn-640.webp",
+  "./assets/brand/restart-dawn-1280.webp",
   "./assets/lake.jpg",
   "./assets/pwa/restart-512.png",
   "./assets/pwa/restart-maskable.png",
-  "./releases/week/index.html",
-  "./releases/week/content.js?v=5c5213ed331e",
-  "./releases/week/week.js?v=51de9b3e3d82",
-  "./releases/week/assessment.js?v=ed5ac0e60ae2",
-  "./releases/week/school.js?v=0bcf366fff85",
   "./releases/navigation/design.css?v=a133c5ff8277",
-  "./releases/navigation/shell.js?v=8c63b89dc71e",
-  "./releases/navigation/pages.js?v=97a825799521",
+  "./releases/navigation/shell.js?v=ce3879ac7c54",
+  "./releases/navigation/pages.js?v=225e366b01bf",
   "./about.html",
   "./philosophy.html",
   "./code.html",
@@ -51,18 +48,17 @@ const ASSETS = [
   "./journal.html",
   "./progress.html",
   "./participation.html",
-  "./week-one.html",
   "./practices.html",
   "./releases/navigation/studio-shell.js?v=d14087e4962f",
   "./activity.html",
   "./founder.html",
-  "./releases/navigation/founder.js?v=d0c4a5f8d896",
+  "./releases/navigation/founder.js?v=61ff41f268dc",
   "./releases/navigation/founder.css?v=60ab97ecc514",
-  "./releases/navigation/founder-portrait.js?v=024fc05304f0",
-  "./releases/week/content.js",
-  "./releases/week/week.js",
-  "./releases/week/assessment.js",
-  "./releases/week/school.js"
+  "./releases/navigation/about.css?v=bc6f237b17f3",
+  "./releases/navigation/about.js?v=94735e723006",
+  "./releases/navigation/school-public.js?v=2f83392d5082",
+  "./releases/navigation/school-runtime.js?v=06ffaf7e19b4",
+  "./releases/navigation/founder-portrait.js?v=024fc05304f0"
 ];
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'restart-shell:' + scope.pathname + ':';

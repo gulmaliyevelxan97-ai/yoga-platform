@@ -6,7 +6,6 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 NAV = 'releases/navigation'
-WEEK = 'releases/week'
 entries = {
     'index.html': ('home', 'Не стать другим. Раскрыть себя.'),
     'founder.html': ('founder', 'Эльхан Гюльмалыев'),
@@ -18,7 +17,6 @@ entries = {
     'journal.html': ('journal', 'Дневник'),
     'progress.html': ('progress', 'Мой прогресс'),
     'participation.html': ('signup', 'Участие'),
-    'week-one.html': ('calendar', 'Неделя 1 · Пробуждение'),
 }
 studio = {'practices.html': 'practices', 'activity.html': 'activity'}
 
@@ -40,7 +38,7 @@ header = '''<header class="school-bar" data-shell>
 </header>'''
 footer = '<footer data-school-footer></footer>'
 common_head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#faf8f1"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./assets/pwa/restart-apple.png"><link rel="icon" href="./assets/pwa/restart-192.png">'
-scripts = ''.join(script(path) for path in [NAV+'/shell.js', WEEK+'/content.js', WEEK+'/assessment.js', WEEK+'/school.js', NAV+'/pages.js', WEEK+'/week.js'])
+scripts = ''.join(script(path) for path in [NAV+'/shell.js', NAV+'/school-public.js', NAV+'/pages.js', NAV+'/school-runtime.js'])
 mast_photos = {
     'home': (
         '<img src="./assets/brand/restart-1188.webp" '
@@ -49,7 +47,12 @@ mast_photos = {
         'width="1188" height="1536" alt="RESTART · Elxan Gülmalıyev" fetchpriority="high">'
     ),
     'founder': '<img src="./assets/author.webp" width="408" height="510" alt="Elxan Gülmalıyev" fetchpriority="high">',
-    'about': '<img src="./assets/author.webp" width="408" height="510" alt="Elxan Gülmalıyev" decoding="async">',
+    'about': (
+        '<img src="./assets/brand/restart-dawn-640.webp" '
+        'srcset="./assets/brand/restart-dawn-640.webp 640w, ./assets/brand/restart-dawn-1280.webp 1280w" '
+        'sizes="(max-width: 700px) calc(100vw - 5rem), 42vw" '
+        'width="1280" height="720" alt="" fetchpriority="high">'
+    ),
     'method': '<img src="./assets/hero.webp" width="900" height="900" alt="" decoding="async">',
     'programme': '<img src="./assets/performance.webp" width="640" height="800" alt="" decoding="async">',
 }
@@ -62,6 +65,10 @@ for file, (page,title) in entries.items():
     actions = '<div class="school-actions" id="home-actions"></div>' if page=='home' else ''
     page_scripts = script(NAV+'/founder.js') + scripts if page == 'founder' else scripts
     page_design = design
+    if page == 'about':
+        page_scripts = script(NAV+'/about.js') + scripts
+    if page in ('about', 'programme'):
+        page_design += f'<link rel="stylesheet" href="{tag_path(NAV+"/about.css")}">'
     if page == 'founder':
         page_design += f'<link rel="stylesheet" href="{tag_path(NAV+"/founder.css")}">'
     if page == 'founder' and has_portrait_video:
@@ -89,7 +96,6 @@ for file,page in studio.items():
     text = text.replace('<body>',f'<body data-page="{page}">')
     text = text.replace('</head>',design+shell+script(NAV+'/studio-shell.js')+'</head>')
     text = re.sub(r'<footer>.*?</footer>',footer,text,count=1,flags=re.S)
-    text = text.replace('./releases/week/index.html#signup','./participation.html').replace('./releases/week/index.html#progress','./progress.html')
     if page == 'practices':
         text = text.replace('<main id="top">','<main id="top"><div class="studio-switch"><label for="practice-type" id="practice-type-label">Тип занятия</label><select id="practice-type"><option value="all">Все</option><option value="guided">Практики с таймером</option><option value="video">Видео</option></select></div>',1)
     text = re.sub(r"\./([^\"?]+\.(?:js|css))\?v=[a-f0-9]+", lambda match: tag_path(match[1]), text)
@@ -104,9 +110,7 @@ for file in [*entries,*studio]:
     assets['./'+file] = './'+file
     for script_or_css in re.findall(r'(?:src|href)="(\./[^"]+\.(?:js|css)\?v=[a-f0-9]+)"',(ROOT/file).read_text()):
         assets[script_or_css.split('?')[0]] = script_or_css
-# The legacy week page uses unversioned copies of its four scripts.
-week_paths = ['./'+WEEK+'/'+f for f in ['content.js','week.js','assessment.js','school.js']]
-values = list(assets.values()) + [a for a in week_paths if a not in assets.values()]
+values = list(assets.values())
 digest = sha256()
 for asset in values:
     digest.update((ROOT/asset.split('?')[0]).read_bytes())

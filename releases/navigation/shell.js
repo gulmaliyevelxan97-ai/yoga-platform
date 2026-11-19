@@ -12,8 +12,7 @@ const restartPages = {
  journal:['journal.html','Дневник','Gündəlik','Journal'],
  progress:['progress.html','Мой прогресс','İrəliləyişim','My progress'],
  signup:['participation.html','Участие','İştirak','Participation'],
- activity:['activity.html','История и избранное','Tarixçə və seçilmişlər','History and favourites'],
- calendar:['week-one.html','Первая неделя','Birinci həftə','Week one']
+ activity:['activity.html','История и избранное','Tarixçə və seçilmişlər','History and favourites']
 };
 const restartPage = document.body.dataset.page;
 const navRoot = document.querySelector('[data-shell]');

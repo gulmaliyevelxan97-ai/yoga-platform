@@ -14,7 +14,7 @@ test('Founder page links from the school shell and is cached offline', () => {
  assert.match(read('service-worker.js'), /"\.\/founder\.html"/);
 });
 
-test('Each founder language has the approved title, mission and links in the new order', () => {
+test('Each founder language has the approved title and links without duplicating the school history', () => {
  const titles=['Чемпион Мира и Европы по каратэ','Karate üzrə Dünya və Avropa çempionu','World and European Karate Champion'];
  for (const [index,title] of titles.entries()) {
   const fragment = runInNewContext(read('releases/navigation/founder.js')+'\nfounderPage()', {
@@ -30,13 +30,9 @@ test('Each founder language has the approved title, mission and links in the new
   assert.ok(photo && fragment.indexOf(photo[0]) < fragment.indexOf(title));
   assert.ok(photo[1].includes(['с кубком и медалью','kubok və medalla','with a trophy and medal'][index]));
   assert.deepEqual([...fragment.matchAll(/<h2 id="founder-([\w-]+)"/g)].map(match=>match[1]),[
-   'karate','yoga','workshops','invitation','mission'
+   'karate','yoga','workshops','invitation'
   ]);
-  assert.equal((fragment.match(/class="founder-mission-lead"/g)||[]).length,2);
-  if (index===0) {
-   assert.match(fragment,/Сила тела\. Гармония сознания\./);
-   assert.match(fragment,/Не стать другим\. Раскрыть себя\./);
-  }
+  assert.doesNotMatch(fragment,/founder-mission/);
   assert.doesNotMatch(fragment,/Личный архив|Şəxsi arxiv|Personal archive|Четырёхкратный|dördqat|Four-time/i);
   assert.doesNotMatch(fragment,/Требует подтверждения|Təsdiq tələb edir|Requires confirmation/);
   assert.match(fragment,/href="\.\/practices\.html"/);
@@ -97,5 +93,30 @@ test('Generated hero uses the photo alone until video is available', () => {
   assert.match(html,/Nunçaku ustası/);
   assert.match(html,/Nunchaku practitioner/);
   assert.match(html,/data-src="\.\/assets\/founder-portrait\.mp4\?v=/);
+ }
+});
+
+
+test('About localizes the history and four directions, and lists only week numbers and names', () => {
+ const source=read('releases/navigation/school-public.js')+'\n'+read('releases/navigation/pages.js')+'\n'+read('releases/navigation/about.js');
+ for (const index of [0,1,2]) {
+  const fragment=runInNewContext(source+'\naboutPage()',{
+   document:{addEventListener(){}},
+   t:(...items)=>items[index],
+   tracks:['MIND','BODY','NUTRITION','LIFE'],
+   pageUrl:key=>'./'+key+'.html'
+  });
+  assert.match(fragment,/id="about-story"/);
+  assert.equal((fragment.match(/<details class="about-direction"/g)||[]).length,4);
+  const list=fragment.match(/<ol class="about-weeks">([^]*?)<\/ol>/)[1];
+  const items=[...list.matchAll(/<li><span>(0[1-8])<\/span><strong>[^<]+<\/strong><\/li>/g)];
+  assert.deepEqual(items.map(item=>item[1]),['01','02','03','04','05','06','07','08']);
+  assert.equal(items.map(item=>item[0]).join(''),list);
+ }
+ assert.doesNotMatch(read('about.html'),/releases\/week\/content.js/);
+ for(const width of [640,1280]){
+  const image='assets/brand/restart-dawn-'+width+'.webp';
+  assert.ok(fs.existsSync(path.join(root,image)));
+  assert.ok(read('about.html').includes(image));
  }
 });
