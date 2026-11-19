@@ -1,8 +1,12 @@
+import cloudConfig from './cloud-config.mjs';
+import {cloudAccount, createPilotClient} from './cloud-auth.mjs';
+import {cloudStrings} from './cloud-copy.mjs';
 import {catalog, categories, mentorContent, strings} from './content.mjs';
 import {localRepository, languages, dateKey, fromDateKey, shiftDate, weekStart, elapsed, pause, metrics, upsertEntry} from './state.mjs';
 
 const $ = selector => document.querySelector(selector);
 const repo = localRepository();
+let cloud;
 const screen = $('#screen');
 const tabs = ['today', 'practices', 'path', 'journal', 'profile'];
 const icons = {
@@ -13,10 +17,10 @@ const icons = {
 };
 const icon = name => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+icons[name]+'"/></svg>';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-const state = () => repo.read();
+const state = () => cloud?.state || repo.read();
 const lang = () => languages.includes(state().lang) ? state().lang : 'ru';
 const tr = triple => triple[languages.indexOf(lang())];
-const t = key => tr(strings[key]);
+const t = key => tr(strings[key] || cloudStrings[key]);
 const dateText = (date, options) => new Intl.DateTimeFormat(lang(), options).format(date);
 const dateLabel = value => dateText(fromDateKey(value), {day:'numeric', month:'long', year:'numeric'});
 const itemFor = id => catalog.find(item => item.id === id);
@@ -36,6 +40,7 @@ let applyingUpdate = false;
 
 function route() {
  const [name, id] = location.hash.slice(1).split('/');
+ if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
  if (name === 'practice' && itemFor(id)) return {name, id};
  return {name: [...tabs, 'schedule', 'mentor'].includes(name) ? name : 'today'};
 }
@@ -121,7 +126,7 @@ function journal() {
  const levels = ['unset','low','medium','high'];
  const scales = ['mood','energy','wellbeing'];
  const fields = ['before','after','notes'];
- return heading('journal')+`<p class="muted">${t('localNote')}</p><form id="journal-form" class="panel">
+ return heading('journal')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p><form id="journal-form" class="panel">
  <label>${t('date')}<input type="date" name="date" value="${esc(current.date||dateKey())}" required></label>
  <div class="field-row">${scales.map(key=>`<label>${t(key)}<select name="${key}">${levels.map((level,i)=>`<option value="${i}" ${current[key]===String(i)?'selected':''}>${t(level)}</option>`).join('')}</select></label>`).join('')}</div>
  ${fields.map(key=>`<label>${t(key)}<textarea name="${key}" rows="2" maxlength="2000">${esc(current[key])}</textarea></label>`).join('')}
@@ -154,7 +159,8 @@ function profile() {
  const current = state();
  const reminder = current.reminders;
  const running = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
- return heading('profile')+`<p class="muted">${t('localNote')}</p>
+ return heading('profile')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>
+ ${cloudConfig?`<p><a class="button" href="#account">${t('account')}</a></p>`:''}
  <form id="profile-form" class="panel"><label>${t('name')}<input name="name" maxlength="40" value="${esc(current.name)}"></label><button class="cta">${t('save')}</button></form>
  <form id="reminder-form" class="panel"><h2>${t('reminders')}</h2><p class="muted">${t('reminderNote')}</p><label>${t('reminderTime')}<input type="time" name="time" value="${esc(reminder.time)}" required></label>
  ${['practice','schedule','goal'].map((key,i)=>`<label class="check"><input type="checkbox" name="${key}" ${reminder[key]?'checked':''}>${t(['remindPractice','remindSchedule','remindGoal'][i])}</label>`).join('')}<button class="cta">${t('save')}</button></form>
@@ -181,7 +187,37 @@ function mentor() {
  </div>`;
 }
 
-const screens = {today, practices, practice, path, journal, schedule, profile, mentor};
+function account() {
+ const email = `<label>${t('cloudEmail')}<input name="email" type="email" autocomplete="email" maxlength="254" required></label>`;
+ const password = kind => `<label>${t('cloudPassword')}<input name="password" type="password"
+   autocomplete="${kind==='login'?'current-password':'new-password'}" ${kind==='login'?'':'minlength="12"'} maxlength="72" required></label>`;
+ const form = (kind,label,fields) => `<form class="panel" data-cloud-auth="${kind}">
+  <h2>${t(label)}</h2>${fields}<button class="cta">${t(label)}</button></form>`;
+ if (cloud.recovery) return heading('account')+form('password','cloudNewPassword',password('password'));
+ if (!cloud.user) return heading('account')+form('login','cloudLogin',email+password('login'))+
+  form('register','cloudRegister',email+password('register'))+form('reset','cloudReset',email);
+ return heading('account')+`<div class="panel"><p>${esc(cloud.user.email)}</p><p>${t('cloudNetworkNote')}</p>
+  <div class="actions"><button data-action="cloud-refresh">${t('cloudSync')}</button>
+  <button data-action="cloud-logout">${t('cloudLogout')}</button></div></div>
+  <form class="panel" data-cloud-auth="import">
+   <h2>${t('cloudImport')}</h2><p>${t('cloudImportNote')}</p>
+   <label class="check"><input type="checkbox" name="consent" required>${t('cloudImportConsent')}</label>
+   <button>${t('cloudImport')}</button>
+  </form>`;
+}
+
+function cloudNotice() {
+ const status = $('#cloud-status');
+ if (cloud?.notice) status.textContent = t(cloud.notice);
+ status.hidden = !status.textContent;
+}
+
+function setActive(active) {
+ if (cloud?.state) cloud.state.active = active;
+ else repo.write({active});
+}
+
+const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account};
 
 function refreshBanner() {
  const current = state();
@@ -226,18 +262,27 @@ function render() {
  calendar.setAttribute('aria-label',t('schedule'));
  if (current.name === 'schedule') calendar.setAttribute('aria-current','page');
  else calendar.removeAttribute('aria-current');
- $('#mode').textContent = t('demo');
+ $('#mode').textContent = t(cloud?.user ? 'cloudMode' : cloudConfig ? 'cloudLocal' : 'demo');
  const activeTab = current.name === 'practice' ? 'practices' : current.name;
  $('#tabs').innerHTML = tabs.map(name=>`<a href="#${name}" ${activeTab===name?'aria-current="page"':''}>${icon(name)}<span>${t(name)}</span></a>`).join('');
  document.title = 'RESTART · '+t(activeTab);
- screen.innerHTML = screens[current.name](current.id);
+ screen.innerHTML = cloud?.user && !cloud.state && current.name!=='account'
+  ? `<h1>${t('account')}</h1><p>${t(cloud.notice==='cloudLoadFailed'?'cloudLoadFailed':'cloudLoading')}</p><a class="button" href="#account">${t('account')}</a>`
+  : screens[current.name](current.id);
+ cloudNotice();
  refreshBanner();
 }
 
-$('#language').addEventListener('change', event=>{
+$('#language').addEventListener('change', async event=>{
  const form = screen.querySelector('form');
- const inputs = form && Array.from(form.elements).filter(el=>el.name).map(el=>[el.name,el.type==='checkbox'?el.checked:el.value]);
- repo.write({lang:event.target.value});
+ const inputs = form && Array.from(form.elements).filter(el=>el.name&&el.type!=='password').map(el=>[el.name,el.type==='checkbox'?el.checked:el.value]);
+ const selection = event.target.value;
+ if (cloud?.user) {
+  if (!cloud.state || !(await cloud.save('saveSettings',selection,cloud.state.reminders,cloud.state.revisions.settings))) {
+   event.target.value = lang();
+   return;
+  }
+ } else repo.write({lang:selection});
  render();
  if (inputs) for (const [name,value] of inputs) {
   const field = document.getElementById(form.id)?.elements.namedItem(name);
@@ -265,7 +310,7 @@ function setScheduleDay(day) {
  screen.querySelector('[data-day="'+day+'"]')?.focus({preventScroll:true});
 }
 
-function updatePractice(action) {
+async function updatePractice(action) {
  const id = route().id;
  const item = itemFor(id);
  if (!item) return;
@@ -274,17 +319,20 @@ function updatePractice(action) {
  const now = Date.now();
  if (active && active.id !== id) return;
  if (action === 'start') {
-  repo.write({active: {...(active || {id, sessionId:crypto.randomUUID(), accumulated:0}), startedAt: now}});
+  setActive({...(active || {id, sessionId:crypto.randomUUID(), accumulated:0}), startedAt: now});
  } else if (active && action === 'pause') {
-  repo.write({active: pause(active,item.minutes*60,now)});
+  setActive(pause(active,item.minutes*60,now));
  } else if (active && action === 'finish') {
   const session = {id: active.sessionId, practice:id, seconds:elapsed(active,item.minutes*60,now), day:dateKey()};
-  repo.write({active:null,sessions:[...current.sessions,session]});
+  if (cloud?.user) {
+   if (!await cloud.save('complete',session)) return;
+   if (cloud.state) cloud.state.active = null;
+  } else repo.write({active:null,sessions:[...current.sessions,session]});
   $('#status').textContent=t('completed');
   location.hash='path';
   return;
  } else if (active && action === 'stop') {
-  repo.write({active:null});
+  setActive(null);
  }
  render();
  screen.querySelector('[data-action]')?.focus({preventScroll:true});
@@ -303,7 +351,10 @@ document.addEventListener('click',async event=>{
   render();
   $('#journal-form input').focus();
  } else if (remove && confirm(t('confirmDelete'))) {
-  repo.write({journal:state().journal.filter(entry=>entry.id !== remove)});
+  if (cloud?.user) {
+   const entry = state().journal.find(item=>item.id===remove);
+   if (!entry || !await cloud.save('deleteJournal',entry)) return;
+  } else repo.write({journal:state().journal.filter(entry=>entry.id !== remove)});
   render();
   $('#journal-form input').focus({preventScroll:true});
  } else if (day) {
@@ -314,6 +365,12 @@ document.addEventListener('click',async event=>{
   editing = null;
   render();
   $('#journal-form input').focus({preventScroll:true});
+ } else if (action === 'cloud-refresh') {
+  await cloud.save('refresh');
+  render();
+ } else if (action === 'cloud-logout') {
+  await cloud.action('logout');
+  render();
  } else if (action === 'install' && installPrompt) {
   const prompt = installPrompt;
   installPrompt = null;
@@ -330,20 +387,38 @@ document.addEventListener('click',async event=>{
  }
 });
 
-screen.addEventListener('submit', event=>{
+screen.addEventListener('submit', async event=>{
  event.preventDefault();
  const form = event.target;
  const data = Object.fromEntries(new FormData(form));
+ if (form.dataset.cloudAuth) {
+  const kind = form.dataset.cloudAuth;
+  const ok = kind==='import' ? Boolean(data.consent) && await cloud.save('import',repo.read()) : await cloud.action(kind,data);
+  if (ok) render();
+  return;
+ }
+ if (cloud?.user && !cloud.state) return;
+ const revisions = cloud?.state?.revisions;
  if (form.id === 'journal-form') {
-  const entry = {...data, id:editing || crypto.randomUUID()};
-  repo.write({journal:upsertEntry(state().journal,entry)});
+  const original = editing ? state().journal.find(item=>item.id===editing) : null;
+  const entry = {...data, id:editing || (form.dataset.entryId ||= crypto.randomUUID()), revision:original?.revision};
+  if (cloud?.user) {
+   if (!await cloud.save('saveJournal',entry)) return;
+  } else repo.write({journal:upsertEntry(state().journal,entry)});
   editing = null;
  } else if (form.id === 'goal-form') {
-  repo.write({goal:Number(data.goal)});
+  if (cloud?.user) {
+   if (!await cloud.save('saveGoal',Number(data.goal),revisions.goal)) return;
+  } else repo.write({goal:Number(data.goal)});
  } else if (form.id === 'profile-form') {
-  repo.write({name:data.name.trim()});
+  if (cloud?.user) {
+   if (!await cloud.save('saveName',data.name.trim(),revisions.name)) return;
+  } else repo.write({name:data.name.trim()});
  } else if (form.id === 'reminder-form') {
-  repo.write({reminders:{time:data.time,practice:!!data.practice,schedule:!!data.schedule,goal:!!data.goal}});
+  const reminders = {time:data.time,practice:!!data.practice,schedule:!!data.schedule,goal:!!data.goal};
+  if (cloud?.user) {
+   if (!await cloud.save('saveSettings',lang(),reminders,revisions.settings)) return;
+  } else repo.write({reminders});
  } else return;
  render();
  document.getElementById(form.id)?.querySelector('button').focus({preventScroll:true});
@@ -363,6 +438,28 @@ window.addEventListener('appinstalled',()=>{
 });
 
 render();
+if (cloudConfig) {
+ import('./supabase-sdk.mjs').then(({createClient})=>{
+  cloud = cloudAccount(createPilotClient(createClient,cloudConfig),replaceScreen=>{
+   if (replaceScreen) { editing = null; render(); }
+   else cloudNotice();
+  },()=>repo.read().lang);
+  return cloud.init();
+ }).catch(()=>{
+  const status = $('#cloud-status');
+  status.textContent = t('cloudFailed');
+  status.hidden = false;
+ });
+}
+
+async function refreshReturningAccount() {
+ if (!cloud?.user || cloud.recovery || cloud.busy || !navigator.onLine ||
+     document.visibilityState==='hidden' || screen.querySelector('form')) return;
+ if (await cloud.save('refresh')) render();
+}
+window.addEventListener('online',refreshReturningAccount);
+document.addEventListener('visibilitychange',refreshReturningAccount);
+
 setInterval(refreshTimer,1000);
 setInterval(refreshBanner,30000);
 document.addEventListener('visibilitychange',()=>{refreshTimer();refreshBanner()});

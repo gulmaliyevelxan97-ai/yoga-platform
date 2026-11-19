@@ -1,0 +1,15 @@
+{
+  "name": "restart-cloud-pilot",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.cjs tests/*.test.mjs",
+    "build:pilot": "node scripts/build-cloud-pilot.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.2"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.17",
+    "esbuild": "0.27.0"
+  }
+}
