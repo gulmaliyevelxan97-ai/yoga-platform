@@ -9,6 +9,7 @@ NAV = 'releases/navigation'
 WEEK = 'releases/week'
 entries = {
     'index.html': ('home', 'Не стать другим. Раскрыть себя.'),
+    'founder.html': ('founder', 'Эльхан Гюльмалыев'),
     'about.html': ('about', 'О RESTART'),
     'philosophy.html': ('method', 'Философия'),
     'code.html': ('code', 'Кодекс школы'),
@@ -47,15 +48,29 @@ mast_photos = {
         'sizes="(max-width: 640px) calc(100vw - 5rem), (max-width: 1200px) 38vw, 440px" '
         'width="1188" height="1536" alt="RESTART · Elxan Gülmalıyev" fetchpriority="high">'
     ),
+    'founder': '<img src="./assets/author.webp" width="408" height="510" alt="Elxan Gülmalıyev" fetchpriority="high">',
     'about': '<img src="./assets/author.webp" width="408" height="510" alt="Elxan Gülmalıyev" decoding="async">',
     'method': '<img src="./assets/hero.webp" width="900" height="900" alt="" decoding="async">',
     'programme': '<img src="./assets/performance.webp" width="640" height="800" alt="" decoding="async">',
 }
+# A video is rendered only when the owner-supplied original has been processed.
+portrait_video = 'assets/founder-portrait.mp4'
+has_portrait_video = (ROOT / portrait_video).is_file()
+
 for file, (page,title) in entries.items():
     hero_image = mast_photos.get(page, '')
     actions = '<div class="school-actions" id="home-actions"></div>' if page=='home' else ''
+    page_scripts = script(NAV+'/founder.js') + scripts if page == 'founder' else scripts
+    if page == 'founder' and has_portrait_video:
+        hero_image = (
+            '<div class="founder-portrait">' + hero_image +
+            f'<video data-src="{tag_path(portrait_video)}" poster="./assets/author.webp" '
+            'muted playsinline autoplay loop preload="none" aria-hidden="true"></video></div>'
+        )
+        page_scripts += script(NAV+'/founder-portrait.js')
+
     (ROOT/file).write_text(f'''<!doctype html>
-<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{design}{scripts}</head>
+<html lang="ru"><head>{common_head}<title>{title} · RESTART</title>{design}{page_scripts}</head>
 <body data-page="{page}"><a class="school-skip" href="#top">К содержанию</a>{header.replace('LANG_ID','lang')}
 <main class="school-main" id="top" tabindex="-1">
 <div class="school-mast"><div><small id="kicker"></small><h1 id="headline">{title}</h1><p id="lead"></p>{actions}</div>{hero_image}</div>
@@ -79,6 +94,7 @@ sw = ROOT/'service-worker.js'
 worker = sw.read_text()
 match = re.search(r'const ASSETS = (\[.*?\]);',worker,re.S)
 assets = {a.split('?')[0]:a for a in json.loads(match[1])}
+assets.pop('./'+NAV+'/founder-portrait.js', None)
 for file in [*entries,*studio]:
     assets['./'+file] = './'+file
     for script_or_css in re.findall(r'(?:src|href)="(\./[^"]+\.(?:js|css)\?v=[a-f0-9]+)"',(ROOT/file).read_text()):

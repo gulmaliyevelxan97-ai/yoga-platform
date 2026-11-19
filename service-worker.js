@@ -1,4 +1,4 @@
-const VERSION = '112837d54ea365';
+const VERSION = 'b75c0a11f4664e';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -38,9 +38,9 @@ const ASSETS = [
   "./releases/week/week.js?v=51de9b3e3d82",
   "./releases/week/assessment.js?v=ed5ac0e60ae2",
   "./releases/week/school.js?v=0bcf366fff85",
-  "./releases/navigation/design.css?v=b0adf81b36ef",
-  "./releases/navigation/shell.js?v=b6e579d73695",
-  "./releases/navigation/pages.js?v=c4cc40234ce2",
+  "./releases/navigation/design.css?v=a133c5ff8277",
+  "./releases/navigation/shell.js?v=8c63b89dc71e",
+  "./releases/navigation/pages.js?v=97a825799521",
   "./about.html",
   "./philosophy.html",
   "./code.html",
@@ -53,6 +53,9 @@ const ASSETS = [
   "./practices.html",
   "./releases/navigation/studio-shell.js?v=d14087e4962f",
   "./activity.html",
+  "./founder.html",
+  "./releases/navigation/founder.js?v=ea686e90764e",
+  "./releases/navigation/founder-portrait.js?v=5f783191f25f",
   "./releases/week/content.js",
   "./releases/week/week.js",
   "./releases/week/assessment.js",

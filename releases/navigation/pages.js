@@ -21,9 +21,9 @@ const directions=[
 ];
 
 function homePage(){
- return '<section class="home-explore"><h2>'+t('Исследуйте школу','Məktəblə tanış olun','Explore the school')+'</h2><div class="cards">'+['about','code','practices'].map((key,i)=>'<article class="card"><h3><a href="'+pageUrl(key)+'">'+pageName(key)+'</a></h3><p>'+t(...[
+ return '<section class="home-explore"><h2>'+t('Исследуйте школу','Məktəblə tanış olun','Explore the school')+'</h2><div class="cards">'+['about','founder','practices'].map((key,i)=>'<article class="card"><h3><a href="'+pageUrl(key)+'">'+pageName(key)+'</a></h3><p>'+t(...[
  ['Четыре направления целостной практики.','Bütöv təcrübənin dörd istiqaməti.','Four dimensions of an integrated practice.'],
- ['Десять принципов и примеры их применения.','On prinsip və onların tətbiqinə nümunələr.','Ten principles with practical examples.'],
+ ['Спортивный путь и философия Эльхана Гюльмалыева.','Elxan Gülmalıyevin idman yolu və fəlsəfəsi.','Elxan Gülmalıyev’s athletic background and teaching philosophy.'],
  ['Каталог, видеотека и таймеры.','Kataloq, videokitabxana və taymerlər.','A catalogue, video library and timers.']][i])+'</p></article>').join('')+'</div></section>';
 }
 function pageName(key){return t(...restartPages[key].slice(1))}
@@ -44,7 +44,7 @@ function schoolWeeks(){
  return '<ol class="cards">'+pathway.map((phase,i)=>'<li class="card"><details '+(i===0?'open':'')+'><summary>'+t('Неделя','Həftə','Week')+' '+(i+1)+' · '+t(...phase)+'</summary><p>'+t(...pathwayGoals[i])+'</p></details>'+(i===0?weekStatus()+weekAction()+' <a href="'+pageUrl('calendar')+'">'+pageName('calendar')+'</a>':'<small>'+t('Будущий этап','Gələcək mərhələ','Upcoming stage')+'</small>')+'</li>').join('')+'</ol>';
 }
 function aboutPage(){
- const founder='<p><a class="cta" href="'+pageUrl('practices')+'#founder">'+t('Познакомиться с основателем','Təsisçi ilə tanış olun','Meet the founder')+'</a></p>';
+ const founder='<p><a class="cta" href="'+pageUrl('founder')+'">'+t('Познакомиться с основателем','Təsisçi ilə tanış olun','Meet the founder')+'</a></p>';
  return founder+'<div class="cards">'+directions.map((d,i)=>'<article><h2 id="ph-'+tracks[i].toLowerCase()+'">'+tracks[i]+'</h2><p>'+t(...d)+'</p></article>').join('')+'</div><h2>'+t('Восемь этапов','Səkkiz mərhələ','Eight stages')+'</h2>'+schoolWeeks();
 }
 function myPath(){
@@ -57,8 +57,8 @@ function participation(){
  return '<div class="cards"><article><h2>STANDARD</h2><p>'+t('Базовый формат участия в программе.','Proqramda əsas iştirak formatı.','The core programme option.')+'</p></article><article><h2>PREMIUM</h2><p>'+t('Расширенный формат участия. Состав пакета и даты набора будут объявлены отдельно.','Genişləndirilmiş iştirak formatı. Paketə daxil olan xidmətlər və qəbul tarixləri ayrıca elan ediləcək.','An extended option. Services included and enrolment dates will be announced separately.')+'</p></article></div>'+signup();
 }
 function schoolHeader(page){
- $('#headline').textContent=(headlines[page]?t(...headlines[page]):page==='calendar'?title():pageName(page));
- $('#lead').textContent=pageIntros[page]?t(...pageIntros[page]):'';
+ $('#headline').textContent=(page==='founder'?t('Эльхан Гюльмалыев','Elxan Gülmalıyev','Elxan Gülmalıyev'):headlines[page]?t(...headlines[page]):page==='calendar'?title():pageName(page));
+ $('#lead').textContent=page==='founder'?t(...founderContent.introduction):pageIntros[page]?t(...pageIntros[page]):'';
  $('#kicker').textContent=page==='home'?'RESTART':pageName(page);
  const actions=$('#home-actions');
  if(actions)actions.innerHTML=go('path',t('Мой путь','Mənim yolum','My path'))+go('method',t('Изучить философию','Fəlsəfəni kəşf et','Explore the philosophy')).replace('class="cta"','class="cta secondary"')+go('programme',t('Посмотреть программу','Proqrama bax','View the programme')).replace('class="cta"','class="cta secondary"');
@@ -68,6 +68,7 @@ function routePage(page,dayMatch){
  if(page==='calendar')return dayMatch?day(Number(dayMatch[1])-1):calendar();
  if(page==='home')return homePage();
  if(page==='about')return aboutPage();
+ if(page==='founder')return founderPage();
  if(page==='programme')return schoolWeeks();
  if(page==='path')return myPath();
  if(page==='method')return '<blockquote>'+t('Не стать другим. Раскрыть себя.','Başqasına çevrilmə. Özünü kəşf et.','Discover who you are.')+'</blockquote>'+method();

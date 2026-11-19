@@ -97,3 +97,37 @@ body[data-practice-filter=video] main>section:is(#directions,#courses,#classes,#
   [data-page=home] .school-mast img {max-width:min(78vw,21rem)}
   [data-page=practices] :is(#filters,#videoFilters,#studio) :is(input[type=search],select) {font-size:1rem;min-height:44px}
 }
+
+[data-page=founder] .school-mast img {max-width:21rem}
+.founder-story {margin-block:2rem 3rem}
+.founder-story>section {padding-block:clamp(1.1rem,3vw,2.1rem);border-bottom:1px solid var(--line)}
+.founder-credentials {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:.75rem;list-style:none;padding:0}
+.founder-credentials li {padding:1rem;border:1px solid var(--line);border-radius:.55rem;background:var(--sage)}
+.founder-note {color:#526956;font-size:.92rem}
+.founder-gallery {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:1rem}
+.founder-gallery figure {margin:0;padding:.75rem;background:var(--panel);border:1px solid var(--line);border-radius:.55rem}
+.founder-gallery img {display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain;background:var(--sage);border-radius:.35rem}
+.founder-gallery figcaption {margin-top:.55rem}
+.founder-mission {max-width:67ch}
+.founder-mission .founder-mission-lead {font:400 clamp(1.2rem,3vw,1.65rem)/1.3 var(--display);color:var(--pine)}
+
+[data-page=founder] .school-mast .founder-portrait {
+  position:relative;
+  justify-self:center;
+  width:min(100%,21rem);
+  min-width:0;
+}
+.founder-portrait video {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border-radius:.4rem;
+  object-fit:contain;
+  background:var(--pine);
+  visibility:hidden;
+}
+.founder-portrait.is-playing video { visibility:visible }
+@media(prefers-reduced-motion:reduce) {
+  .founder-portrait.is-playing video { visibility:hidden }
+}

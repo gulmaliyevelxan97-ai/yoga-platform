@@ -2,6 +2,7 @@
 
 const restartPages = {
  home:['','Главная','Ana səhifə','Home'],
+ founder:['founder.html','Основатель RESTART','RESTART-ın təsisçisi','RESTART founder'],
  about:['about.html','О RESTART','RESTART haqqında','About RESTART'],
  method:['philosophy.html','Философия','Fəlsəfə','Philosophy'],
  code:['code.html','Кодекс школы','Məktəbin prinsipləri','School code'],
