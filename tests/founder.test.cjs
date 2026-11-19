@@ -9,7 +9,7 @@ const read = file => fs.readFileSync(path.join(root,file),'utf8');
 test('Founder page links from the school shell and is cached offline', () => {
  const html = read('founder.html');
  assert.match(html, /data-page="founder"/);
- assert.match(html, /src="\.\/assets\/author\.webp"/);
+ assert.match(html, /src="\.\/assets\/founder-nunchaku-first-frame\.webp\?v=/);
  assert.match(read('releases/navigation/shell.js'), /founder:\['founder\.html'/);
  assert.match(read('service-worker.js'), /"\.\/founder\.html"/);
 });
@@ -53,9 +53,12 @@ test('Portrait stays static with reduced motion or rejected autoplay', async () 
  const classes = new Set();
  const media = {matches:true, addEventListener:(_type,callback)=>{updates.motion=callback}};
  let rejectPlay;
+ let frameCallback;
  const video = {
   dataset:{src:'./assets/founder-portrait.mp4'},isConnected:true,
-  hasAttribute:key=>attributes.has(key), removeAttribute:key=>attributes.delete(key), load(){}, pause(){},
+  hasAttribute:key=>key==='data-first-frame'||attributes.has(key),
+  requestVideoFrameCallback(callback){frameCallback=callback;return 1},
+  cancelVideoFrameCallback(){frameCallback=undefined}, removeAttribute:key=>attributes.delete(key), load(){}, pause(){},
   set src(value){attributes.set('src',value)},
   addEventListener:(type,callback)=>{events[type]=callback},
   play:()=>new Promise((_resolve,reject)=>{rejectPlay=reject})
@@ -74,6 +77,8 @@ test('Portrait stays static with reduced motion or rejected autoplay', async () 
  await Promise.resolve();
  assert.equal(classes.has('is-playing'),false);
  events.playing();
+ assert.equal(classes.has('is-playing'),false);
+ frameCallback();
  assert.equal(classes.has('is-playing'),true);
  media.matches=true;
  updates.motion();
@@ -81,13 +86,17 @@ test('Portrait stays static with reduced motion or rejected autoplay', async () 
  assert.equal(classes.has('is-playing'),false);
 });
 
-test('Generated hero uses the photo alone until video is available', () => {
+test('Generated hero only uses the extracted frame while the video loads', () => {
  const hasVideo = fs.existsSync(path.join(root,'assets/founder-portrait.mp4'));
  const html = read('founder.html');
- assert.match(html,/class="school-mast"[^]*src="\.\/assets\/author\.webp"/);
+
  if (!hasVideo) assert.doesNotMatch(html,/<video|founder-portrait\.mp4/);
  else {
-  assert.match(html,/<video [^>]*poster="\.\/assets\/author\.webp" muted playsinline autoplay loop preload="none"/);
+  assert.doesNotMatch(html,/src="\.\/assets\/author\.webp"/);
+  const frame=html.match(/<img src="([^"]*founder-nunchaku-first-frame[^"]*)"/)[1];
+  assert.ok(html.includes('poster="'+frame+'"'));
+  assert.ok(read('service-worker.js').includes(frame));
+  assert.match(html,/<video [^>]*poster="[^"]+" muted playsinline autoplay loop preload="none"/);
   assert.doesNotMatch(html,/<video [^>]*\scontrols[\s=>]/);
   assert.match(html,/Мастер владения нунчаками/);
   assert.match(html,/Nunçaku ustası/);

@@ -19,7 +19,12 @@
       const video = portrait.querySelector('video');
       if (!video || players.has(video)) continue;
 
+      let frameRequest;
       function showPoster() {
+        if (frameRequest !== undefined) {
+          video.cancelVideoFrameCallback(frameRequest);
+          frameRequest = undefined;
+        }
         portrait.classList.remove('is-playing');
       }
 
@@ -40,7 +45,17 @@
       }
 
       video.addEventListener('playing', () => {
-        if (!motion.matches) portrait.classList.add('is-playing');
+        if (motion.matches) return;
+        if (video.hasAttribute('data-first-frame') && typeof video.requestVideoFrameCallback === 'function') {
+          if (frameRequest === undefined) {
+            frameRequest = video.requestVideoFrameCallback(() => {
+              frameRequest = undefined;
+              if (!motion.matches && !video.paused && video.isConnected) portrait.classList.add('is-playing');
+            });
+          }
+        } else {
+          portrait.classList.add('is-playing');
+        }
       });
       video.addEventListener('error', showPoster);
       video.addEventListener('pause', showPoster);

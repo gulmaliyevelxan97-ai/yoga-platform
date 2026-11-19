@@ -1,4 +1,4 @@
-const VERSION = '54a9f0ff4d054a';
+const VERSION = 'afc8c67073cb3b';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -53,12 +53,13 @@ const ASSETS = [
   "./activity.html",
   "./founder.html",
   "./releases/navigation/founder.js?v=61ff41f268dc",
-  "./releases/navigation/founder.css?v=60ab97ecc514",
+  "./releases/navigation/founder.css?v=51c01721fad4",
   "./releases/navigation/about.css?v=bc6f237b17f3",
   "./releases/navigation/about.js?v=94735e723006",
   "./releases/navigation/school-public.js?v=2f83392d5082",
   "./releases/navigation/school-runtime.js?v=06ffaf7e19b4",
-  "./releases/navigation/founder-portrait.js?v=024fc05304f0"
+  "./assets/founder-nunchaku-first-frame.webp?v=002fc08f6759",
+  "./releases/navigation/founder-portrait.js?v=d9db613f69c0"
 ];
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'restart-shell:' + scope.pathname + ':';

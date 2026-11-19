@@ -74,3 +74,17 @@ html:not([lang=en]) .founder-motion-title [lang=en] {
   border: 1px solid var(--line);
   border-radius: .75rem;
 }
+
+[data-page=founder] .school-mast .founder-motion .founder-portrait img {
+  aspect-ratio: 4 / 5;
+  height: auto;
+}
+.founder-motion .founder-portrait video {
+  visibility: visible;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+.founder-motion .founder-portrait.is-playing video { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .founder-motion .founder-portrait.is-playing video { visibility: hidden; }
+}

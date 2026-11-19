@@ -59,6 +59,7 @@ mast_photos = {
 # A video is rendered only when the owner-supplied original has been processed.
 portrait_video = 'assets/founder-portrait.mp4'
 has_portrait_video = (ROOT / portrait_video).is_file()
+portrait_frame = 'assets/founder-nunchaku-first-frame.webp'
 
 for file, (page,title) in entries.items():
     hero_image = mast_photos.get(page, '')
@@ -73,8 +74,9 @@ for file, (page,title) in entries.items():
         page_design += f'<link rel="stylesheet" href="{tag_path(NAV+"/founder.css")}">'
     if page == 'founder' and has_portrait_video:
         hero_image = (
-            '<figure class="founder-motion"><div class="founder-portrait">' + hero_image +
-            f'<video data-src="{tag_path(portrait_video)}" poster="./assets/author.webp" '
+            '<figure class="founder-motion"><div class="founder-portrait">'
+            f'<img src="{tag_path(portrait_frame)}" width="540" height="960" alt="Elxan Gülmalıyev" fetchpriority="high">'
+            f'<video data-first-frame data-src="{tag_path(portrait_video)}" poster="{tag_path(portrait_frame)}" '
             'muted playsinline autoplay loop preload="none" aria-hidden="true"></video></div>'
             '<figcaption><h2 class="founder-motion-title"><span lang="ru">Мастер владения нунчаками</span>'
             '<span lang="az">Nunçaku ustası</span><span lang="en">Nunchaku practitioner</span></h2></figcaption></figure>'
@@ -106,6 +108,9 @@ worker = sw.read_text()
 match = re.search(r'const ASSETS = (\[.*?\]);',worker,re.S)
 assets = {a.split('?')[0]:a for a in json.loads(match[1])}
 assets.pop('./'+NAV+'/founder-portrait.js', None)
+assets.pop('./'+portrait_frame, None)
+if has_portrait_video:
+    assets['./'+portrait_frame] = tag_path(portrait_frame)
 for file in [*entries,*studio]:
     assets['./'+file] = './'+file
     for script_or_css in re.findall(r'(?:src|href)="(\./[^"]+\.(?:js|css)\?v=[a-f0-9]+)"',(ROOT/file).read_text()):
