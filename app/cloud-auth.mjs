@@ -129,7 +129,9 @@ export function cloudAccount(client, onChange, guestLocale) {
      history.replaceState(null,'',url.pathname+'#account');
      if (callbackError || !code) notice = 'cloudLinkFailed';
      else {
-      const {data,error} = await auth.exchangeCodeForSession(code);
+      // Keep the SDK's PKCE flow identifier after removing callback parameters from the URL.
+      const flowId = url.searchParams.get('sb_flow_id');
+      const {data,error} = await auth.exchangeCodeForSession(code, flowId === null ? undefined : {flowId});
       if (error) notice = 'cloudLinkFailed';
       else await adopt(data.session,data.redirectType==='recovery');
      }
