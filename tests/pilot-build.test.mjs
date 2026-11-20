@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {mkdtemp, readFile, cp, symlink, rm, mkdir} from 'node:fs/promises';
+import {mkdtemp, readFile, writeFile, cp, symlink, rm, mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -17,9 +17,16 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
   }
   await symlink(path.join(root,'node_modules'),path.join(dir,'node_modules'),'dir');
   // Offline packaging fixtures only. No connection is made to a Supabase project.
-  execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],{cwd:dir,env:{...process.env,
+  await writeFile(path.join(dir,'app','.env.local'),'fixture-private-file');
+  await writeFile(path.join(dir,'assets/pwa','draft.txt'),'fixture-draft');
+  const buildOptions={cwd:dir,env:{...process.env,RESTART_PILOT_OUTPUT:'dist',
    RESTART_SUPABASE_URL:'https://offline-build-fixture.supabase.co',
-   RESTART_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_offline_fixture'}});
+   RESTART_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_offline_fixture'}};
+  execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],buildOptions);
+  await assert.rejects(readFile(path.join(dir,'dist/app/.env.local')),{code:'ENOENT'});
+  await assert.rejects(readFile(path.join(dir,'dist/assets/pwa/draft.txt')),{code:'ENOENT'});
+  assert.throws(()=>execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],
+   {...buildOptions,stdio:'pipe'}),{message:/Pilot output already exists/});
   const script = await readFile(path.join(dir,'dist/app/sw.js'),'utf8');
   const scope = 'https://staging.invalid/app/';
   const handlers = {};
