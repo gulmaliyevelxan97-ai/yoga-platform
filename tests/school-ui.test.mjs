@@ -42,3 +42,16 @@ test('A closed session cannot render private school records',async()=>{
  assert.equal(html,undefined);
  assert.deepEqual(calls,[]);
 });
+
+test('Instructor lesson editor preselects the saved type and position',async()=>{
+ const {html}=await render({role:'instructor',route:{name:'staff',id:'p'},rows:{
+  restart_programs:[{id:'p',title:'Program',status:'draft',instructor_id:'test'}],
+  restart_modules:[{id:'m',title:'Module'}],
+  restart_lessons:[{id:'lesson',title:'Practice',module_id:'m',body:'Keep this text',kind:'practice',position:3}]
+ }});
+ const editor=html.match(/<form [^>]*data-school="edit".*?<\/form>/)?.[0];
+ assert(editor);
+ assert.match(editor,/name="position"[^>]*value="3"/);
+ assert.match(editor,/<option value="practice" selected>/);
+ assert.match(editor,/Keep this text/);
+});

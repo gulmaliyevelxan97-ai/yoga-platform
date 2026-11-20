@@ -3,6 +3,7 @@ import {classVenueField,classLocationFields,classDetailMarkup,classCalendarLink,
 import {schoolNotices, saveLessonPreference} from './school-notices.mjs';
 export const schoolStrings = {
  ...academyCopy,
+ lessonPositionTaken:['Эта позиция уже занята в модуле. Выберите другую.','Bu sıra nömrəsi modulda artıq istifadə olunur. Başqa nömrə seçin.','This position is already taken in the module. Choose another.'],
  resumeLesson:['Продолжить обучение','Öyrənməyə davam et','Continue learning'],
  revokeEnrollment:['Отозвать доступ','Girişi ləğv et','Revoke access'],
  student:['Ученик','Şagird','Student'],
@@ -45,7 +46,11 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
  const empty = '<p class="muted">'+t('schoolEmpty')+'</p>';
  const input = (key,name,attrs='') => '<label>'+t(key)+'<input required name="'+name+'" '+attrs+'></label>';
  const titleInput = input('schoolTitle','title','maxlength="180"');
- const position = input('order','position','type="number" min="1" step="1"');
+ const lessonFields = ({position,kind,body} = {}) =>
+  input('order','position','type="number" min="1" max="2147483647" step="1" value="'+esc(position ?? '')+'"')+
+  '<label>'+t('kind')+'<select name="kind">'+['lesson','practice','assignment'].map(option=>
+   '<option value="'+option+'"'+(option===kind?' selected':'')+'>'+t(option==='practice'?'practiceType':option)+'</option>').join('')+
+  '</select></label><label>'+t('body')+'<textarea name="body" maxlength="50000">'+esc(body ?? '')+'</textarea></label>';
  const form = (action,label,fields='',key='') => '<form class="panel" data-school="'+action+'" data-key="'+esc(key)+'">'+fields+'<button>'+t(label)+'</button></form>';
  const date = value => new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
  let busy = false;
@@ -58,7 +63,7 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   const staff = route.name==='staff';
   const editing = staff && (role==='admin' || (program.status==='draft' && program.instructor_id===user));
   const modules = await data(table('modules').select('id,title').eq('program_id',program.id).order('position'));
-  const lessons = modules.length ? await data(table('lessons').select('id,module_id,title,body,kind').in('module_id',modules.map(m=>m.id)).order('position')) : [];
+  const lessons = modules.length ? await data(table('lessons').select('id,module_id,title,body,kind,position').in('module_id',modules.map(m=>m.id)).order('position')) : [];
   const done = lessons.length && !staff ? await data(table('lesson_progress').select('lesson_id,completed_at').eq('user_id',user).in('lesson_id',lessons.map(l=>l.id))) : [];
   const completed = new Set(done.map(d=>d.lesson_id));
   let html = link(route.name,'schoolPrograms')+'<h2>'+esc(program.title)+'</h2>'+programmeCardInfo(program,t,esc);
@@ -79,13 +84,13 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
    for (const l of lessons.filter(l=>l.module_id===m.id)) {
     html+='<details class="panel" data-lesson="'+esc(l.id)+'"><summary>'+esc(l.title)+(completed.has(l.id)?' ✓':'')+'</summary><p>'+esc(l.body).replace(/\n/g,'<br>')+'</p>';
     if (!staff && !completed.has(l.id)) html+=form('complete','completeLesson','',l.id);
-    if (editing) html+=form('edit','lessonEdit','<label>'+t('schoolTitle')+'<input name="title" required maxlength="180" value="'+esc(l.title)+'"></label><label>'+t('body')+'<textarea name="body" maxlength="50000">'+esc(l.body)+'</textarea></label>',l.id);
+    if (editing) html+=form('edit','lessonEdit',input('schoolTitle','title','maxlength="180" value="'+esc(l.title)+'"')+lessonFields(l),l.id);
     html+='</details>';
    }
-   if (editing) html+=form('lesson','addLesson',titleInput+position+'<label>'+t('kind')+'<select name="kind">'+['lesson','practice','assignment'].map(k=>'<option value="'+k+'">'+t(k==='practice'?'practiceType':k)+'</option>').join('')+'</select></label><label>'+t('body')+'<textarea name="body" maxlength="50000"></textarea></label>',m.id);
+   if (editing) html+=form('lesson','addLesson',titleInput+lessonFields(),m.id);
    html+='</section>';
   }
-  return html+(editing?form('module','addModule',titleInput+position,program.id):'');
+  return html+(editing?form('module','addModule',titleInput+input('order','position','type="number" min="1" step="1"'),program.id):'');
  }
  const select = (label,name,values) => '<label>'+t(label)+'<select name="'+name+'">'+values.map(v=>'<option value="'+v+'">'+t(v)+'</option>').join('')+'</select></label>';
  async function management() {
@@ -154,6 +159,7 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   const key=f.dataset.key, action=f.hasAttribute('data-lesson-notices')?'noticePref':f.dataset.school, values=Object.fromEntries(new FormData(f));
   if(key && !uuid.test(key)) return;
   busy=true;
+  f.querySelector('[role=alert]')?.remove();
   f.querySelector('button').disabled=true;
   try {
    if ((await client.auth.getSession()).data.session?.user.id!==user || !current()) return;
@@ -192,15 +198,16 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
     case 'publish': case 'archive': await data(table('programs').update({status:action==='publish'?'published':'archived'}).eq('id',key).select('id').single()); break;
     case 'module': await data(table('modules').insert({program_id:key,title:values.title,position:Number(values.position)})); break;
     case 'lesson': await data(table('lessons').insert({module_id:key,title:values.title,body:values.body,position:Number(values.position),kind:values.kind})); break;
-    case 'edit': await data(table('lessons').update({title:values.title,body:values.body}).eq('id',key).select('id').single()); break;
+    case 'edit': await data(table('lessons').update({title:values.title,body:values.body,position:Number(values.position),kind:values.kind}).eq('id',key).select('id').single()); break;
     default: return;
    }
    await load();
   } catch (failure) {
-   if(current() && failure.message==='courseConflict') {
+   const lessonPositionTaken = (action==='edit' || action==='lesson') && failure.code==='23505';
+   if(current() && (failure.message==='courseConflict' || lessonPositionTaken)) {
     const alert=f.querySelector('[role=alert]') || f.appendChild(document.createElement('p'));
     alert.setAttribute('role','alert');
-    alert.textContent=t('courseConflict');
+    alert.textContent=t(lessonPositionTaken?'lessonPositionTaken':'courseConflict');
    } else if(current()) error();
   }
   finally {busy=false;f.querySelector('button').disabled=false;}
