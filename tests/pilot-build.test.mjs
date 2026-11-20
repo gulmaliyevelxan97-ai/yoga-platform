@@ -50,7 +50,7 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
    'https://offline-build-fixture.supabase.co/rest/v1/restart_journal',
    scope+'rest/v1/restart_journal', scope+'cloud-config.mjs?auth=private'
   ]) {
-   handlers.fetch({request:{url,method:'GET',mode:'cors'},
+   handlers.fetch({request:new Request(url),
     respondWith:()=>assert.fail('Worker intercepted a private or non-shell request')});
   }
   assert(requests.includes(scope+'supabase-sdk.mjs'));

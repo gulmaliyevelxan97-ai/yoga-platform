@@ -78,11 +78,40 @@ test('Manifest and worker use the app scope, use existing RESTART assets and exc
   assert(!captures.includes(new URL('../assets/hero.webp',scope).href));
   assert(captures.every(url=>url.startsWith(scope)||url.startsWith('https://example.test/yoga-platform/assets/')));
   let response;
-  handlers.fetch({request:{method:'GET',mode:'navigate',url:scope},respondWith:value=>{response=value;}});
+  handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:scope},respondWith:value=>{response=value;}});
   assert.equal(await response,'offline-shell');
   for (const external of ['../about.html','../releases/week/content.js','../week-one.html']) {
-   handlers.fetch({request:{method:'GET',mode:'navigate',url:new URL(external,scope).href},respondWith:()=>assert.fail(external)});
+   handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:new URL(external,scope).href},respondWith:()=>assert.fail(external)});
   }
+  handlers.fetch({request:new Request(scope+'index.html',{headers:{Range:'bytes=0-12'}}),
+   respondWith:()=>assert.fail('Range requests require an origin response')});
+  handlers.fetch({request:new Request(scope+'rest/v1/restart_journal'),
+   respondWith:()=>assert.fail('The worker must bypass private data routes')});
   assert.doesNotMatch(read('app/index.html')+read('app/ui.mjs'),/gtag|googletagmanager|google-analytics/i);
  });
+});
+
+test('Only app windows can activate a waiting app worker', async () => {
+ const handlers = {};
+ const scope = 'https://example.test/yoga-platform/app/';
+ let updates=0;
+ runInNewContext(read('app/sw.js'),{
+  URL, self:{registration:{scope},skipWaiting:async()=>{updates++;},
+  addEventListener:(name,handler)=>{handlers[name]=handler;}}
+ });
+ const post=(source,type='ACTIVATE')=>{
+  let pending;
+  handlers.message({data:{type},source,waitUntil:promise=>{pending=promise;}});
+  return pending;
+ };
+ await post(null);
+ await post({type:'worker',url:scope});
+ await post({type:'window',url:'https://example.test/yoga-platform/'});
+ await post({type:'window',url:'https://other.example/yoga-platform/app/'});
+ await post({type:'window',url:scope},'OTHER');
+ assert.equal(updates,0);
+ await post({type:'window',url:scope+'#journal'});
+ assert.equal(updates,1);
+ await post({type:'window',url:scope+'index.html?code=fixture#account'});
+ assert.equal(updates,2);
 });
