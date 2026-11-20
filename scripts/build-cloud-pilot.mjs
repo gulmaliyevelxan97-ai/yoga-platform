@@ -23,6 +23,12 @@ if (verifyOnly) {
  process.exit(0);
 }
 const url = new URL(projectUrl);
+if (process.argv.includes('--staging')) {
+ const stagingRef = process.env.RESTART_STAGING_PROJECT_REF || '';
+ if (!/^[a-z0-9]{20}$/.test(stagingRef) || url.hostname !== stagingRef+'.supabase.co') {
+  throw Error('Staging build requires RESTART_STAGING_PROJECT_REF from the restart-staging dashboard and a matching project URL.');
+ }
+}
 const out = pathToFileURL(resolve(root, process.env.RESTART_PILOT_OUTPUT || 'dist') + '/');
 // A fresh output folder prevents stale files from becoming part of the pilot.
 try {

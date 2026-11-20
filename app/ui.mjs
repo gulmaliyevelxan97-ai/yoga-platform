@@ -14,10 +14,14 @@ const repo = localRepository();
 const seenReminderKey = 'restart.notification.seen.v1';
 let seenReminders = new Set();
 let activeReminder;
-try {
- const items = JSON.parse(localStorage.getItem(seenReminderKey));
- if (Array.isArray(items)) seenReminders = new Set(items.filter(item=>typeof item==='string').slice(-12));
-} catch {}
+function syncSeenReminders() {
+ try {
+  const items = JSON.parse(localStorage.getItem(seenReminderKey));
+  if (Array.isArray(items)) {
+   seenReminders = new Set([...seenReminders,...items.filter(item=>typeof item==='string')].sort().slice(-12));
+  }
+ } catch {}
+}
 
 let cloud;
 let pilotClient;
@@ -111,7 +115,8 @@ function route() {
  if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
  if (cloudConfig && ['academy','classes','staff'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
- return {name: [...tabs, 'journal', 'schedule', 'mentor', 'week'].includes(name) ? name : 'today'};
+ if (name === 'week') return {name, id:/^\d{4}-\d{2}-\d{2}$/.test(id) ? id : undefined};
+ return {name: [...tabs, 'journal', 'schedule', 'mentor'].includes(name) ? name : 'today'};
 }
 
 function sampleClass(date) {
@@ -344,7 +349,7 @@ function setActive(active) {
  else repo.write({active});
 }
 
-const week = () => renderWeeklyProgram({lang:lang(),sessions:state().sessions});
+const week = selectedDate => renderWeeklyProgram({lang:lang(),sessions:state().sessions,selectedDate});
 const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account, academy, week};
 
 function refreshBanner() {
@@ -359,12 +364,13 @@ function refreshBanner() {
  if (!repo.available) messages.push(t('storageError'));
  const plan = readNotificationPlan();
  const due = dueNotifications(plan,{now,windowMinutes:10});
- if (!due.some(item=>item.id===activeReminder?.id)) activeReminder = null;
+ activeReminder = due.find(item=>item.id===activeReminder?.id);
+ if (due.length) syncSeenReminders();
  const pending = due.filter(item=>!seenReminders.has(item.id));
  if (pending.length && document.visibilityState==='visible') {
   activeReminder = pending.at(-1);
   for (const item of pending) seenReminders.add(item.id);
-  seenReminders = new Set([...seenReminders].slice(-12));
+  seenReminders = new Set([...seenReminders].sort().slice(-12));
   try {localStorage.setItem(seenReminderKey,JSON.stringify([...seenReminders]));} catch {}
  }
  if (activeReminder) {
@@ -449,15 +455,26 @@ $('#language').addEventListener('change', async event=>{
  }
 });
 
+function focusWeekDay(current) {
+ const day = current.name==='week' && current.id && document.getElementById('week/'+current.id);
+ if (!day) return false;
+ day.focus({preventScroll:true});
+ day.scrollIntoView({block:'start'});
+ return true;
+}
+
 window.addEventListener('hashchange',()=>{
  editing = null;
- if (route().name==='schedule') {
+ const current = route();
+ if (current.name==='schedule') {
   selectedDay = dateKey(nextClass(new Date())?.date || new Date());
   scheduleOffset = weekStart(fromDateKey(selectedDay)).getTime() > weekStart(new Date()).getTime() ? 1 : 0;
  }
  render();
- screen.focus();
- window.scrollTo(0,0);
+ if (!focusWeekDay(current)) {
+  screen.focus();
+  window.scrollTo(0,0);
+ }
 });
 
 function setScheduleDay(day) {
@@ -639,6 +656,7 @@ window.addEventListener('appinstalled',()=>{
 });
 
 render();
+focusWeekDay(route());
 if (cloudConfig) {
  import('./supabase-sdk.mjs').then(({createClient})=>{
   pilotClient = createPilotClient(createClient,cloudConfig);
