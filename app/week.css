@@ -69,3 +69,27 @@
 @media (max-width:390px) {
  .week-jump {grid-template-columns:repeat(4,minmax(44px,1fr))}
 }
+.week-jump a {
+ position:relative;
+}
+.week-jump-check {
+ position:absolute;
+ inset-block-start:.24rem;
+ inset-inline-end:.3rem;
+ color:var(--gold);
+}
+.week-day[data-selected] {
+ border-color:var(--gold);
+ background:var(--active-surface,var(--surface));
+}
+@media (hover:hover) {
+ .week-jump a:hover {
+  border-color:var(--gold);
+  color:var(--paper);
+ }
+}
+@media (prefers-reduced-motion:no-preference) {
+ .week-jump a {transition:background-color .16s ease,border-color .16s ease}
+ .week-day[data-selected] {animation:week-day-arrival .2s ease-out}
+ @keyframes week-day-arrival {from {transform:translateY(3px)}}
+}
