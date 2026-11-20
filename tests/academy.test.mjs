@@ -14,7 +14,7 @@ test('Academy protects drafts, enrollments, progress, roles and journals indepen
     create function auth.jwt() returns jsonb language sql stable as $$select current_setting('test.jwt',true)::jsonb$$;
     grant usage on schema auth to authenticated;`);
   const dir=new URL('../supabase/migrations/',import.meta.url);
-  for(const file of (await readdir(dir)).filter(f=>f<='20261120000400_academy.sql').sort()){
+  for(const file of (await readdir(dir)).filter(f=>f<='20261120000700_programme_details.sql').sort()){
    await db.exec(await readFile(new URL(file,dir),'utf8'));
   }
   const query=async(sql,params=[]) => (await db.query(sql,params)).rows;
@@ -27,6 +27,12 @@ test('Academy protects drafts, enrollments, progress, roles and journals indepen
   const denied={code:'42501'};
   await signIn(teacher);
   const [{id:program}]=await query("insert into restart_programs(title) values('Fixture') returning id");
+  const details = "update restart_programs set summary=$1,direction='mind',minutes=25,level='beginner' where id=$2 and revision=$3 returning revision";
+  assert.deepEqual(await query(details,['Reflection',program,1]),[{revision:2}]);
+  assert.deepEqual(await query(details,['Stale text',program,1]),[]);
+  await assert.rejects(query('update restart_programs set minutes=0 where id=$1',[program]),{code:'23514'});
+  await assert.rejects(query("update restart_programs set direction='other' where id=$1",[program]),{code:'23514'});
+  await assert.rejects(query('update restart_programs set revision=1 where id=$1',[program]),denied);
   const [{id:module}]=await query("insert into restart_modules(program_id,title,position) values($1,'Module',1) returning id",[program]);
   const [{id:lesson}]=await query("insert into restart_lessons(module_id,title,position) values($1,'Lesson',1) returning id",[module]);
   await assert.rejects(query("update restart_programs set status='published' where id=$1",[program]),denied);
@@ -49,6 +55,8 @@ test('Academy protects drafts, enrollments, progress, roles and journals indepen
   assert.equal((await query('select * from restart_lessons')).length,0);
   await signIn(student);
   assert.equal((await query('select id from restart_lessons'))[0].id,lesson);
+  assert.deepEqual(await query('select summary,direction,minutes from restart_programs'),[{summary:'Reflection',direction:'mind',minutes:25}]);
+  assert.deepEqual(await query(details,['Unauthorized',program,3]),[]);
   await query('insert into restart_lesson_progress(lesson_id) values($1)',[lesson]);
   await assert.rejects(query('insert into restart_lesson_progress(lesson_id) values($1)',[lesson]),{code:'23505'});
   await query("insert into restart_journal(client_id,entry_date,notes) values(gen_random_uuid(),current_date,'Private fixture')");

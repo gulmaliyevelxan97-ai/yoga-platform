@@ -5,6 +5,14 @@ export const createPilotClient = (createClient, config) => createClient(config.u
  auth:{flowType:'pkce',detectSessionInUrl:false,storageKey:'restart.cloud.auth.v1'}
 });
 
+function authNotice(error, kind) {
+ if (error?.status === 429) return 'cloudRateLimited';
+ if (kind === 'login' && error?.code === 'invalid_credentials') return 'cloudLoginInvalid';
+ if (kind === 'login' && error?.code === 'email_not_confirmed') return 'cloudConfirmEmail';
+ if (error?.name === 'AuthRetryableFetchError' || error instanceof TypeError) return 'cloudConnection';
+ return 'cloudFailed';
+}
+
 export function cloudAccount(client, onChange, guestLocale) {
  const auth = client.auth;
  let user = null;
@@ -26,7 +34,10 @@ export function cloudAccount(client, onChange, guestLocale) {
 
  async function adopt(session, isRecovery = false) {
   const nextUser = session?.user ?? null;
-  if (user?.id === nextUser?.id && recovery === isRecovery) return;
+  if (user?.id === nextUser?.id && recovery === isRecovery) {
+   user = nextUser;
+   return;
+  }
   epoch++;
   journalDraft = null;
   notice = '';
@@ -70,8 +81,8 @@ export function cloudAccount(client, onChange, guestLocale) {
    else if (response.data?.session) await adopt(response.data.session);
    notice = user && !state && !recovery ? 'cloudLoadFailed' : successMessage[kind];
    return true;
-  } catch {
-   notice = 'cloudFailed';
+  } catch (error) {
+   notice = authNotice(error,kind);
    return false;
   } finally {
    busy = false;
@@ -124,25 +135,29 @@ export function cloudAccount(client, onChange, guestLocale) {
    try {
     const url = new URL(location.href);
     const code = url.searchParams.get('code');
-    if (code || url.searchParams.has('error') || url.searchParams.has('error_code')) {
-     const callbackError = url.searchParams.has('error') || url.searchParams.has('error_code');
+    const fragment = new URLSearchParams(url.hash.slice(1));
+    const callbackError = [url.searchParams,fragment].some(params=>
+     params.has('error') || params.has('error_code') || params.has('access_token') || params.has('refresh_token'));
+    let linkFailed = false;
+    if (url.searchParams.has('code') || callbackError) {
      history.replaceState(null,'',url.pathname+'#account');
-     if (callbackError || !code) notice = 'cloudLinkFailed';
+     if (callbackError || !code) linkFailed = true;
      else {
       // Keep the SDK's PKCE flow identifier after removing callback parameters from the URL.
       const flowId = url.searchParams.get('sb_flow_id');
       const {data,error} = await auth.exchangeCodeForSession(code, flowId === null ? undefined : {flowId});
-      if (error) notice = 'cloudLinkFailed';
+      if (error) linkFailed = true;
       else await adopt(data.session,data.redirectType==='recovery');
      }
     }
     const {data,error} = await auth.getSession();
     if (error) throw error;
     await adopt(data.session,!!data.session && sessionStorage.getItem(recoveryKey)===data.session.user.id);
+    if (linkFailed) notice = 'cloudLinkFailed';
    } catch { notice = 'cloudFailed'; }
    finally {
     auth.onAuthStateChange((event,session)=>{
-     if (event === 'INITIAL_SESSION' || event === 'USER_UPDATED') return;
+     // INITIAL_SESSION reconciles changes between getSession() and subscription.
      // Supabase holds its auth lock while notifying listeners.
      setTimeout(()=>void adopt(session,!!session && (event==='PASSWORD_RECOVERY' ||
       sessionStorage.getItem(recoveryKey)===session.user.id)).catch(()=>{notice='cloudFailed';onChange(false);}),0);

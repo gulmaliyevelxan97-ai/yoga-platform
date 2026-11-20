@@ -117,3 +117,6 @@ textarea{resize:vertical}
  .today-practice,.mentor-hero{animation:app-intro .36s ease-out}
  @keyframes app-intro{from{opacity:.84;transform:translateY(4px)}}
 }
+
+.skip-to-content{position:fixed;top:max(.5rem,env(safe-area-inset-top));left:1rem;z-index:10;transform:translateY(-200%)}
+.skip-to-content:focus{transform:none}

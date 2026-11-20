@@ -1,3 +1,5 @@
+import {renderPersonalPlan,submitPersonalPlan,suggestedPracticeId} from './personal-plan.mjs';
+import {renderPracticeTrends,renderJournalFilter,filterJournal,journalEmptyLabel} from './progress-view.mjs';
 import {schoolPage, schoolStrings} from './school.mjs';
 import cloudConfig from './cloud-config.mjs';
 import {cloudAccount, createPilotClient} from './cloud-auth.mjs';
@@ -11,6 +13,10 @@ let cloud;
 let pilotClient;
 let renderSequence = 0;
 const screen = $('#screen');
+$('#skip-to-content').addEventListener('click',()=>{
+ screen.focus();
+ screen.scrollIntoView({block:'start'});
+});
 const tabs = ['today', 'practices', 'path', 'journal', 'profile'];
 const icons = {
  today:'M3 10l9-7 9 7v10H3z M9 20v-6h6v6', practices:'M4 12h16 M12 4v16 M6.4 6.4l11.2 11.2 M17.6 6.4L6.4 17.6',
@@ -37,6 +43,7 @@ let filter = 'all';
 let selectedDay = dateKey();
 let scheduleOffset = 0;
 let editing = null;
+let journalPeriod = 'all';
 let installPrompt;
 let waitingWorker;
 let applyingUpdate = false;
@@ -67,7 +74,7 @@ function nextClass(now) {
 function today() {
  const now = new Date();
  const current = state();
- const suggested = itemFor(current.active?.id) || catalog[now.getDay() % catalog.length];
+ const suggested = itemFor(current.active?.id) || itemFor(suggestedPracticeId(now)) || catalog[now.getDay() % catalog.length];
  const next = nextClass(now);
  const stats = metrics(current.sessions, now);
  return `
@@ -79,7 +86,7 @@ function today() {
  <div class="home-grid">
  <article class="panel goal-card"><p class="eyebrow">${t('progress')}</p><h2>${stats.week} <span class="muted">/ ${current.goal}</span></h2>
  <progress aria-label="${t('progress')}" value="${stats.week}" max="${current.goal}"></progress><a class="link" href="#path">${t('goal')} <span aria-hidden="true">→</span></a></article>
- ${next ? `<article class="panel next-card"><p class="eyebrow">${t('next')}</p><h2>${t('classTitle')}</h2>
+ ${next && !cloud?.user ? `<article class="panel next-card"><p class="eyebrow">${t('next')}</p><h2>${t('classTitle')}</h2>
  <p>${esc(dateText(next.date,{day:'numeric',month:'short'}))} · ${localTime(next)}</p><a class="link" href="#schedule">${t('sample')} <span aria-hidden="true">→</span></a></article>` : ''}
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
@@ -122,6 +129,8 @@ function path() {
   const label = dateLabel(dateKey(day)) + (done ? ' · '+t('completed') : '');
   return '<li title="'+esc(label)+'" aria-label="'+esc(label)+'" class="'+(done?'done':'')+'">'+day.getDate()+(done?' <span aria-hidden="true">✓</span>':'')+'</li>';
  }).join('')}</ol></article>
+ ${renderPracticeTrends(current.sessions,lang())}
+ ${renderPersonalPlan(lang())}
  <form id="goal-form" class="panel"><h2>${t('goal')}</h2><label>${t('goalField')}<input type="number" name="goal" min="1" max="99" value="${current.goal}" required></label><button class="cta">${t('save')}</button></form>
  <article class="panel"><h2>${t('history')}</h2>${history?'<ul class="history">'+history+'</ul>':'<p class="muted">'+t('noSessions')+'</p>'}</article>`;
 }
@@ -138,11 +147,12 @@ function journal() {
  ${fields.map(key=>`<label>${t(key)}<textarea name="${key}" rows="2" maxlength="2000">${esc(current[key])}</textarea></label>`).join('')}
  <div class="actions"><button class="cta">${t('save')}</button>${(editing||draft)?`<button type="button" data-action="cancel-edit">${t('cancel')}</button>`:''}</div></form>
  <h2>${t('entries')}</h2>
- ${[...state().journal].sort((a,b)=>b.date.localeCompare(a.date)).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
+ ${renderJournalFilter(journalPeriod,lang())}
+ ${filterJournal(state().journal,journalPeriod).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
  <dl>${[...scales,...fields].filter(key=>entry[key]&&entry[key]!=='0').map(key=>{
   const value = scales.includes(key) ? t(levels[Number(entry[key])]||'unset') : esc(entry[key]);
   return `<dt>${t(key)}</dt><dd>${value}</dd>`;
- }).join('')}</dl><div class="actions"><button data-edit="${esc(entry.id)}">${t('edit')}</button><button data-remove="${esc(entry.id)}">${t('remove')}</button></div></article>`).join('') || '<p class="muted">'+t('emptyNotes')+'</p>'}`;
+ }).join('')}</dl><div class="actions"><button data-edit="${esc(entry.id)}">${t('edit')}</button><button data-remove="${esc(entry.id)}">${t('remove')}</button></div></article>`).join('') || '<p class="muted">'+esc(journalEmptyLabel(journalPeriod,lang()))+'</p>'}`;
 }
 
 function schedule() {
@@ -248,7 +258,10 @@ function refreshBanner() {
  }
  const banner = $('#reminder');
  banner.hidden = !messages.length && !waitingWorker;
- banner.replaceChildren(document.createTextNode(messages.join(' · ')));
+ const bannerText = messages.join(' · ');
+ const existingUpdate = banner.querySelector('[data-action=update]');
+ if (banner.firstChild?.textContent === bannerText && Boolean(existingUpdate) === Boolean(waitingWorker)) return;
+ banner.replaceChildren(document.createTextNode(bannerText));
  if (waitingWorker) {
   const button = document.createElement('button');
   button.dataset.action = 'update';
@@ -270,6 +283,7 @@ function render() {
  const current = route();
  document.documentElement.lang = lang();
  $('#language').value = lang();
+ $('#skip-to-content').textContent = tr(['К содержанию','Məzmuna keç','Skip to content']);
  const calendar = $('#schedule-link');
  calendar.innerHTML = icon('schedule');
  calendar.setAttribute('aria-label',t('schedule'));
@@ -411,9 +425,20 @@ document.addEventListener('click',async event=>{
  }
 });
 
+screen.addEventListener('change', event=>{
+ if (!event.target.matches('[data-journal-period]')) return;
+ journalPeriod = event.target.value;
+ render();
+ screen.querySelector('[data-journal-period]')?.focus({preventScroll:true});
+});
+
 screen.addEventListener('submit', async event=>{
  event.preventDefault();
  const form = event.target;
+ if (form.id==='personal-plan-form') {
+  submitPersonalPlan(form,lang(),event.submitter);
+  return;
+ }
  const data = Object.fromEntries(new FormData(form));
  if (form.dataset.cloudAuth) {
   const kind = form.dataset.cloudAuth;
@@ -471,7 +496,7 @@ if (cloudConfig) {
  import('./supabase-sdk.mjs').then(({createClient})=>{
   pilotClient = createPilotClient(createClient,cloudConfig);
   cloud = cloudAccount(pilotClient,replaceScreen=>{
-   if (replaceScreen) { editing = null; render(); }
+   if (replaceScreen) { editing = null; journalPeriod = 'all'; render(); }
    else cloudNotice();
   },()=>repo.read().lang);
   return cloud.init();
