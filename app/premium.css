@@ -76,3 +76,11 @@
 .milestone-list li{display:inline-flex;gap:var(--space-2);align-items:center;border:1px solid var(--line);border-radius:var(--radius-control);padding:var(--space-2) var(--space-3)}
 .milestone-list svg{flex:none;color:var(--gold)}
 .practice-trend meter{align-self:center;inline-size:min(42%,16rem);accent-color:var(--success)}
+
+/* State surfaces use the same semantic colors as their text. */
+:root {
+ --status-success:color-mix(in srgb,var(--success) 11%,var(--surface));
+ --status-danger:color-mix(in srgb,var(--danger) 11%,var(--surface));
+ --status-neutral:var(--active-surface);
+ --nav-clearance:calc(6rem + env(safe-area-inset-bottom,0px));
+}
