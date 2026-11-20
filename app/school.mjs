@@ -15,6 +15,7 @@ export const schoolStrings = {
  classFormatFilter:['Формат занятия','Məşğələnin formatı','Class format'],
  allFormats:['Все форматы','Bütün formatlar','All formats'],
  noMatchingClasses:['Для этого формата занятий пока нет.','Bu formatda hələ məşğələ yoxdur.','There are no classes in this format yet.'],
+ noUpcomingClasses:['Ближайших занятий пока нет.','Hələ qarşıdakı məşğələlər yoxdur.','No upcoming classes yet.'],
  bookingHistory:['История записей','Qeydiyyat tarixçəsi','Booking history'],
  bookingCancelled:['Запись отменена','Qeydiyyat ləğv olunub','Booking cancelled'],
  classFull:['Свободных мест нет','Boş yer yoxdur','No places available'],
@@ -242,7 +243,7 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current,dr
   const hasMatches = sessions.some(s=>!classFormat || s.format===classFormat);
   const historyItems=history.map(s=>'<li><strong>'+esc(s.title)+'</strong> · '+esc(date(s.starts_at))+' · '+
    t(s.status==='cancelled'?'cancelled':s.restart_bookings[0]?.status==='booked'?'confirmed':'bookingCancelled')+'</li>').join('');
-  return filters+'<p data-class-empty role="status"'+(hasMatches?' hidden':'')+'>'+t('noMatchingClasses')+'</p>'+cards+
+  return (sessions.length?filters:'')+'<p data-class-empty role="status"'+(hasMatches?' hidden':'')+'>'+t(sessions.length?'noMatchingClasses':'noUpcomingClasses')+'</p>'+cards+
    '<details class="panel"><summary>'+t('bookingHistory')+'</summary>'+(historyItems?'<ul>'+historyItems+'</ul>':empty)+'</details>';
  }
  async function load(saved = false) {
