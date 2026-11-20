@@ -120,3 +120,66 @@ textarea{resize:vertical}
 
 .skip-to-content{position:fixed;top:max(.5rem,env(safe-area-inset-top));left:1rem;z-index:10;transform:translateY(-200%)}
 .skip-to-content:focus{transform:none}
+
+/* Student dashboard and practice catalogue */
+.tabs {
+ background:var(--nav-surface,var(--pine));
+ gap:.15rem;
+ padding-inline:max(.45rem,env(safe-area-inset-left)) max(.45rem,env(safe-area-inset-right));
+}
+.tabs a {font-size:clamp(.67rem,2.7vw,.82rem);line-height:1.2;padding:.3rem .12rem}
+.tabs a[aria-current] {background:var(--active-surface,var(--surface));box-shadow:inset 0 -2px var(--gold)}
+@media (hover:hover) {
+ .tabs a:not([aria-current]):hover,.today-avatar:hover {background:var(--active-surface,var(--surface));color:var(--paper)}
+}
+.today-heading {display:flex;align-items:start;justify-content:space-between;gap:.75rem;margin-bottom:1.1rem}
+.today-heading>div {min-width:0}
+.today-heading h1 {margin:.25rem 0 .4rem}
+.today-heading p:last-child {margin-bottom:0}
+.today-avatar {
+ display:grid;place-items:center;width:48px;height:48px;flex:none;border:1px solid var(--line);
+ border-radius:50%;background:var(--surface);color:var(--gold);font:600 1.25rem var(--serif);
+}
+.practice-cover-yoga {--practice-image:url('../assets/yoga.webp')}
+.practice-cover-meditation {--practice-image:url('../assets/meditation.webp')}
+.practice-cover-breathing {--practice-image:url('../assets/breath.webp')}
+.practice-cover-mobility {--practice-image:url('../assets/founder-yoga.webp')}
+.practice-cover-strength {--practice-image:url('../assets/performance.webp')}
+.practice-cover-recovery {--practice-image:url('../assets/lake.jpg')}
+.today-practice {
+ display:grid;align-items:end;min-height:clamp(245px,57vw,370px);
+ padding:clamp(1.15rem,5vw,2.35rem);border-color:var(--line);border-radius:var(--radius-card,18px);
+ background:linear-gradient(0deg,#101b19 0%,#101b19ce 35%,#101b192e 100%),var(--practice-image) center/cover #101b19;
+ color:#fff7e9;box-shadow:var(--shadow-card,none);
+}
+.today-practice::after {content:none}
+.today-practice .eyebrow {color:#ffe2a9}
+.today-copy {max-width:36rem}
+.today-copy h2 {margin-bottom:.85rem}
+.practice-state,.today-actions .button {display:flex;align-items:center;gap:.55rem}
+.practice-state svg,.today-actions svg {width:18px;height:18px;flex:none}
+.today-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;margin:0 0 .65rem}
+.today-actions .button {text-align:center;overflow-wrap:anywhere}
+.practice-filters {margin-bottom:1rem}
+.practice-options {gap:.7rem}
+.practice-options label {margin-bottom:0}
+.practice-options select {text-overflow:ellipsis}
+.practice-grid {gap:clamp(.65rem,3vw,1.1rem)}
+.practice-card {
+ display:block;overflow:hidden;padding:0;
+ background:var(--surface);border-radius:var(--radius-card,16px);
+}
+.practice-card-art {display:flex;align-items:end;padding:.75rem;aspect-ratio:16/9;
+ color:#fff7e9;background:linear-gradient(0deg,#101b19bb,transparent 80%),var(--practice-image) center/cover #101b19}
+.practice-card-copy {padding:clamp(.7rem,3vw,1rem)}
+.practice-card-copy .eyebrow {margin:0 0 .38rem}
+.practice-card-footer {display:flex;align-items:center;justify-content:space-between;gap:.35rem;margin-top:.55rem}
+.practice-card-footer small {overflow-wrap:anywhere}
+.practice-card-copy .arrow {color:var(--gold)}
+.practice-level {font-size:.875rem;margin:-.3rem 0 .85rem}
+.academy-intro {padding:clamp(1.35rem,5vw,2.5rem)}
+.academy-intro>svg {color:var(--gold);margin-bottom:.7rem}
+@media(max-width:350px) {
+ .practice-grid {grid-template-columns:1fr}
+ .today-heading p {font-size:.9rem}
+}
