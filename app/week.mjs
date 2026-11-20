@@ -13,6 +13,7 @@ const copy = {
  rest: ['День отдыха', 'İstirahət günü', 'Rest day'],
  restNote: ['Оставьте время на восстановление.', 'Bərpa üçün vaxt ayırın.', 'Make time for recovery.'],
  start: ['Открыть практику', 'Məşqi aç', 'Open practice'],
+ repeat: ['Повторить практику', 'Məşqi təkrarla', 'Repeat practice'],
  done: ['Выполнено', 'Tamamlanıb', 'Completed'],
  progress: ['Выполнено на этой неделе', 'Bu həftə tamamlanan məşqlər', 'Completed this week'],
  planner: ['Настроить свой план', 'Öz planını tənzimlə', 'Set up your own plan']
@@ -54,8 +55,9 @@ export function renderWeeklyProgram({lang, sessions, today} = {}) {
   const marker = completed ? t('done') : current ? strings.today[index] : '';
   const heading = practice?.title[index] ?? t('rest');
   const detail = practice ? categories[practice.id][index] + ' · ' + practice.minutes + ' ' + strings.min[index] : t('restNote');
-  const action = practice && !completed ? '<a class="button" href="#practice/' + practice.id +
-   '" aria-label="' + t('start') + ' · ' + heading + '">' + t('start') + '</a>' : '';
+  const label = t(completed ? 'repeat' : 'start');
+  const action = practice ? '<a class="button" href="#practice/' + practice.id +
+   '" aria-label="' + label + ' · ' + heading + '">' + label + '</a>' : '';
   return '<li class="panel week-day"' + (current ? ' aria-current="date"' : '') + '><div>' +
    '<p class="muted week-day-date">' + time + (marker ? '<span class="week-day-marker">' + marker + '</span>' : '') +
    '</p><h2>' + heading + '</h2><p>' + detail + '</p></div>' + action + '</li>';

@@ -28,10 +28,10 @@ test('Programme progress requires a matching practice and date, with no credit f
 });
 
 test('Programme localizes the date, links and truthful progress', () => {
- for (const [lang, title, rest] of [
-  ['ru', 'Программа недели', 'День отдыха'],
-  ['az', 'Həftənin proqramı', 'İstirahət günü'],
-  ['en', 'Weekly programme', 'Rest day']
+ for (const [lang, title, rest, repeat] of [
+  ['ru', 'Программа недели', 'День отдыха', 'Повторить практику'],
+  ['az', 'Həftənin proqramı', 'İstirahət günü', 'Məşqi təkrarla'],
+  ['en', 'Weekly programme', 'Rest day', 'Repeat practice']
  ]) {
   const html = renderWeeklyProgram({lang, sessions:[{day:'2026-11-16', practice:'yoga'}], today:week});
   assert.ok(html.includes('<h1>' + title + '</h1>'));
@@ -39,7 +39,7 @@ test('Programme localizes the date, links and truthful progress', () => {
   assert.match(html, /<progress value="1" max="6">/);
   assert.match(html, /<time datetime="2026-11-20">/);
   assert.match(html, /href="#practice\/strength"/);
-  assert.doesNotMatch(html, /href="#practice\/yoga"/);
+  assert.ok(html.includes('href="#practice/yoga" aria-label="' + repeat));
   assert.ok(renderWeeklyProgramLink(lang).includes('href="#week">' + title));
  }
 });
