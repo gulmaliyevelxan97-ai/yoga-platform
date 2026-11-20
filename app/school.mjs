@@ -3,6 +3,16 @@ import {classVenueField,classLocationFields,classDetailMarkup,classCalendarLink,
 import {schoolNotices, saveLessonPreference} from './school-notices.mjs';
 export const schoolStrings = {
  ...academyCopy,
+ previousLesson:['Предыдущий урок','Əvvəlki dərs','Previous lesson'],
+ nextLesson:['Следующий урок','Növbəti dərs','Next lesson'],
+ classFormatFilter:['Формат занятия','Məşğələnin formatı','Class format'],
+ allFormats:['Все форматы','Bütün formatlar','All formats'],
+ noMatchingClasses:['Для этого формата занятий пока нет.','Bu formatda hələ məşğələ yoxdur.','There are no classes in this format yet.'],
+ bookingHistory:['История записей','Qeydiyyat tarixçəsi','Booking history'],
+ bookingCancelled:['Запись отменена','Qeydiyyat ləğv olunub','Booking cancelled'],
+ classFull:['Свободных мест нет','Boş yer yoxdur','No places available'],
+ schoolSaved:['Сохранено','Yadda saxlanıldı','Saved'],
+ schoolSaving:['Сохраняем…','Yadda saxlanılır…','Saving…'],
  lessonPositionTaken:['Эта позиция уже занята в модуле. Выберите другую.','Bu sıra nömrəsi modulda artıq istifadə olunur. Başqa nömrə seçin.','This position is already taken in the module. Choose another.'],
  resumeLesson:['Продолжить обучение','Öyrənməyə davam et','Continue learning'],
  revokeEnrollment:['Отозвать доступ','Girişi ləğv et','Revoke access'],
@@ -52,10 +62,11 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
    '<option value="'+option+'"'+(option===kind?' selected':'')+'>'+t(option==='practice'?'practiceType':option)+'</option>').join('')+
   '</select></label><label>'+t('body')+'<textarea name="body" maxlength="50000">'+esc(body ?? '')+'</textarea></label>';
  const form = (action,label,fields='',key='') => '<form class="panel" data-school="'+action+'" data-key="'+esc(key)+'">'+fields+'<button>'+t(label)+'</button></form>';
- const date = value => new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
+ const date = value => new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Baku'}).format(new Date(value));
  let busy = false;
  let role = '';
  let isOwner = false;
+ let classFormat = '';
  async function programmes() {
   const programs = await data(table('programs').select('id,title,status,instructor_id,summary,direction,level,minutes,revision').order('title'));
   const program = programs.find(p=>p.id===route.id);
@@ -68,10 +79,13 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   const completed = new Set(done.map(d=>d.lesson_id));
   let html = link(route.name,'schoolPrograms')+'<h2>'+esc(program.title)+'</h2>'+programmeCardInfo(program,t,esc);
   if (editing) html+=programmeEditor(program,t,esc);
-  if (!staff) html += '<p>'+t('historyTitle')+' · '+completed.size+' / '+lessons.length+'</p>';
+  if (!staff && lessons.length) html += '<label>'+t('historyTitle')+' · '+completed.size+' / '+lessons.length+
+   '<progress value="'+completed.size+'" max="'+lessons.length+'"></progress></label>';
   const orderedLessons = modules.flatMap(m=>lessons.filter(l=>l.module_id===m.id));
+  const lessonNav = (lesson,label) => lesson ?
+   '<button type="button" data-continue="'+esc(lesson.id)+'">'+t(label)+'</button>' : '';
   const nextLesson = orderedLessons.find(l=>!completed.has(l.id));
-  if (!staff && nextLesson) html += '<button type="button" data-continue="'+esc(nextLesson.id)+'">'+t('resumeLesson')+'</button>';
+  if (!staff && nextLesson) html += lessonNav(nextLesson,'resumeLesson');
   if (staff && role==='admin') {
    if (program.status==='draft') html+=form('publish','publish','',program.id);
    if (program.status!=='archived') html+=form('archive','archive','',program.id);
@@ -83,7 +97,12 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
    html+='<section class="panel"><h3>'+esc(m.title)+'</h3>';
    for (const l of lessons.filter(l=>l.module_id===m.id)) {
     html+='<details class="panel" data-lesson="'+esc(l.id)+'"><summary>'+esc(l.title)+(completed.has(l.id)?' ✓':'')+'</summary><p>'+esc(l.body).replace(/\n/g,'<br>')+'</p>';
-    if (!staff && !completed.has(l.id)) html+=form('complete','completeLesson','',l.id);
+    if (!staff) {
+     if (!completed.has(l.id)) html+=form('complete','completeLesson','',l.id);
+     const index=orderedLessons.indexOf(l);
+     html+='<div class="actions">'+lessonNav(orderedLessons[index-1],'previousLesson')+
+       lessonNav(orderedLessons[index+1],'nextLesson')+'</div>';
+    }
     if (editing) html+=form('edit','lessonEdit',input('schoolTitle','title','maxlength="180" value="'+esc(l.title)+'"')+lessonFields(l),l.id);
     html+='</details>';
    }
@@ -113,15 +132,35 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   return html;
  }
  async function classes() {
-  const [sessions,bookings] = await Promise.all([data(table('class_sessions').select('id,title,starts_at,ends_at,status,capacity,seats_taken,time_zone,venue').gte('starts_at',new Date().toISOString()).order('starts_at')),data(table('bookings').select('session_id,status').eq('user_id',user))]);
-  const booked = new Set(bookings.filter(b=>b.status==='booked').map(b=>b.session_id));
-  return sessions.map(s=>{
-   const places=s.capacity-s.seats_taken;
-   const owns = booked.has(s.id);
-   return '<article class="panel"><h2>'+esc(s.title)+'</h2><p>'+esc(date(s.starts_at))+'</p>'+classDetailMarkup(s,lang,esc)+(s.status==='cancelled'?t('cancelled'):'<p>'+t('free')+' · '+places+'</p>'+(owns?'<p>'+t('confirmed')+'</p>'+classCalendarLink(s,lang)+form('cancel','cancelBooking','',s.id):places>0?form('book','book','',s.id):''))+'</article>';
-  }).join('') || empty;
+  const now = new Date().toISOString();
+  const [sessions,bookings] = await Promise.all([
+   data(table('class_sessions').select('id,title,starts_at,ends_at,status,capacity,seats_taken,format,kind,venue').gte('starts_at',now).order('starts_at')),
+   data(table('bookings').select('session_id,status').eq('user_id',user))
+  ]);
+  const byId = new Map(bookings.map(booking=>[booking.session_id,booking.status]));
+  const history = bookings.length ? await data(table('class_sessions')
+   .select('id,title,starts_at,status,restart_bookings!inner(status)')
+   .eq('restart_bookings.user_id',user).lt('starts_at',now).order('starts_at',{ascending:false}).limit(30)) : [];
+  const options = [['','allFormats'],['onsite','onsite'],['online','online']];
+  const filters = '<label>'+t('classFormatFilter')+'<select data-class-format>'+options.map(([value,label])=>
+   '<option value="'+value+'"'+(value===classFormat?' selected':'')+'>'+t(label)+'</option>').join('')+'</select></label>';
+  const cards = sessions.map(s=>{
+   const places=Math.max(0,s.capacity-s.seats_taken);
+   const owns = byId.get(s.id)==='booked';
+   const status = s.status==='cancelled' ? '<p>'+t('cancelled')+'</p>' :
+    '<p>'+(places ? t('free')+' · '+places+' / '+s.capacity : t('classFull'))+'</p>'+
+    (owns?'<p>'+t('confirmed')+'</p>'+classCalendarLink(s,lang)+form('cancel','cancelBooking','',s.id):places>0?form('book','book','',s.id):'');
+   return '<article class="panel" data-class-card="'+esc(s.format)+'"'+(classFormat && s.format!==classFormat?' hidden':'')+
+    '><h2>'+esc(s.title)+'</h2><p>'+esc(date(s.starts_at))+' · '+t('localClock')+'</p>'+
+    '<p>'+t(s.format)+' · '+t(s.kind)+'</p>'+classDetailMarkup(s,lang,esc)+status+'</article>';
+  }).join('');
+  const hasMatches = sessions.some(s=>!classFormat || s.format===classFormat);
+  const historyItems=history.map(s=>'<li><strong>'+esc(s.title)+'</strong> · '+esc(date(s.starts_at))+' · '+
+   t(s.status==='cancelled'?'cancelled':s.restart_bookings[0]?.status==='booked'?'confirmed':'bookingCancelled')+'</li>').join('');
+  return filters+'<p data-class-empty role="status"'+(hasMatches?' hidden':'')+'>'+t('noMatchingClasses')+'</p>'+cards+
+   '<details class="panel"><summary>'+t('bookingHistory')+'</summary>'+(historyItems?'<ul>'+historyItems+'</ul>':empty)+'</details>';
  }
- async function load() {
+ async function load(saved = false) {
   if (!current()) return;
   outlet.textContent=t('cloudLoading');
   try {
@@ -142,10 +181,20 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
     }
     html+=await programmes();
    }
-   if(current()) outlet.innerHTML=html;
+   if(current()) {
+    outlet.innerHTML=(saved?'<p role="status" tabindex="-1">'+t('schoolSaved')+'</p>':'')+html;
+    if (saved) outlet.querySelector('[role=status]').focus();
+   }
   } catch { if(current()) error(); }
  }
  function error() { outlet.innerHTML='<p role="alert">'+t('schoolError')+'</p>'+form('refresh','reload'); }
+ outlet.onchange=e=>{
+  if (!current() || !e.target.matches('select[data-class-format]')) return;
+  classFormat=e.target.value;
+  const cards=[...outlet.querySelectorAll('[data-class-card]')];
+  for (const card of cards) card.hidden=!!classFormat && card.dataset.classCard!==classFormat;
+  outlet.querySelector('[data-class-empty]').hidden=cards.some(card=>!card.hidden);
+ };
  outlet.onclick=e=>{
   const id=e.target.closest('button[data-continue]')?.dataset.continue;
   if (!current() || !uuid.test(id || '')) return;
@@ -160,7 +209,10 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   if(key && !uuid.test(key)) return;
   busy=true;
   f.querySelector('[role=alert]')?.remove();
-  f.querySelector('button').disabled=true;
+  const submit = f.querySelector('button');
+  const label = submit.textContent;
+  submit.disabled=true;
+  submit.textContent=t('schoolSaving');
   try {
    if ((await client.auth.getSession()).data.session?.user.id!==user || !current()) return;
    switch(action) {
@@ -195,22 +247,22 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
      if (!uuid.test(values.student) || !confirm(t('revokeEnrollment')+' · '+values.student+'?')) return;
      await data(table('enrollments').delete().eq('user_id',values.student).eq('program_id',key).select('user_id').single());
      break;
-    case 'publish': case 'archive': await data(table('programs').update({status:action==='publish'?'published':'archived'}).eq('id',key).select('id').single()); break;
+    case 'publish': case 'archive': if (!confirm(t(action)+'?')) return; await data(table('programs').update({status:action==='publish'?'published':'archived'}).eq('id',key).select('id').single()); break;
     case 'module': await data(table('modules').insert({program_id:key,title:values.title,position:Number(values.position)})); break;
     case 'lesson': await data(table('lessons').insert({module_id:key,title:values.title,body:values.body,position:Number(values.position),kind:values.kind})); break;
     case 'edit': await data(table('lessons').update({title:values.title,body:values.body,position:Number(values.position),kind:values.kind}).eq('id',key).select('id').single()); break;
     default: return;
    }
-   await load();
+   await load(action!=='refresh');
   } catch (failure) {
    const lessonPositionTaken = (action==='edit' || action==='lesson') && failure.code==='23505';
-   if(current() && (failure.message==='courseConflict' || lessonPositionTaken)) {
+   if(current()) {
     const alert=f.querySelector('[role=alert]') || f.appendChild(document.createElement('p'));
     alert.setAttribute('role','alert');
-    alert.textContent=t(lessonPositionTaken?'lessonPositionTaken':'courseConflict');
-   } else if(current()) error();
+    alert.textContent=t(lessonPositionTaken?'lessonPositionTaken':failure.message==='courseConflict'?'courseConflict':'schoolError');
+   }
   }
-  finally {busy=false;f.querySelector('button').disabled=false;}
+  finally {busy=false;submit.disabled=false;submit.textContent=label;}
  };
  await load();
 }

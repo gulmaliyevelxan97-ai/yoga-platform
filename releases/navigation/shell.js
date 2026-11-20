@@ -12,6 +12,8 @@ const restartPages = {
  journal:['journal.html','Дневник','Gündəlik','Journal'],
  progress:['progress.html','Мой прогресс','İrəliləyişim','My progress'],
  signup:['participation.html','Участие','İştirak','Participation'],
+ academy:['practices.html#courses','Академия','Akademiya','Academy'],
+ schedule:['practices.html#live','Расписание','Cədvəl','Schedule'],
  app:['app/','Приложение RESTART','RESTART tətbiqi','RESTART app'],
  activity:['activity.html','История и избранное','Tarixçə və seçilmişlər','History and favourites']
 };
@@ -21,7 +23,7 @@ function pageUrl(key){return './'+restartPages[key][0]}
 function buildShell(locale){
  const i=Math.max(0,['ru','az','en'].indexOf(locale));
  const n=(key,caption)=>'<a href="'+pageUrl(key)+'"'+(restartPage===key?' aria-current="page"':'')+'>'+(caption||restartPages[key][i+1])+'</a>';
- navRoot.querySelector('.top-links').innerHTML=['about','founder','method','programme','practices'].map(key=>n(key,key==='founder'?['Основатель','Təsisçi','Founder'][i]:null)).join('');
+ navRoot.querySelector('.top-links').innerHTML=['about','founder','practices','academy','schedule'].map(key=>n(key,key==='founder'?['Основатель','Təsisçi','Founder'][i]:null)).join('');
  navRoot.querySelector('.dock').innerHTML=['home','path','practices','progress'].map(key=>n(key)).join('');
  navRoot.querySelector('.all-links').innerHTML=Object.keys(restartPages).map(key=>n(key)).join('');
  navRoot.querySelector('.all-menu summary').textContent=['Разделы','Bölmələr','Sections'][i];

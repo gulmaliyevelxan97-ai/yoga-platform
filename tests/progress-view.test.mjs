@@ -49,3 +49,12 @@ test('Journal date range is inclusive, stays in memory, and preserves original e
  assert.match(renderJournalFilter('week','az'),/<option value="week" selected>Son 7 gün/);
  assert.equal(journalEmptyLabel('month','en'),'No entries in this date range.');
 });
+
+test('Practice milestones require completed records on distinct past or current days',()=>{
+ const records = Array.from({length:7},(_,day)=>({day:'2026-11-'+(day+14),seconds:60}));
+ const future = {day:'2026-11-21',seconds:60};
+ assert.doesNotMatch(renderPracticeTrends([future],'en',today),/First practice/);
+ assert.match(renderPracticeTrends([records[0]],'en',today),/First practice/);
+ assert.doesNotMatch(renderPracticeTrends([...records.slice(0,6),records[0],future],'en',today),/Seven practice days/);
+ assert.match(renderPracticeTrends(records,'en',today),/Seven practice days/);
+});

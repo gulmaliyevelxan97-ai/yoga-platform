@@ -11,7 +11,7 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
  const root = fileURLToPath(new URL('../',import.meta.url));
  const dir = await mkdtemp(path.join(tmpdir(),'restart-pilot-build-'));
  try {
-  for (const sub of ['app','scripts','assets/pwa','assets/brand']) {
+  for (const sub of ['app','scripts','assets']) {
    await mkdir(path.dirname(path.join(dir,sub)),{recursive:true});
    await cp(path.join(root,sub),path.join(dir,sub),{recursive:true});
   }

@@ -34,14 +34,14 @@ analytics = f'<link rel="stylesheet" href="{tag_path(NAV+"/analytics.css")}">' +
 shell = script(NAV+'/shell.js')
 header = '''<header class="school-bar" data-shell>
 <a class="wordmark" href="./">RESTART</a>
-<nav class="top-links" aria-label="Основная навигация"><a href="./about.html">О RESTART</a><a href="./founder.html">Основатель</a><a href="./programme.html">Программа</a><a href="./practices.html">Практики</a></nav>
+<nav class="top-links" aria-label="Основная навигация"><a href="./about.html">О RESTART</a><a href="./founder.html">Основатель</a><a href="./practices.html">Практики</a><a href="./practices.html#courses">Академия</a><a href="./practices.html#live">Расписание</a></nav>
 <nav class="dock" aria-label="Быстрые ссылки"><a href="./">Главная</a><a href="./my-path.html">Мой путь</a><a href="./practices.html">Практики</a><a href="./progress.html">Мой прогресс</a></nav>
 <details class="all-menu" id="moreNav"><summary>Разделы</summary><nav class="all-links" aria-label="Все разделы">STATIC_LINKS</nav></details>
 <select id="LANG_ID" aria-label="Язык / Dil / Language"><option value="ru">RU</option><option value="az">AZ</option><option value="en">EN</option></select>
 </header>'''
 static_links = ''.join(
     f'<a href="./{file}">{title}</a>' for file, (_, title) in entries.items()
-) + '<a href="./practices.html">Практики</a><a href="./activity.html">История и избранное</a><a href="./app/">Приложение RESTART</a>'
+) + '<a href="./practices.html">Практики</a><a href="./practices.html#courses">Академия</a><a href="./practices.html#live">Расписание</a><a href="./activity.html">История и избранное</a><a href="./app/">Приложение RESTART</a>'
 header = header.replace('STATIC_LINKS', static_links)
 footer = '<footer data-school-footer></footer>'
 common_head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#faf8f1"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./assets/pwa/restart-apple.png"><link rel="icon" href="./assets/pwa/restart-192.png">'
@@ -75,7 +75,7 @@ const t=(...labels)=>labels[0], tracks=['MIND','BODY','NUTRITION','LIFE'];
 const routes=ROUTES;
 const pageUrl=key=> './'+routes[key];
 const go=(key,label)=> '<a class="cta" href="'+pageUrl(key)+'">'+label+'</a>';
-""".replace("ROUTES", json.dumps({page: file for file, (page, _) in entries.items()})) + fallback_source + "\nconsole.log(JSON.stringify({founder:founderPage(),founderIntro:founderContent.introduction[0],about:aboutPage(),method:philosophyPage(),programme:publicWeeks(),homeActions:homeActions(),homeFounder:homeFounder(),homeLead:pageIntros.home[0],homeMotto:homeMotto()}));"
+""".replace("ROUTES", json.dumps({**{page: file for file, (page, _) in entries.items()}, 'practices': 'practices.html', 'academy': 'practices.html#courses', 'schedule': 'practices.html#live'})) + fallback_source + "\nconsole.log(JSON.stringify({founder:founderPage(),founderIntro:founderContent.introduction[0],about:aboutPage(),method:philosophyPage(),programme:publicWeeks(),homeActions:homeActions(),homeFounder:homeFounder(),homeLead:pageIntros.home[0],homeMotto:homeMotto(),home:homePage()}));"
 fallbacks = json.loads(run(['node'], input=fallback_source, text=True, encoding='utf-8', capture_output=True, check=True).stdout)
 
 for file, (page,title) in entries.items():
@@ -139,6 +139,10 @@ assets.pop('./'+NAV+'/founder-portrait.js', None)
 assets.pop('./'+portrait_frame, None)
 if has_portrait_video:
     assets['./'+portrait_frame] = tag_path(portrait_frame)
+# The founder gallery is available offline; videos remain on-demand.
+for photo in ('group', 'talk', 'outdoors'):
+    path = './assets/founder-workshop-' + photo + '.webp'
+    assets[path] = path
 for file in [*entries,*studio]:
     assets['./'+file] = './'+file
     for script_or_css in re.findall(r'(?:src|href)="(\./[^"]+\.(?:js|css)\?v=[a-f0-9]+)"',(ROOT/file).read_text()):
