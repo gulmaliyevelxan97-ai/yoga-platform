@@ -11,6 +11,10 @@ let cloud;
 let pilotClient;
 let renderSequence = 0;
 const screen = $('#screen');
+$('#skip-to-content').addEventListener('click',()=>{
+ screen.focus();
+ screen.scrollIntoView({block:'start'});
+});
 const tabs = ['today', 'practices', 'path', 'journal', 'profile'];
 const icons = {
  today:'M3 10l9-7 9 7v10H3z M9 20v-6h6v6', practices:'M4 12h16 M12 4v16 M6.4 6.4l11.2 11.2 M17.6 6.4L6.4 17.6',
@@ -248,7 +252,10 @@ function refreshBanner() {
  }
  const banner = $('#reminder');
  banner.hidden = !messages.length && !waitingWorker;
- banner.replaceChildren(document.createTextNode(messages.join(' · ')));
+ const bannerText = messages.join(' · ');
+ const existingUpdate = banner.querySelector('[data-action=update]');
+ if (banner.firstChild?.textContent === bannerText && Boolean(existingUpdate) === Boolean(waitingWorker)) return;
+ banner.replaceChildren(document.createTextNode(bannerText));
  if (waitingWorker) {
   const button = document.createElement('button');
   button.dataset.action = 'update';
@@ -270,6 +277,7 @@ function render() {
  const current = route();
  document.documentElement.lang = lang();
  $('#language').value = lang();
+ $('#skip-to-content').textContent = tr(['К содержанию','Məzmuna keç','Skip to content']);
  const calendar = $('#schedule-link');
  calendar.innerHTML = icon('schedule');
  calendar.setAttribute('aria-label',t('schedule'));
