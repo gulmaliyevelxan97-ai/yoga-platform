@@ -28,6 +28,16 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
   assert.throws(()=>execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],
    {...buildOptions,stdio:'pipe'}),{message:/Pilot output already exists/});
   const script = await readFile(path.join(dir,'dist/app/sw.js'),'utf8');
+  // Replacing only an icon must still invalidate the installed worker's cache.
+  await writeFile(path.join(dir,'assets/pwa/restart-192.png'),'replacement icon');
+  execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],{
+   ...buildOptions,env:{...buildOptions.env,RESTART_PILOT_OUTPUT:'dist-icon-change'}
+  });
+  const updated = await readFile(path.join(dir,'dist-icon-change/app/sw.js'),'utf8');
+  const version = source => source.match(/const VERSION = 'pilot-[a-f0-9]+';/)?.[0];
+  assert(version(script));
+  assert(version(updated));
+  assert.notEqual(version(script),version(updated));
   const scope = 'https://staging.invalid/app/';
   const handlers = {};
   const requests = [];
