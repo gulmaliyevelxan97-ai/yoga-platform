@@ -3,6 +3,13 @@ import {classVenueField,classLocationFields,classDetailMarkup,classCalendarLink,
 import {schoolNotices, saveLessonPreference} from './school-notices.mjs';
 export const schoolStrings = {
  ...academyCopy,
+ lessonMedia:['Видео урока (YouTube или Vimeo)','Dərsin videosu (YouTube və ya Vimeo)','Lesson video (YouTube or Vimeo)'],
+ lessonMediaWatch:['Открыть видео ↗','Videonu aç ↗','Open video ↗'],
+ lessonMediaInvalid:['Укажите прямую HTTPS-ссылку на видео YouTube или Vimeo без дополнительных параметров.','Əlavə parametr olmadan YouTube və ya Vimeo videosunun birbaşa HTTPS keçidini daxil edin.','Enter a direct HTTPS YouTube or Vimeo video link without extra parameters.'],
+ lessonDraftRecovered:['Восстановлен черновик этой вкладки','Bu vərəqdəki qaralama bərpa edildi','Draft recovered from this tab'],
+ lessonDraftStored:['Черновик сохранён в этой вкладке','Qaralama bu vərəqdə saxlanıldı','Draft saved in this tab'],
+ lessonDraftUnavailable:['Браузер не смог сохранить черновик в этой вкладке','Brauzer qaralamanı bu vərəqdə saxlaya bilmədi','The browser could not save this draft in this tab'],
+ discardLessonDraft:['Удалить черновик','Qaralamanı sil','Discard draft'],
  previousLesson:['Предыдущий урок','Əvvəlki dərs','Previous lesson'],
  nextLesson:['Следующий урок','Növbəti dərs','Next lesson'],
  classFormatFilter:['Формат занятия','Məşğələnin formatı','Class format'],
@@ -45,7 +52,49 @@ export const schoolStrings = {
 
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
-export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) {
+const lessonDraftFields = {title:180,body:50000,position:10,kind:10,media_url:80};
+const videoUrl = /^https:\/\/(?:www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}|youtu\.be\/[A-Za-z0-9_-]{11}|vimeo\.com\/[1-9][0-9]{0,11})$/;
+export const validLessonVideo = value => typeof value==='string' && !/[\x00-\x1f\x7f]/.test(value) && videoUrl.test(value);
+const lessonAction = action => action==='edit' || action==='lesson';
+
+export function lessonDraftStore(account, project, storage) {
+ const prefix = 'restart.lessonDraft.v1:'+encodeURIComponent(project ?? '')+':'+encodeURIComponent(account)+':';
+ const key = (action,id) => prefix+action+':'+id;
+ const valid = (action,id) => lessonAction(action) && uuid.test(id);
+ const browserStorage = () => storage ?? globalThis.sessionStorage;
+ const normalize = values => Object.fromEntries(Object.entries(lessonDraftFields).map(([field,limit])=>
+  [field,typeof values?.[field]==='string' ? values[field].slice(0,limit) : '']).filter(([field])=>field!=='media_url' || Object.hasOwn(values ?? {},field)));
+ return {
+  read(action,id) {
+   if (!valid(action,id)) return null;
+   try {
+    const raw = browserStorage()?.getItem(key(action,id));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || Object.keys(lessonDraftFields).some(field=>field!=='media_url' && typeof parsed[field]!=='string')) return null;
+    return normalize(parsed);
+   } catch { return null; }
+  },
+  write(action,id,values) {
+   if (!valid(action,id)) return false;
+   try {
+    browserStorage().setItem(key(action,id),JSON.stringify(normalize(values)));
+    return true;
+   } catch { return false; }
+  },
+  clear(action,id) {
+   if (!valid(action,id)) return false;
+   try {
+    browserStorage().removeItem(key(action,id));
+    return true;
+   } catch { return false; }
+  }
+ };
+}
+
+export async function schoolPage({outlet,client,user,route,t,esc,lang,current,draftStorage}) {
+ const drafts = lessonDraftStore(user,client.supabaseUrl,draftStorage);
+ const lessonBaselines = new Map();
  const table = name => client.from('restart_'+name);
  async function data(query) {
   const {data:rows,error} = await query;
@@ -60,13 +109,46 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   input('order','position','type="number" min="1" max="2147483647" step="1" value="'+esc(position ?? '')+'"')+
   '<label>'+t('kind')+'<select name="kind">'+['lesson','practice','assignment'].map(option=>
    '<option value="'+option+'"'+(option===kind?' selected':'')+'>'+t(option==='practice'?'practiceType':option)+'</option>').join('')+
-  '</select></label><label>'+t('body')+'<textarea name="body" maxlength="50000">'+esc(body ?? '')+'</textarea></label>';
+  '</select></label><label>'+t('body')+'<textarea name="body" maxlength="50000">\n'+esc(body ?? '')+'</textarea></label>';
  const form = (action,label,fields='',key='') => '<form class="panel" data-school="'+action+'" data-key="'+esc(key)+'">'+fields+'<button>'+t(label)+'</button></form>';
+ function lessonForm(action,id,label,original,draft = drafts.read(action,id)) {
+  const baseline = {title:original.title ?? '',body:(original.body ?? '').replace(/\r\n?/g,'\n'),position:String(original.position ?? ''),kind:original.kind ?? 'lesson'};
+  if (lessonMediaAvailable) baseline.media_url=original.media_url ?? '';
+  const fields = {...baseline,...draft};
+  const mediaInput = lessonMediaAvailable ?
+   '<label>'+t('lessonMedia')+'<input name="media_url" type="url" maxlength="80" value="'+esc(fields.media_url)+'"></label>' : '';
+  lessonBaselines.set(action+':'+id,baseline);
+  return '<form class="panel" data-school="'+action+'" data-key="'+esc(id)+'"><fieldset class="lesson-editor-fields">'+
+   input('schoolTitle','title','maxlength="180" value="'+esc(fields.title)+'"')+lessonFields(fields)+mediaInput+
+   '<p class="muted" role="status" data-lesson-draft-status>'+(draft?t('lessonDraftRecovered'):'')+'</p>'+
+   '<div class="actions"><button type="submit">'+t(label)+'</button>'+
+   '<button type="button" data-lesson-draft-discard'+(draft?'':' hidden')+'>'+t('discardLessonDraft')+'</button></div></fieldset></form>';
+ }
  const date = value => new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Baku'}).format(new Date(value));
  let busy = false;
  let role = '';
  let isOwner = false;
  let classFormat = '';
+ let lessonMediaAvailable = false;
+ function lessonValues(values) {
+  const fields = {title:values.title,body:values.body,position:Number(values.position),kind:values.kind};
+  if (lessonMediaAvailable && typeof values.media_url==='string') {
+   const media = values.media_url.trim();
+   if (media && !validLessonVideo(media)) throw new Error('lessonMediaInvalid');
+   fields.media_url=media || null;
+  }
+  return fields;
+ }
+ async function programmeLessons(modules) {
+  if (!modules.length) return [];
+  const list = columns=>table('lessons').select(columns).in('module_id',modules.map(m=>m.id)).order('position');
+  const columns = 'id,module_id,title,body,kind,position';
+  const result = await list(columns+',media_url');
+  lessonMediaAvailable = !result.error;
+  if (lessonMediaAvailable) return result.data;
+  if (result.error.code==='42703') return data(list(columns));
+  throw result.error;
+ }
  async function programmes() {
   const programs = await data(table('programs').select('id,title,status,instructor_id,summary,direction,level,minutes,revision').order('title'));
   const program = programs.find(p=>p.id===route.id);
@@ -74,7 +156,7 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   const staff = route.name==='staff';
   const editing = staff && (role==='admin' || (program.status==='draft' && program.instructor_id===user));
   const modules = await data(table('modules').select('id,title').eq('program_id',program.id).order('position'));
-  const lessons = modules.length ? await data(table('lessons').select('id,module_id,title,body,kind,position').in('module_id',modules.map(m=>m.id)).order('position')) : [];
+  const lessons = await programmeLessons(modules);
   const done = lessons.length && !staff ? await data(table('lesson_progress').select('lesson_id,completed_at').eq('user_id',user).in('lesson_id',lessons.map(l=>l.id))) : [];
   const completed = new Set(done.map(d=>d.lesson_id));
   let html = link(route.name,'schoolPrograms')+'<h2>'+esc(program.title)+'</h2>'+programmeCardInfo(program,t,esc);
@@ -96,17 +178,20 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   for (const m of modules) {
    html+='<section class="panel"><h3>'+esc(m.title)+'</h3>';
    for (const l of lessons.filter(l=>l.module_id===m.id)) {
-    html+='<details class="panel" data-lesson="'+esc(l.id)+'"><summary>'+esc(l.title)+(completed.has(l.id)?' ✓':'')+'</summary><p>'+esc(l.body).replace(/\n/g,'<br>')+'</p>';
+    const recovered = editing && drafts.read('edit',l.id);
+   html+='<details class="panel" data-lesson="'+esc(l.id)+'"'+(recovered?' open':'')+'><summary>'+esc(l.title)+(completed.has(l.id)?' ✓':'')+'</summary><p>'+esc(l.body).replace(/\n/g,'<br>')+'</p>';
+    if (validLessonVideo(l.media_url)) html+='<p><a class="button" href="'+esc(l.media_url)+
+     '" target="_blank" rel="noopener noreferrer">'+t('lessonMediaWatch')+'</a></p>';
     if (!staff) {
      if (!completed.has(l.id)) html+=form('complete','completeLesson','',l.id);
      const index=orderedLessons.indexOf(l);
      html+='<div class="actions">'+lessonNav(orderedLessons[index-1],'previousLesson')+
        lessonNav(orderedLessons[index+1],'nextLesson')+'</div>';
     }
-    if (editing) html+=form('edit','lessonEdit',input('schoolTitle','title','maxlength="180" value="'+esc(l.title)+'"')+lessonFields(l),l.id);
+    if (editing) html+=lessonForm('edit',l.id,'lessonEdit',l,recovered);
     html+='</details>';
    }
-   if (editing) html+=form('lesson','addLesson',titleInput+lessonFields(),m.id);
+   if (editing) html+=lessonForm('lesson',m.id,'addLesson',{});
    html+='</section>';
   }
   return html+(editing?form('module','addModule',titleInput+input('order','position','type="number" min="1" step="1"'),program.id):'');
@@ -163,6 +248,7 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
  async function load(saved = false) {
   if (!current()) return;
   outlet.textContent=t('cloudLoading');
+  lessonBaselines.clear();
   try {
    const roles=await data(table('school_roles').select('role').eq('user_id',user).maybeSingle());
    isOwner=roles?.role==='owner';
@@ -195,9 +281,38 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   for (const card of cards) card.hidden=!!classFormat && card.dataset.classCard!==classFormat;
   outlet.querySelector('[data-class-empty]').hidden=cards.some(card=>!card.hidden);
  };
+ outlet.oninput=e=>{
+  const editor = e.target.closest('form[data-school="edit"],form[data-school="lesson"]');
+  if (!current() || !editor || !Object.hasOwn(lessonDraftFields,e.target.name)) return;
+  const {school,key} = editor.dataset;
+  const baseline = lessonBaselines.get(school+':'+key);
+  if (!baseline) return;
+  const values = Object.fromEntries(new FormData(editor));
+  const changed = Object.keys(baseline).some(field=>baseline[field]!==values[field]);
+  const stored = changed ? drafts.write(school,key,values) : drafts.clear(school,key);
+  editor.querySelector('[data-lesson-draft-status]').textContent =
+   stored ? (changed?t('lessonDraftStored'):'') : t('lessonDraftUnavailable');
+  editor.querySelector('[data-lesson-draft-discard]').hidden = !changed;
+ };
  outlet.onclick=e=>{
+  if (!current()) return;
+  const discard = e.target.closest('button[data-lesson-draft-discard]');
+  if (discard) {
+   const editor = discard.form;
+   const {school,key} = editor.dataset;
+   const baseline = lessonBaselines.get(school+':'+key);
+   if (!baseline || !confirm(t('discardLessonDraft')+'?')) return;
+   const cleared = drafts.clear(school,key);
+   if (cleared) {
+    for (const [field,value] of Object.entries(baseline)) editor.elements[field].value=value;
+    discard.hidden=true;
+    editor.querySelector('input[name="title"]').focus();
+   }
+   editor.querySelector('[data-lesson-draft-status]').textContent = cleared?'':t('lessonDraftUnavailable');
+   return;
+  }
   const id=e.target.closest('button[data-continue]')?.dataset.continue;
-  if (!current() || !uuid.test(id || '')) return;
+  if (!uuid.test(id || '')) return;
   const lesson=outlet.querySelector('details[data-lesson="'+id+'"]');
   if (lesson) { lesson.open=true; lesson.querySelector('summary').focus(); }
  };
@@ -210,6 +325,8 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   busy=true;
   f.querySelector('[role=alert]')?.remove();
   const submit = f.querySelector('button');
+  const lessonEditor = lessonAction(action) ? f.querySelector('fieldset') : null;
+  if (lessonEditor) lessonEditor.disabled=true;
   const label = submit.textContent;
   submit.disabled=true;
   submit.textContent=t('schoolSaving');
@@ -249,20 +366,26 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
      break;
     case 'publish': case 'archive': if (!confirm(t(action)+'?')) return; await data(table('programs').update({status:action==='publish'?'published':'archived'}).eq('id',key).select('id').single()); break;
     case 'module': await data(table('modules').insert({program_id:key,title:values.title,position:Number(values.position)})); break;
-    case 'lesson': await data(table('lessons').insert({module_id:key,title:values.title,body:values.body,position:Number(values.position),kind:values.kind})); break;
-    case 'edit': await data(table('lessons').update({title:values.title,body:values.body,position:Number(values.position),kind:values.kind}).eq('id',key).select('id').single()); break;
+    case 'lesson': await data(table('lessons').insert({module_id:key,...lessonValues(values)})); break;
+    case 'edit': await data(table('lessons').update(lessonValues(values)).eq('id',key).select('id').single()); break;
     default: return;
    }
+   if (lessonEditor) drafts.clear(action,key);
    await load(action!=='refresh');
   } catch (failure) {
    const lessonPositionTaken = (action==='edit' || action==='lesson') && failure.code==='23505';
    if(current()) {
     const alert=f.querySelector('[role=alert]') || f.appendChild(document.createElement('p'));
     alert.setAttribute('role','alert');
-    alert.textContent=t(lessonPositionTaken?'lessonPositionTaken':failure.message==='courseConflict'?'courseConflict':'schoolError');
+    alert.textContent=t(lessonPositionTaken?'lessonPositionTaken':['courseConflict','lessonMediaInvalid'].includes(failure.message)?failure.message:'schoolError');
    }
   }
-  finally {busy=false;submit.disabled=false;submit.textContent=label;}
+  finally {
+   busy=false;
+   if (lessonEditor) lessonEditor.disabled=false;
+   submit.disabled=false;
+   submit.textContent=label;
+  }
  };
  await load();
 }
