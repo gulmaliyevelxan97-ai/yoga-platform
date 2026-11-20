@@ -1,6 +1,7 @@
 import {studentStore} from './cloud-data.mjs';
 
 const recoveryKey = 'restart.cloud.recovery';
+const journalDraftKey = 'restart.cloud.journal.pending.v1';
 export const createPilotClient = (createClient, config) => createClient(config.url,config.key,{
  auth:{flowType:'pkce',detectSessionInUrl:false,storageKey:'restart.cloud.auth.v1'}
 });
@@ -25,6 +26,26 @@ export function cloudAccount(client, onChange, guestLocale) {
  let lastImport = null;
  let journalDraft = null;
 
+ function setJournalDraft(entry) {
+  journalDraft = entry;
+  try {
+   if (entry) sessionStorage.setItem(journalDraftKey,JSON.stringify({owner:user.id,entry}));
+   else sessionStorage.removeItem(journalDraftKey);
+  } catch {
+   // A restricted browser still keeps the pending draft in memory.
+  }
+ }
+
+ function restoreJournalDraft() {
+  try {
+   const saved = JSON.parse(sessionStorage.getItem(journalDraftKey));
+   if (user && !recovery && saved?.owner===user.id &&
+       typeof saved.entry?.id==='string' && typeof saved.entry?.date==='string') return saved.entry;
+   sessionStorage.removeItem(journalDraftKey);
+  } catch {}
+  return null;
+ }
+
  async function reload() {
   const current = epoch;
   const next = await store.read(state?.lang || guestLocale());
@@ -36,15 +57,16 @@ export function cloudAccount(client, onChange, guestLocale) {
   const nextUser = session?.user ?? null;
   if (user?.id === nextUser?.id && recovery === isRecovery) {
    user = nextUser;
+   if (!user) setJournalDraft(null);
    return;
   }
   epoch++;
-  journalDraft = null;
   notice = '';
   lastImport = null;
   user = nextUser;
   recovery = isRecovery;
   store = user && !recovery ? studentStore(client,user.id) : null;
+  journalDraft = restoreJournalDraft();
   state = null;
   if (recovery) sessionStorage.setItem(recoveryKey,user.id);
   else sessionStorage.removeItem(recoveryKey);
@@ -93,13 +115,13 @@ export function cloudAccount(client, onChange, guestLocale) {
  async function save(operation, ...values) {
   if (busy || !store) return false;
   const startEpoch = epoch;
-  if (operation === 'saveJournal') journalDraft = {...values[0]};
+  if (operation === 'saveJournal') setJournalDraft({...values[0]});
   busy = true;
   try {
    const result = operation === 'refresh' ? null : await store[operation](...values);
    if (startEpoch !== epoch) return false;
    if (operation === 'import') lastImport = result;
-   if (operation === 'saveJournal') journalDraft = null;
+   if (operation === 'saveJournal') setJournalDraft(null);
    // Acknowledged writes should not be retried just because the follow-up read failed.
    try {
     await reload();
@@ -128,7 +150,7 @@ export function cloudAccount(client, onChange, guestLocale) {
  return {
   get user() {return user;}, get recovery() {return recovery;}, get state() {return state;},
   get journalDraft() {return journalDraft;},
-  discardJournalDraft() {journalDraft = null;},
+  discardJournalDraft() {setJournalDraft(null);},
   get lastImport() {return lastImport;}, get notice() {return notice;}, get busy() {return busy;},
   action, save,
   async init() {
