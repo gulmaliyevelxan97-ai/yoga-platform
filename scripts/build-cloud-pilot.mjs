@@ -40,7 +40,7 @@ const revision = createHash('sha256');
 for (const name of (await readdir(new URL('app/',out))).sort()) revision.update(await readFile(new URL('app/'+name,out)));
 const serviceWorker = new URL('app/sw.js',out);
 const source = await readFile(serviceWorker,'utf8');
-await writeFile(serviceWorker,source
- .replace(/const VERSION = '[^']*';/,"const VERSION = 'pilot-"+revision.digest('hex').slice(0,16)+"';")
- .replace(" './index.html',"," './supabase-sdk.mjs','./index.html',"));
+const workerVersion = "const VERSION = 'pilot-"+revision.digest('hex').slice(0,16)+"';";
+await writeFile(serviceWorker, source.replace(/const VERSION = '[^']*';/,workerVersion) +
+ "\nresources.add(new URL('./supabase-sdk.mjs',base).href);\n");
 console.log('Pilot built in dist/; open /app/ on a separate staging origin.');

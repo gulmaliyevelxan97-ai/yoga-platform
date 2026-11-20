@@ -25,6 +25,9 @@ export const cloudStrings = {
  cloudImport:['Перенести локальные данные','Yerli məlumatları köçür','Import local data'],
  cloudImportNote:['Дневник, история практик, имя, цель и настройки этого браузера будут скопированы в текущий аккаунт. Локальные записи сохранятся.','Bu brauzerdəki gündəlik, məşq tarixçəsi, ad, məqsəd və ayarlar cari hesaba kopyalanacaq. Yerli qeydlər qalacaq.','Copy this browser’s journal, practice history, name, goal and settings into the current account. Local records will stay here.'],
  cloudImportConsent:['Эти данные мои. Я хочу скопировать их в этот аккаунт.','Bu məlumatlar mənimdir. Onları bu hesaba kopyalamaq istəyirəm.','These are my records. I want to copy them into this account.'],
+ cloudDraft:['Черновик хранится в этой вкладке до выхода или перезагрузки. Когда появится связь, нажмите «Сохранить».','Qaralama hesabdan çıxana və ya səhifəni yeniləyənə qədər bu vərəqdə qalır. Bağlantı bərpa ediləndə yadda saxlayın.','Your draft stays in this tab until you sign out or reload. When connected, select Save.'],
+ cloudDiscard:['Отбросить несохранённый черновик?','Yadda saxlanılmamış qaralama silinsin?','Discard the unsaved draft?'],
+ cloudCounts:['Записи дневника: {j}. Практики: {p}.','Gündəlik qeydləri: {j}. Məşqlər: {p}.','Journal entries: {j}. Practices: {p}.'],
  cloudImported:['Перенос завершён. Существующие записи сохранены без дублей.','Köçürmə tamamlandı. Mövcud qeydlər təkrarlanmadan saxlanıldı.','Import complete. Existing records were preserved without duplicates.'],
  cloudNetworkNote:['Изменения в аккаунте требуют подключения. Напоминания работают внутри открытого приложения.','Hesabda dəyişiklik etmək üçün internet lazımdır. Xatırlatmalar tətbiq açıq olanda işləyir.','Account changes require a connection. Reminders work while the app is open.']
 };

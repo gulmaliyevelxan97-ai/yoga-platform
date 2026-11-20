@@ -14,6 +14,8 @@ export function cloudAccount(client, onChange, guestLocale) {
  let recovery = false;
  let busy = false;
  let notice = '';
+ let lastImport = null;
+ let journalDraft = null;
 
  async function reload() {
   const current = epoch;
@@ -26,6 +28,9 @@ export function cloudAccount(client, onChange, guestLocale) {
   const nextUser = session?.user ?? null;
   if (user?.id === nextUser?.id && recovery === isRecovery) return;
   epoch++;
+  journalDraft = null;
+  notice = '';
+  lastImport = null;
   user = nextUser;
   recovery = isRecovery;
   store = user && !recovery ? studentStore(client,user.id) : null;
@@ -77,10 +82,13 @@ export function cloudAccount(client, onChange, guestLocale) {
  async function save(operation, ...values) {
   if (busy || !store) return false;
   const startEpoch = epoch;
+  if (operation === 'saveJournal') journalDraft = {...values[0]};
   busy = true;
   try {
-   if (operation !== 'refresh') await store[operation](...values);
+   const result = operation === 'refresh' ? null : await store[operation](...values);
    if (startEpoch !== epoch) return false;
+   if (operation === 'import') lastImport = result;
+   if (operation === 'saveJournal') journalDraft = null;
    // Acknowledged writes should not be retried just because the follow-up read failed.
    try {
     await reload();
@@ -108,7 +116,9 @@ export function cloudAccount(client, onChange, guestLocale) {
 
  return {
   get user() {return user;}, get recovery() {return recovery;}, get state() {return state;},
-  get notice() {return notice;}, get busy() {return busy;},
+  get journalDraft() {return journalDraft;},
+  discardJournalDraft() {journalDraft = null;},
+  get lastImport() {return lastImport;}, get notice() {return notice;}, get busy() {return busy;},
   action, save,
   async init() {
    try {

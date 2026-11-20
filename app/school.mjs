@@ -1,0 +1,186 @@
+import {schoolNotices, saveLessonPreference} from './school-notices.mjs';
+export const schoolStrings = {
+ resumeLesson:['Продолжить обучение','Öyrənməyə davam et','Continue learning'],
+ revokeEnrollment:['Отозвать доступ','Girişi ləğv et','Revoke access'],
+ student:['Ученик','Şagird','Student'],
+ manageClasses:['Управление занятиями','Məşğələlərin idarə edilməsi','Manage classes'], newClass:['Создать занятие','Məşğələ yarat','Create class'],
+ capacity:['Вместимость','Yer sayı','Capacity'], starts:['Начало','Başlanğıc','Starts'], ends:['Окончание','Son','Ends'], format:['Формат','Format','Format'],
+ onsite:['Очно','Əyani','In person'], online:['Онлайн','Onlayn','Online'], group:['Группа','Qrup','Group'], individual:['Индивидуально','Fərdi','Individual'], event:['Мероприятие','Tədbir','Event'],
+ stopClass:['Отменить занятие','Məşğələni ləğv et','Cancel class'], pending:['Ожидается','Gözlənilir','Pending'], present:['Присутствовал','İştirak edib','Present'], absent:['Отсутствовал','İştirak etməyib','Absent'],
+ students:['Участники','İştirakçılar','Participants'], assignRole:['Назначить роль','Rol təyin et','Assign role'], instructor:['Преподаватель','Müəllim','Instructor'], admin:['Администратор','İdarəçi','Administrator'],
+ audit:['Журнал изменений','Dəyişiklik jurnalı','Change log'], localClock:['Время на вашем устройстве','Cihazınızın yerli vaxtı','Device local time'], schoolRole:['Роль','Rol','Role'],
+ academy:['Мои программы','Proqramlarım','My programmes'], classes:['Мои занятия','Məşğələlərim','My classes'],
+ staff:['Управление школой','Məktəbin idarə edilməsi','School management'], schoolEmpty:['Пока нет записей.','Hələ qeyd yoxdur.','No entries yet.'],
+ schoolError:['Не удалось получить подтверждение сервера. Обновите данные.','Serverdən təsdiq alınmadı. Məlumatları yeniləyin.','Could not confirm the result. Refresh the data.'],
+ reload:['Обновить','Yenilə','Refresh'], schoolPrograms:['Программы','Proqramlar','Programmes'], book:['Записаться','Yazıl','Book a place'],
+ cancelBooking:['Отменить запись','Qeydiyyatı ləğv et','Cancel booking'], free:['Свободные места','Boş yerlər','Available places'],
+ cancelled:['Отменено','Ləğv edilib','Cancelled'], createDraft:['Создать черновик','Qaralama yarat','Create draft'],
+ schoolTitle:['Название','Ad','Title'], addModule:['Добавить модуль','Modul əlavə et','Add module'],
+ addLesson:['Добавить урок','Dərs əlavə et','Add lesson'], order:['Порядок','Sıra','Position'],
+ body:['Текст урока','Dərsin mətni','Lesson text'], publish:['Опубликовать','Dərc et','Publish'],
+ archive:['В архив','Arxivləşdir','Archive'], enroll:['Добавить ученика','Şagird əlavə et','Enrol student'],
+ memberId:['ID ученика','Şagirdin ID-si','Student ID'], draft:['Черновик','Qaralama','Draft'], published:['Опубликовано','Dərc edilib','Published'],
+ archived:['В архиве','Arxivdə','Archived'], lesson:['Урок','Dərs','Lesson'], assignment:['Задание','Tapşırıq','Assignment'],
+ practiceType:['Практика','Praktika','Practice'], completeLesson:['Отметить выполнение','Tamamlandığını qeyd et','Mark complete'],
+ historyTitle:['Завершённые уроки','Tamamlanmış dərslər','Completed lessons'], denied:['Доступ ограничен.','Giriş məhduddur.','Access is restricted.'],
+ schoolStats:['Статистика школы','Məktəbin statistikası','School statistics'], registered_students:['Ученики','Şagirdlər','Students'],
+ active_learners_30d:['Активны за 30 дней','Son 30 gündə aktiv','Active in 30 days'], completed_practices:['Завершённые практики','Tamamlanmış praktikalar','Completed practices'],
+ completed_lessons:['Завершённые уроки','Tamamlanmış dərslər','Completed lessons'], bookings:['Записи','Qeydiyyatlar','Bookings'], attended:['Посещения','İştirak','Attendance'],
+ confirmed:['Запись подтверждена','Qeydiyyat təsdiqlənib','Booking confirmed'], kind:['Тип','Növ','Type'], lessonEdit:['Редактировать урок','Dərsi redaktə et','Edit lesson']
+};
+
+const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+
+export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) {
+ const table = name => client.from('restart_'+name);
+ async function data(query) {
+  const {data:rows,error} = await query;
+  if (error) throw error;
+  return rows;
+ }
+ const link = (name,label,id='') => '<a class="button" href="#'+name+(id?'/'+esc(id):'')+'">'+t(label)+'</a>';
+ const empty = '<p class="muted">'+t('schoolEmpty')+'</p>';
+ const input = (key,name,attrs='') => '<label>'+t(key)+'<input required name="'+name+'" '+attrs+'></label>';
+ const titleInput = input('schoolTitle','title','maxlength="180"');
+ const position = input('order','position','type="number" min="1" step="1"');
+ const form = (action,label,fields='',key='') => '<form class="panel" data-school="'+action+'" data-key="'+esc(key)+'">'+fields+'<button>'+t(label)+'</button></form>';
+ const date = value => new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
+ let busy = false;
+ let role = '';
+ async function programmes() {
+  const programs = await data(table('programs').select('id,title,status').order('title'));
+  const program = programs.find(p=>p.id===route.id);
+  if (!program) return programs.map(p=>'<article class="panel"><h2><a href="#'+route.name+'/'+esc(p.id)+'">'+esc(p.title)+'</a></h2><p>'+t(p.status)+'</p></article>').join('') || empty;
+  const staff = route.name==='staff';
+  const editing = staff && (role==='admin' || program.status==='draft');
+  const modules = await data(table('modules').select('id,title').eq('program_id',program.id).order('position'));
+  const lessons = modules.length ? await data(table('lessons').select('id,module_id,title,body,kind').in('module_id',modules.map(m=>m.id)).order('position')) : [];
+  const done = lessons.length && !staff ? await data(table('lesson_progress').select('lesson_id,completed_at').eq('user_id',user).in('lesson_id',lessons.map(l=>l.id))) : [];
+  const completed = new Set(done.map(d=>d.lesson_id));
+  let html = link(route.name,'schoolPrograms')+'<h2>'+esc(program.title)+'</h2>';
+  if (!staff) html += '<p>'+t('historyTitle')+' · '+completed.size+' / '+lessons.length+'</p>';
+  const orderedLessons = modules.flatMap(m=>lessons.filter(l=>l.module_id===m.id));
+  const nextLesson = orderedLessons.find(l=>!completed.has(l.id));
+  if (!staff && nextLesson) html += '<button type="button" data-continue="'+esc(nextLesson.id)+'">'+t('resumeLesson')+'</button>';
+  if (staff && role==='admin') {
+   if (program.status==='draft') html+=form('publish','publish','',program.id);
+   if (program.status!=='archived') html+=form('archive','archive','',program.id);
+   html+=form('enroll','enroll',input('memberId','student','maxlength="36"'),program.id);
+   const members=await data(table('enrollments').select('user_id').eq('program_id',program.id));
+   html+=members.map(m=>form('unenroll','revokeEnrollment','<span>'+esc(m.user_id)+'</span><input type="hidden" name="student" value="'+esc(m.user_id)+'">',program.id)).join('');
+  }
+  for (const m of modules) {
+   html+='<section class="panel"><h3>'+esc(m.title)+'</h3>';
+   for (const l of lessons.filter(l=>l.module_id===m.id)) {
+    html+='<details class="panel" data-lesson="'+esc(l.id)+'"><summary>'+esc(l.title)+(completed.has(l.id)?' ✓':'')+'</summary><p>'+esc(l.body).replace(/\n/g,'<br>')+'</p>';
+    if (!staff && !completed.has(l.id)) html+=form('complete','completeLesson','',l.id);
+    if (editing) html+=form('edit','lessonEdit','<label>'+t('schoolTitle')+'<input name="title" required maxlength="180" value="'+esc(l.title)+'"></label><label>'+t('body')+'<textarea name="body" maxlength="50000">'+esc(l.body)+'</textarea></label>',l.id);
+    html+='</details>';
+   }
+   if (editing) html+=form('lesson','addLesson',titleInput+position+'<label>'+t('kind')+'<select name="kind">'+['lesson','practice','assignment'].map(k=>'<option value="'+k+'">'+t(k==='practice'?'practiceType':k)+'</option>').join('')+'</select></label><label>'+t('body')+'<textarea name="body" maxlength="50000"></textarea></label>',m.id);
+   html+='</section>';
+  }
+  return html+(editing?form('module','addModule',titleInput+position,program.id):'');
+ }
+ const select = (label,name,values) => '<label>'+t(label)+'<select name="'+name+'">'+values.map(v=>'<option value="'+v+'">'+t(v)+'</option>').join('')+'</select></label>';
+ async function management() {
+  let query=table('class_sessions').select('id,title,starts_at,status').order('starts_at',{ascending:false}).limit(50);
+  if(role==='instructor') query=query.eq('instructor_id',user);
+  const sessions=await data(query);
+  const roster=sessions.length ? await data(table('bookings').select('session_id,user_id,status,attendance').in('session_id',sessions.map(s=>s.id)).eq('status','booked')) : [];
+  let html='<details class="panel"><summary>'+t('manageClasses')+'</summary>'+form('newClass','newClass',titleInput+'<p>'+t('localClock')+'</p>'+input('starts','start','type="datetime-local"')+input('ends','end','type="datetime-local"')+select('format','format',['onsite','online'])+select('kind','kind',['group','individual','event'])+input('capacity','capacity','type="number" min="1" max="1000"'))+
+   sessions.map(s=>'<details><summary>'+esc(s.title)+' · '+esc(date(s.starts_at))+'</summary>'+(s.status==='cancelled'?t('cancelled'):form('stopClass','stopClass','',s.id))+roster.filter(b=>b.session_id===s.id).map(b=>form('attendance','save','<p>'+esc(b.user_id)+' · '+t(b.attendance)+'</p><input type="hidden" name="student" value="'+esc(b.user_id)+'">'+select('attended','attendance',['present','absent']),s.id)).join('')+'</details>').join('')+'</details>';
+  if(role==='admin') {
+   const audit=await data(table('school_audit').select('operation,relation_name,happened_at').order('id',{ascending:false}).limit(20));
+   html+='<details class="panel"><summary>'+t('schoolRole')+'</summary>'+form('role','assignRole',input('memberId','student','maxlength="36"')+select('schoolRole','role',['student','instructor','admin']))+'</details>'+
+     '<details class="panel"><summary>'+t('audit')+'</summary>'+audit.map(a=>'<p>'+esc(date(a.happened_at))+' · '+esc(a.operation)+' · '+esc(a.relation_name)+'</p>').join('')+'</details>';
+  }
+  return html;
+ }
+ async function classes() {
+  const [sessions,bookings] = await Promise.all([data(table('class_sessions').select('id,title,starts_at,status,capacity,seats_taken').gte('starts_at',new Date().toISOString()).order('starts_at')),data(table('bookings').select('session_id,status').eq('user_id',user))]);
+  const booked = new Set(bookings.filter(b=>b.status==='booked').map(b=>b.session_id));
+  return sessions.map(s=>{
+   const places=s.capacity-s.seats_taken;
+   const owns = booked.has(s.id);
+   return '<article class="panel"><h2>'+esc(s.title)+'</h2><p>'+esc(date(s.starts_at))+'</p>'+(s.status==='cancelled'?t('cancelled'):'<p>'+t('free')+' · '+places+'</p>'+(owns?'<p>'+t('confirmed')+'</p>'+form('cancel','cancelBooking','',s.id):places>0?form('book','book','',s.id):''))+'</article>';
+  }).join('') || empty;
+ }
+ async function load() {
+  if (!current()) return;
+  outlet.textContent=t('cloudLoading');
+  try {
+   const roles=await data(table('school_roles').select('role').eq('user_id',user).maybeSingle());
+   role=roles?.role || 'student';
+   const staff=['admin','instructor'].includes(role);
+   let html='<nav class="actions">'+link('academy','academy')+' '+link('classes','classes')+(staff?' '+link('staff','staff'):'')+'</nav>';
+   if (route.name==='staff' && !staff) html+='<p>'+t('denied')+'</p>';
+   else if (route.name==='classes') html+=(await classes())+(await schoolNotices(client,user,lang));
+   else {
+    if (route.name==='staff' && !route.id) {
+     if (role==='admin') {
+      const stats=await data(client.rpc('restart_school_metrics'));
+      html+='<section class="panel"><h2>'+t('schoolStats')+'</h2><dl>'+['registered_students','active_learners_30d','completed_practices','completed_lessons','bookings','attended'].map(k=>'<dt>'+t(k)+'</dt><dd>'+esc(stats[k])+'</dd>').join('')+'</dl></section>';
+     }
+     html+=form('program','createDraft',titleInput)+await management();
+    }
+    html+=await programmes();
+   }
+   if(current()) outlet.innerHTML=html;
+  } catch { if(current()) error(); }
+ }
+ function error() { outlet.innerHTML='<p role="alert">'+t('schoolError')+'</p>'+form('refresh','reload'); }
+ outlet.onclick=e=>{
+  const id=e.target.closest('button[data-continue]')?.dataset.continue;
+  if (!current() || !uuid.test(id || '')) return;
+  const lesson=outlet.querySelector('details[data-lesson="'+id+'"]');
+  if (lesson) { lesson.open=true; lesson.querySelector('summary').focus(); }
+ };
+ outlet.onsubmit=async e=>{
+  e.preventDefault(); e.stopPropagation();
+  if (busy || !current()) return;
+  const f=e.target;
+  const key=f.dataset.key, action=f.hasAttribute('data-lesson-notices')?'noticePref':f.dataset.school, values=Object.fromEntries(new FormData(f));
+  if(key && !uuid.test(key)) return;
+  busy=true;
+  f.querySelector('button').disabled=true;
+  try {
+   if ((await client.auth.getSession()).data.session?.user.id!==user || !current()) return;
+   switch(action) {
+    case 'refresh': break;
+    case 'noticePref': await saveLessonPreference(client,user,f.elements.lesson_updates.checked); break;
+    case 'newClass': await data(table('class_sessions').insert({title:values.title,starts_at:new Date(values.start).toISOString(),ends_at:new Date(values.end).toISOString(),kind:values.kind,format:values.format,capacity:Number(values.capacity)})); break;
+    case 'stopClass': if(!confirm(t('stopClass')+'?')) return; await data(table('class_sessions').update({status:'cancelled'}).eq('id',key).select('id').single()); break;
+    case 'attendance': await data(client.rpc('restart_mark_attendance',{p_session_id:key,p_user_id:values.student,p_attendance:values.attendance})); break;
+    case 'role': {
+     if (!uuid.test(values.student) || !confirm(t('assignRole')+' · '+t(values.role)+' · '+values.student+'?')) return;
+     const existing=await data(table('school_roles').select('role').eq('user_id',values.student).maybeSingle());
+     if (values.student===user && values.role!=='admin') throw Error();
+     if(values.role==='student') {
+      if(existing) await data(table('school_roles').delete().eq('user_id',values.student).select('user_id').single());
+      break;
+     }
+     if(existing) await data(table('school_roles').update({role:values.role}).eq('user_id',values.student).select('role').single());
+     else await data(table('school_roles').insert({user_id:values.student,role:values.role}));
+     break;
+    }
+    case 'complete': await data(table('lesson_progress').upsert({lesson_id:key},{onConflict:'user_id,lesson_id',ignoreDuplicates:true})); break;
+    case 'book': case 'cancel': await data(client.rpc('restart_set_booking',{p_session_id:key,p_book:action==='book'})); break;
+    case 'program': await data(table('programs').insert({title:values.title})); break;
+    case 'enroll': if (!uuid.test(values.student)) throw Error(); await data(table('enrollments').insert({program_id:key,user_id:values.student})); break;
+    case 'unenroll':
+     if (!uuid.test(values.student) || !confirm(t('revokeEnrollment')+' · '+values.student+'?')) return;
+     await data(table('enrollments').delete().eq('user_id',values.student).eq('program_id',key).select('user_id').single());
+     break;
+    case 'publish': case 'archive': await data(table('programs').update({status:action==='publish'?'published':'archived'}).eq('id',key).select('id').single()); break;
+    case 'module': await data(table('modules').insert({program_id:key,title:values.title,position:Number(values.position)})); break;
+    case 'lesson': await data(table('lessons').insert({module_id:key,title:values.title,body:values.body,position:Number(values.position),kind:values.kind})); break;
+    case 'edit': await data(table('lessons').update({title:values.title,body:values.body}).eq('id',key).select('id').single()); break;
+    default: return;
+   }
+   await load();
+  } catch { if(current()) error(); }
+  finally {busy=false;f.querySelector('button').disabled=false;}
+ };
+ await load();
+}
