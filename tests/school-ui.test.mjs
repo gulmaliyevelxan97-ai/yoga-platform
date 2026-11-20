@@ -168,3 +168,9 @@ test('Academy renders previous backend schemas without the optional video field'
  assert.doesNotMatch(html,/name="media_url"/);
  assert.equal(queries,2);
 });
+
+test('An empty schedule displays its own empty state and omits the format filter',async()=>{
+ const {html}=await render({route:{name:'classes'}});
+ assert.match(html,/Ближайших занятий пока нет/);
+ assert.doesNotMatch(html,/data-class-format/);
+});
