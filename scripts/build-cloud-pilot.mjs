@@ -33,7 +33,7 @@ try {
 }
 const runtimeFiles = {
  app:['index.html','style.css','ui.mjs','content.mjs','state.mjs','manifest.webmanifest','sw.js',
-  'cloud-auth.mjs','cloud-copy.mjs','cloud-data.mjs','school.mjs','school-notices.mjs'],
+  'cloud-auth.mjs','cloud-copy.mjs','cloud-data.mjs','school.mjs','school-notices.mjs','academy-programs.mjs','booking-calendar.mjs','personal-plan.mjs','progress-view.mjs'],
  'assets/brand':['restart-640.webp','restart-1188.webp'],
  'assets/pwa':['restart-192.png','restart-512.png','restart-maskable.png','restart-apple.png']
 };

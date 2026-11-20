@@ -131,3 +131,19 @@ body[data-practice-filter=video] main>section:is(#directions,#courses,#classes,#
 @media(prefers-reduced-motion:reduce) {
   .founder-portrait.is-playing video { visibility:hidden }
 }
+
+/* Keep the menu trigger recognizable with native pointer and keyboard behavior. */
+.school-bar .all-menu summary { gap:.5rem; border:1px solid var(--line); border-radius:.5rem; }
+.school-bar .all-menu summary::after {
+ content:''; width:.45rem; height:.45rem; border:solid currentColor; border-width:0 1.5px 1.5px 0;
+ transform:translateY(-.12rem) rotate(45deg);
+}
+.school-bar .all-menu[open] summary::after { transform:translateY(.1rem) rotate(225deg); }
+.school-bar .all-menu[open] summary, .school-bar .all-links a:hover { background:var(--sage); }
+.school-bar .all-links a { flex-shrink:0; }
+#home-founder a { text-underline-offset:.24em; text-decoration-thickness:1px; }
+@media(max-width:850px) {
+ .school-bar .all-menu { position:static; }
+ .school-bar .all-menu .all-links { left:auto; right:clamp(.8rem,4vw,3.5rem); width:min(20rem,calc(100% - 1.6rem)); max-height:min(66dvh,32rem); overscroll-behavior:contain; }
+ html:has(.school-bar .dock) { scroll-padding-bottom:calc(4.2rem + env(safe-area-inset-bottom)); }
+}

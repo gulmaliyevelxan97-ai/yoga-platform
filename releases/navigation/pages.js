@@ -48,7 +48,7 @@ function schoolHeader(page){
  if(philosophyJump)philosophyJump.textContent=t('Читать философию RESTART','RESTART fəlsəfəsini oxu','Read the RESTART philosophy');
  const actions=$('#home-actions');
  if(actions){
-  $('#home-founder').textContent=homeFounder();
+  $('#home-founder a').textContent=homeFounder();
   $('#home-motto').textContent=homeMotto();
   actions.innerHTML=homeActions();
  }

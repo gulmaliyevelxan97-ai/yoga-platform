@@ -1,5 +1,8 @@
+import {academyCopy,programmeCardInfo,programmeEditor,saveProgrammeDetails} from './academy-programs.mjs';
+import {classVenueField,classLocationFields,classDetailMarkup,classCalendarLink,classTimeInstant,classTimeInput} from './booking-calendar.mjs';
 import {schoolNotices, saveLessonPreference} from './school-notices.mjs';
 export const schoolStrings = {
+ ...academyCopy,
  resumeLesson:['Продолжить обучение','Öyrənməyə davam et','Continue learning'],
  revokeEnrollment:['Отозвать доступ','Girişi ləğv et','Revoke access'],
  student:['Ученик','Şagird','Student'],
@@ -8,7 +11,7 @@ export const schoolStrings = {
  onsite:['Очно','Əyani','In person'], online:['Онлайн','Onlayn','Online'], group:['Группа','Qrup','Group'], individual:['Индивидуально','Fərdi','Individual'], event:['Мероприятие','Tədbir','Event'],
  stopClass:['Отменить занятие','Məşğələni ləğv et','Cancel class'], pending:['Ожидается','Gözlənilir','Pending'], present:['Присутствовал','İştirak edib','Present'], absent:['Отсутствовал','İştirak etməyib','Absent'],
  students:['Участники','İştirakçılar','Participants'], assignRole:['Назначить роль','Rol təyin et','Assign role'], instructor:['Преподаватель','Müəllim','Instructor'], admin:['Администратор','İdarəçi','Administrator'],
- audit:['Журнал изменений','Dəyişiklik jurnalı','Change log'], localClock:['Время на вашем устройстве','Cihazınızın yerli vaxtı','Device local time'], schoolRole:['Роль','Rol','Role'],
+ audit:['Журнал изменений','Dəyişiklik jurnalı','Change log'], localClock:['Время Баку','Bakı vaxtı','Baku time'], venueEdit:['Место занятия','Məşğələnin yeri','Class venue'], editClass:['Изменить время, место и вместимость','Vaxtı, yeri və iştirakçı sayını dəyiş','Change time, venue and capacity'], schoolRole:['Роль','Rol','Role'],
  academy:['Мои программы','Proqramlarım','My programmes'], classes:['Мои занятия','Məşğələlərim','My classes'],
  staff:['Управление школой','Məktəbin idarə edilməsi','School management'], schoolEmpty:['Пока нет записей.','Hələ qeyd yoxdur.','No entries yet.'],
  schoolError:['Не удалось получить подтверждение сервера. Обновите данные.','Serverdən təsdiq alınmadı. Məlumatları yeniləyin.','Could not confirm the result. Refresh the data.'],
@@ -47,17 +50,19 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
  const date = value => new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
  let busy = false;
  let role = '';
+ let isOwner = false;
  async function programmes() {
-  const programs = await data(table('programs').select('id,title,status').order('title'));
+  const programs = await data(table('programs').select('id,title,status,instructor_id,summary,direction,level,minutes,revision').order('title'));
   const program = programs.find(p=>p.id===route.id);
-  if (!program) return programs.map(p=>'<article class="panel"><h2><a href="#'+route.name+'/'+esc(p.id)+'">'+esc(p.title)+'</a></h2><p>'+t(p.status)+'</p></article>').join('') || empty;
+  if (!program) return programs.map(p=>'<article class="panel"><h2><a href="#'+route.name+'/'+esc(p.id)+'">'+esc(p.title)+'</a></h2><p>'+t(p.status)+'</p>'+programmeCardInfo(p,t,esc)+'</article>').join('') || empty;
   const staff = route.name==='staff';
-  const editing = staff && (role==='admin' || program.status==='draft');
+  const editing = staff && (role==='admin' || (program.status==='draft' && program.instructor_id===user));
   const modules = await data(table('modules').select('id,title').eq('program_id',program.id).order('position'));
   const lessons = modules.length ? await data(table('lessons').select('id,module_id,title,body,kind').in('module_id',modules.map(m=>m.id)).order('position')) : [];
   const done = lessons.length && !staff ? await data(table('lesson_progress').select('lesson_id,completed_at').eq('user_id',user).in('lesson_id',lessons.map(l=>l.id))) : [];
   const completed = new Set(done.map(d=>d.lesson_id));
-  let html = link(route.name,'schoolPrograms')+'<h2>'+esc(program.title)+'</h2>';
+  let html = link(route.name,'schoolPrograms')+'<h2>'+esc(program.title)+'</h2>'+programmeCardInfo(program,t,esc);
+  if (editing) html+=programmeEditor(program,t,esc);
   if (!staff) html += '<p>'+t('historyTitle')+' · '+completed.size+' / '+lessons.length+'</p>';
   const orderedLessons = modules.flatMap(m=>lessons.filter(l=>l.module_id===m.id));
   const nextLesson = orderedLessons.find(l=>!completed.has(l.id));
@@ -84,26 +89,31 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
  }
  const select = (label,name,values) => '<label>'+t(label)+'<select name="'+name+'">'+values.map(v=>'<option value="'+v+'">'+t(v)+'</option>').join('')+'</select></label>';
  async function management() {
-  let query=table('class_sessions').select('id,title,starts_at,status').order('starts_at',{ascending:false}).limit(50);
+  let query=table('class_sessions').select('id,title,starts_at,ends_at,status,capacity,venue').order('starts_at',{ascending:false}).limit(50);
   if(role==='instructor') query=query.eq('instructor_id',user);
   const sessions=await data(query);
   const roster=sessions.length ? await data(table('bookings').select('session_id,user_id,status,attendance').in('session_id',sessions.map(s=>s.id)).eq('status','booked')) : [];
-  let html='<details class="panel"><summary>'+t('manageClasses')+'</summary>'+form('newClass','newClass',titleInput+'<p>'+t('localClock')+'</p>'+input('starts','start','type="datetime-local"')+input('ends','end','type="datetime-local"')+select('format','format',['onsite','online'])+select('kind','kind',['group','individual','event'])+input('capacity','capacity','type="number" min="1" max="1000"'))+
-   sessions.map(s=>'<details><summary>'+esc(s.title)+' · '+esc(date(s.starts_at))+'</summary>'+(s.status==='cancelled'?t('cancelled'):form('stopClass','stopClass','',s.id))+roster.filter(b=>b.session_id===s.id).map(b=>form('attendance','save','<p>'+esc(b.user_id)+' · '+t(b.attendance)+'</p><input type="hidden" name="student" value="'+esc(b.user_id)+'">'+select('attended','attendance',['present','absent']),s.id)).join('')+'</details>').join('')+'</details>';
+  const editClass = s => '<details><summary>'+t('editClass')+'</summary>'+form('editClass','save',
+   '<p>'+t('localClock')+'</p>'+input('starts','start','type="datetime-local" value="'+esc(classTimeInput(s.starts_at))+'"')+
+   input('ends','end','type="datetime-local" value="'+esc(classTimeInput(s.ends_at))+'"')+
+   input('capacity','capacity','type="number" min="1" max="1000" value="'+esc(s.capacity)+'"')+
+   '<label>'+t('venueEdit')+'<input name="venue" maxlength="180" value="'+esc(s.venue)+'"></label>',s.id)+'</details>';
+  let html='<details class="panel"><summary>'+t('manageClasses')+'</summary>'+form('newClass','newClass',titleInput+'<p>'+t('localClock')+'</p>'+input('starts','start','type="datetime-local"')+input('ends','end','type="datetime-local"')+select('format','format',['onsite','online'])+select('kind','kind',['group','individual','event'])+input('capacity','capacity','type="number" min="1" max="1000"')+classVenueField(lang))+
+   sessions.map(s=>'<details><summary>'+esc(s.title)+' · '+esc(date(s.starts_at))+'</summary>'+(s.status==='cancelled'?t('cancelled'):editClass(s)+form('stopClass','stopClass','',s.id))+roster.filter(b=>b.session_id===s.id).map(b=>form('attendance','save','<p>'+esc(b.user_id)+' · '+t(b.attendance)+'</p><input type="hidden" name="student" value="'+esc(b.user_id)+'">'+select('attended','attendance',['present','absent']),s.id)).join('')+'</details>').join('')+'</details>';
   if(role==='admin') {
    const audit=await data(table('school_audit').select('operation,relation_name,happened_at').order('id',{ascending:false}).limit(20));
-   html+='<details class="panel"><summary>'+t('schoolRole')+'</summary>'+form('role','assignRole',input('memberId','student','maxlength="36"')+select('schoolRole','role',['student','instructor','admin']))+'</details>'+
-     '<details class="panel"><summary>'+t('audit')+'</summary>'+audit.map(a=>'<p>'+esc(date(a.happened_at))+' · '+esc(a.operation)+' · '+esc(a.relation_name)+'</p>').join('')+'</details>';
+   if(isOwner) html+='<details class="panel"><summary>'+t('schoolRole')+'</summary>'+form('role','assignRole',input('memberId','student','maxlength="36"')+select('schoolRole','role',['student','instructor','admin']))+'</details>';
+   html+='<details class="panel"><summary>'+t('audit')+'</summary>'+audit.map(a=>'<p>'+esc(date(a.happened_at))+' · '+esc(a.operation)+' · '+esc(a.relation_name)+'</p>').join('')+'</details>';
   }
   return html;
  }
  async function classes() {
-  const [sessions,bookings] = await Promise.all([data(table('class_sessions').select('id,title,starts_at,status,capacity,seats_taken').gte('starts_at',new Date().toISOString()).order('starts_at')),data(table('bookings').select('session_id,status').eq('user_id',user))]);
+  const [sessions,bookings] = await Promise.all([data(table('class_sessions').select('id,title,starts_at,ends_at,status,capacity,seats_taken,time_zone,venue').gte('starts_at',new Date().toISOString()).order('starts_at')),data(table('bookings').select('session_id,status').eq('user_id',user))]);
   const booked = new Set(bookings.filter(b=>b.status==='booked').map(b=>b.session_id));
   return sessions.map(s=>{
    const places=s.capacity-s.seats_taken;
    const owns = booked.has(s.id);
-   return '<article class="panel"><h2>'+esc(s.title)+'</h2><p>'+esc(date(s.starts_at))+'</p>'+(s.status==='cancelled'?t('cancelled'):'<p>'+t('free')+' · '+places+'</p>'+(owns?'<p>'+t('confirmed')+'</p>'+form('cancel','cancelBooking','',s.id):places>0?form('book','book','',s.id):''))+'</article>';
+   return '<article class="panel"><h2>'+esc(s.title)+'</h2><p>'+esc(date(s.starts_at))+'</p>'+classDetailMarkup(s,lang,esc)+(s.status==='cancelled'?t('cancelled'):'<p>'+t('free')+' · '+places+'</p>'+(owns?'<p>'+t('confirmed')+'</p>'+classCalendarLink(s,lang)+form('cancel','cancelBooking','',s.id):places>0?form('book','book','',s.id):''))+'</article>';
   }).join('') || empty;
  }
  async function load() {
@@ -111,7 +121,8 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
   outlet.textContent=t('cloudLoading');
   try {
    const roles=await data(table('school_roles').select('role').eq('user_id',user).maybeSingle());
-   role=roles?.role || 'student';
+   isOwner=roles?.role==='owner';
+   role=isOwner?'admin':roles?.role || 'student';
    const staff=['admin','instructor'].includes(role);
    let html='<nav class="actions">'+link('academy','academy')+' '+link('classes','classes')+(staff?' '+link('staff','staff'):'')+'</nav>';
    if (route.name==='staff' && !staff) html+='<p>'+t('denied')+'</p>';
@@ -149,10 +160,15 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
    switch(action) {
     case 'refresh': break;
     case 'noticePref': await saveLessonPreference(client,user,f.elements.lesson_updates.checked); break;
-    case 'newClass': await data(table('class_sessions').insert({title:values.title,starts_at:new Date(values.start).toISOString(),ends_at:new Date(values.end).toISOString(),kind:values.kind,format:values.format,capacity:Number(values.capacity)})); break;
+    case 'newClass': await data(table('class_sessions').insert({title:values.title,starts_at:classTimeInstant(values.start),ends_at:classTimeInstant(values.end),kind:values.kind,format:values.format,capacity:Number(values.capacity),...classLocationFields(values)})); break;
+    case 'editClass': await data(table('class_sessions').update({
+     starts_at:classTimeInstant(values.start),ends_at:classTimeInstant(values.end),
+     capacity:Number(values.capacity),...classLocationFields(values)
+    }).eq('id',key).eq('status','scheduled').select('id').single()); break;
     case 'stopClass': if(!confirm(t('stopClass')+'?')) return; await data(table('class_sessions').update({status:'cancelled'}).eq('id',key).select('id').single()); break;
     case 'attendance': await data(client.rpc('restart_mark_attendance',{p_session_id:key,p_user_id:values.student,p_attendance:values.attendance})); break;
     case 'role': {
+     if (!isOwner) return;
      if (!uuid.test(values.student) || !confirm(t('assignRole')+' · '+t(values.role)+' · '+values.student+'?')) return;
      const existing=await data(table('school_roles').select('role').eq('user_id',values.student).maybeSingle());
      if (values.student===user && values.role!=='admin') throw Error();
@@ -166,6 +182,7 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
     }
     case 'complete': await data(table('lesson_progress').upsert({lesson_id:key},{onConflict:'user_id,lesson_id',ignoreDuplicates:true})); break;
     case 'book': case 'cancel': await data(client.rpc('restart_set_booking',{p_session_id:key,p_book:action==='book'})); break;
+    case 'courseDetails': await saveProgrammeDetails(client,key,values); break;
     case 'program': await data(table('programs').insert({title:values.title})); break;
     case 'enroll': if (!uuid.test(values.student)) throw Error(); await data(table('enrollments').insert({program_id:key,user_id:values.student})); break;
     case 'unenroll':
@@ -179,7 +196,13 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current}) 
     default: return;
    }
    await load();
-  } catch { if(current()) error(); }
+  } catch (failure) {
+   if(current() && failure.message==='courseConflict') {
+    const alert=f.querySelector('[role=alert]') || f.appendChild(document.createElement('p'));
+    alert.setAttribute('role','alert');
+    alert.textContent=t('courseConflict');
+   } else if(current()) error();
+  }
   finally {busy=false;f.querySelector('button').disabled=false;}
  };
  await load();

@@ -29,3 +29,27 @@ test('Practice search matches localized words across title and topic', () => {
   assert.equal(match('relax breath',['Breathing practice','Relaxation'],'en'),true);
   assert.equal(match('breath running',['Breathing practice','Relaxation'],'en'),false);
 });
+
+test('Public pages expose the founder and application before JavaScript starts', () => {
+  for (const file of ['index', 'founder', 'about', 'philosophy', 'code', 'programme', 'my-path', 'journal', 'progress', 'participation', 'practices', 'activity']) {
+    const html=read(file+'.html');
+    const menu=html.match(/<nav class="all-links"[^>]*>([\s\S]*?)<\/nav>/)[1];
+    assert.match(menu,/href="\.\/founder\.html"/);
+    assert.match(menu,/href="\.\/app\/"/);
+    assert.match(html,/<a class="school-skip" href="#top">/);
+    assert.match(html,/<main[^>]*id="top"[^>]*tabindex="-1"/);
+  }
+  assert.match(read('index.html'), /id="home-founder"><a href="\.\/founder\.html">Elxan Gülmalıyev/);
+  assert.match(read('founder.html'), /id="founder-workshops"/);
+});
+
+test('Legacy home hashes open their canonical school destinations', () => {
+  for (const [hash, expected] of [['#founder','./founder.html'],['#teacher-elxan','./founder.html'],['#watch/lesson','./practices.html#watch/lesson'],['#profile','./activity.html#profile']]) {
+    let redirected;
+    runInNewContext(read('releases/navigation/shell.js'), {
+      document:{body:{dataset:{page:'home'}},querySelector:()=>({querySelector(){}}),addEventListener(){}},
+      location:{hash,replace:url=>{redirected=url}},window:{addEventListener(){}},navigator:{}
+    });
+    assert.equal(redirected,expected);
+  }
+});
