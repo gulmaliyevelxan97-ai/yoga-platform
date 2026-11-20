@@ -43,3 +43,15 @@ test('Programme localizes the date, links and truthful progress', () => {
   assert.ok(renderWeeklyProgramLink(lang).includes('href="#week">' + title));
  }
 });
+
+test('Week day links expose localized dates and match focusable day cards',()=>{
+ const html = renderWeeklyProgram({lang:'en',today:week,selectedDate:'2026-11-22'});
+ const nav = html.match(/<nav class="week-jump"[^>]*>(.*?)<\/nav>/)?.[1];
+ assert.equal((nav.match(/href="#week\//g) || []).length,7);
+ assert.match(nav,/href="#week\/2026-11-22" aria-label="[^"]+" aria-current="date"/);
+ for (const [,id] of nav.matchAll(/href="#(week\/[\d-]+)"/g)) {
+  assert.ok(html.includes('id="'+id+'" tabindex="-1"'));
+ }
+ const expired = renderWeeklyProgram({lang:'en',today:week,selectedDate:'2026-11-15'});
+ assert.match(expired,/href="#week\/2026-11-20" aria-label="[^"]+" aria-current="date"/);
+});
