@@ -22,7 +22,15 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
   const buildOptions={cwd:dir,env:{...process.env,RESTART_PILOT_OUTPUT:'dist',
    RESTART_SUPABASE_URL:'https://offline-build-fixture.supabase.co',
    RESTART_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_offline_fixture'}};
-  execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],buildOptions);
+  const stagingRef='abcdefghijklmnopqrst';
+  const stage={...buildOptions,env:{...buildOptions.env,RESTART_STAGING_PROJECT_REF:stagingRef},stdio:'pipe'};
+  assert.throws(()=>execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs','--staging'],stage),
+   {message:/matching project URL/});
+  assert.throws(()=>execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs','--staging'],
+   {...stage,env:{...stage.env,RESTART_STAGING_PROJECT_REF:''}}),{message:/matching project URL/});
+  execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs','--staging'],{
+   ...stage,env:{...stage.env,RESTART_SUPABASE_URL:'https://'+stagingRef+'.supabase.co/'}
+  });
   await assert.rejects(readFile(path.join(dir,'dist/app/.env.local')),{code:'ENOENT'});
   await assert.rejects(readFile(path.join(dir,'dist/assets/pwa/draft.txt')),{code:'ENOENT'});
   assert.throws(()=>execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs'],
