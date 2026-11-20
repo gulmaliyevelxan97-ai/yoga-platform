@@ -13,7 +13,7 @@ button:active,.button:active,a.cta:active {filter:brightness(.88)}
 button:disabled{cursor:default;opacity:.62}
 @media (hover:hover){button:not(:disabled):not(.cta):hover,.button:hover,.tabs a:hover{border-color:var(--gold);color:var(--gold)}}
 [hidden]{display:none!important}
-.app{max-width:var(--app-width);margin:auto;padding:0 clamp(.8rem,4vw,2.3rem) calc(6rem + env(safe-area-inset-bottom))}
+.app{max-width:var(--app-width);margin:auto;padding:0 clamp(.8rem,4vw,2.3rem) var(--nav-clearance)}
 .top{display:flex;gap:.65rem;align-items:center;justify-content:space-between;padding:max(.9rem,env(safe-area-inset-top)) 0 .7rem;border-bottom:1px solid var(--line)}
 .brand{display:flex;gap:.55rem;align-items:center;min-height:44px;font:600 1.28rem var(--serif);letter-spacing:.16em;color:var(--paper)}
 .brand img{border-radius:8px}
@@ -183,3 +183,67 @@ textarea{resize:vertical}
  .practice-grid {grid-template-columns:1fr}
  .today-heading p {font-size:.9rem}
 }
+
+/* School and journal controls share a rhythm with the rest of the app. */
+html{scroll-padding-block-end:var(--nav-clearance)}
+#screen :is(p[role="alert"],p[role="status"],p[data-class-empty]){
+ padding:.65rem .8rem;
+ border-radius:var(--radius-control);
+ border-inline-start:3px solid var(--line);
+ background:var(--status-neutral);
+}
+#screen p[role="alert"]{
+ border-inline-start-color:var(--danger);
+ background:var(--status-danger);
+ color:var(--danger);
+}
+#screen p[role="status"][tabindex="-1"]{
+ border-inline-start-color:var(--success);
+ background:var(--status-success);
+ color:var(--success);
+}
+#screen :is(p[role="alert"],p[role="status"]):empty{display:none}
+#screen [aria-busy="true"]{cursor:progress}
+#screen .panel :is(.panel,form){background:var(--button-surface)}
+#screen .panel details.panel{background:transparent}
+#screen .panel > :last-child:not(summary){margin-block-end:0}
+#screen article.panel h2 a{
+ text-decoration:underline;
+ text-decoration-thickness:1px;
+ text-underline-offset:.2em;
+}
+#screen details>summary{
+ min-block-size:var(--control-size);
+ display:list-item;
+ padding:.6rem .35rem;
+ border-radius:var(--radius-control);
+ cursor:pointer;
+ overflow-wrap:anywhere;
+}
+#screen details>summary::marker{color:var(--gold)}
+#screen details[open]>summary{margin-block-end:.55rem;background:var(--active-surface)}
+#screen details>details{margin-block-start:.55rem}
+#screen .actions{margin-block-end:.8rem}
+#screen .actions :is(a,button){overflow-wrap:anywhere;text-align:center}
+#screen [data-class-card] form[data-school]{border:0;padding:0;background:none}
+#screen [data-class-card] form[data-school] button:not([disabled]){border-color:var(--gold)}
+#screen textarea{min-block-size:6rem}
+#screen textarea[name="body"]{min-block-size:10rem}
+#screen :is(input,select,textarea){accent-color:var(--gold)}
+#screen .history li{min-width:0}
+#screen .history li>*{min-width:0}
+#screen :is(.history li,dd){overflow-wrap:anywhere}
+#screen .history li>time{flex-shrink:0}
+#screen .practice-card:focus-visible{outline-offset:4px}
+@media(max-width:480px){
+ #screen details.panel .panel{padding-inline:.6rem}
+ #screen .history li{flex-wrap:wrap}
+}
+@media(forced-colors:active){
+ .tabs a[aria-current],.icon-button[aria-current]{border:1px solid Highlight}
+ .filters button[aria-pressed=true],.schedule-grid button[aria-pressed=true]{outline:2px solid Highlight;outline-offset:-3px}
+ .practice-card-art,.today-practice{background:Canvas;color:CanvasText}
+ .today-practice .eyebrow{color:CanvasText}
+}
+.lesson-editor-fields{border:0;margin:0;padding:0;min-inline-size:0}
+[data-lesson-draft-status]:empty{display:none}

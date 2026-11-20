@@ -1,5 +1,5 @@
 /* The app has an independent scope and cache. Bump VERSION when shell assets change. */
-const VERSION = '2.3.0';
+const VERSION = '2.3.1';
 const base = new URL(self.registration.scope);
 const prefix = 'restart-app:' + base.pathname + ':';
 const name = prefix + VERSION;
@@ -22,15 +22,20 @@ self.addEventListener('activate',event=>{
   await self.clients.claim();
  })());
 });
+function isAppPage(url) {
+ return url.origin===base.origin && (url.pathname===base.pathname || url.pathname===new URL(shell).pathname);
+}
+
 self.addEventListener('message',event=>{
- if(event.data?.type==='ACTIVATE')event.waitUntil(self.skipWaiting());
+ if(event.data?.type!=='ACTIVATE' || event.source?.type!=='window')return;
+ if(isAppPage(new URL(event.source.url)))event.waitUntil(self.skipWaiting());
 });
 self.addEventListener('fetch',event=>{
- if(event.request.method!=='GET')return;
+ if(event.request.method!=='GET' || event.request.headers.has('Range'))return;
  const url=new URL(event.request.url);
  if(url.origin!==base.origin)return;
  const nav=event.request.mode==='navigate';
- if(nav && url.pathname!==base.pathname && url.pathname!==new URL(shell).pathname)return;
+ if(nav && !isAppPage(url))return;
  const key=nav?shell:url.href;
  if(!resources.has(key))return;
  event.respondWith(caches.match(key,{cacheName:name}).then(hit=>hit||fetch(event.request)));

@@ -50,12 +50,13 @@ test('Stale revisions are rejected without replacing the newer cloud note',async
  assert.equal(row.notes,'edited');
 });
 
-test('Offline journal draft can be retried on reconnect and is cleared on sign-out',async()=>{
+test('Offline journal draft survives reload for its owner and clears on save, sign-out or account change',async()=>{
  const {cloudAccount}=await import('../app/cloud-auth.mjs');
  const original={location:globalThis.location,sessionStorage:globalThis.sessionStorage};
  globalThis.location={href:'https://pilot.example.invalid/app/'};
- globalThis.sessionStorage={getItem:()=>null,removeItem(){}};
- const user={id:'test-a'};
+ const storage=new Map();
+ globalThis.sessionStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)};
+ let user={id:'test-a'};
  let offline=true;
  const client={from(){return {
   select(){return this},eq(){return this},order(){return this},limit(){return {data:[]}},
@@ -68,12 +69,25 @@ test('Offline journal draft can be retried on reconnect and is cleared on sign-o
   const entry={id:'test-entry',notes:'draft',date:'2026-11-20'};
   assert.equal(await account.save('saveJournal',entry),false);
   assert.deepEqual(account.journalDraft,entry);
+  const reloaded=cloudAccount(client,()=>{},()=> 'en');
+  await reloaded.init();
+  assert.deepEqual(reloaded.journalDraft,entry);
   offline=false;
-  assert.equal(await account.save('saveJournal',account.journalDraft),true);
-  assert.equal(account.journalDraft,null);
+  assert.equal(await reloaded.save('saveJournal',reloaded.journalDraft),true);
+  assert.equal(reloaded.journalDraft,null);
+  assert.equal(storage.size,0);
   offline=true;
   await account.save('saveJournal',entry);
   await account.action('logout');
   assert.equal(account.journalDraft,null);
+  assert.equal(storage.size,0);
+  const first=cloudAccount(client,()=>{},()=> 'en');
+  await first.init();
+  await first.save('saveJournal',entry);
+  user={id:'test-b'};
+  const second=cloudAccount(client,()=>{},()=> 'en');
+  await second.init();
+  assert.equal(second.journalDraft,null);
+  assert.equal(storage.size,0);
  }finally{Object.assign(globalThis,original)}
 });
