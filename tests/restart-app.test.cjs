@@ -115,3 +115,27 @@ test('Only app windows can activate a waiting app worker', async () => {
  await post({type:'window',url:scope+'index.html?code=fixture#account'});
  assert.equal(updates,2);
 });
+
+test('Push receiver uses built-in copy, a stable tag and fixed in-scope navigation', async () => {
+ const handlers={};
+ const scope='https://example.test/app/';
+ const shown=[];
+ const opened=[];
+ runInNewContext(read('app/sw.js'),{URL,self:{
+  registration:{scope,showNotification:async(title,options)=>shown.push({title,options})},
+  clients:{matchAll:async()=>[],openWindow:async url=>opened.push(url)},
+  addEventListener:(name,handler)=>{handlers[name]=handler;}
+ }});
+ function run(handler,fields) {
+  let pending;
+  handler({...fields,waitUntil:value=>{pending=value;}});
+  return pending;
+ }
+ await run(handlers.push,{data:{json:()=>({period:'invalid',day:'2026-11-21'})}});
+ assert.equal(shown.length,0);
+ await run(handlers.push,{data:{json:()=>({period:'morning',day:'2026-11-21',locale:'en',body:'untrusted',url:'https://example.invalid/'})}});
+ assert.equal(shown[0].options.body,'Start your morning with breathing.');
+ assert.equal(shown[0].options.tag,'restart-2026-11-21-morning');
+ await run(handlers.notificationclick,{notification:{tag:shown[0].options.tag,close(){}}});
+ assert.deepEqual(opened,[scope+'#today']);
+});

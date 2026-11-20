@@ -1,11 +1,11 @@
 /* The app has an independent scope and cache. Bump VERSION when shell assets change. */
-const VERSION = '2.3.2';
+const VERSION = '2.3.3';
 const base = new URL(self.registration.scope);
 const prefix = 'restart-app:' + base.pathname + ':';
 const name = prefix + VERSION;
 const shell = new URL('./index.html',base).href;
 const resources = new Set([
- './premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./index.html','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
+ './week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./index.html','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
  '../assets/yoga.webp','../assets/meditation.webp','../assets/breath.webp','../assets/founder-yoga.webp','../assets/performance.webp','../assets/lake.jpg',
  '../assets/brand/restart-640.webp','../assets/brand/restart-1188.webp','../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
  '../assets/pwa/restart-maskable.png','../assets/pwa/restart-apple.png'
@@ -39,4 +39,34 @@ self.addEventListener('fetch',event=>{
  const key=nav?shell:url.href;
  if(!resources.has(key))return;
  event.respondWith(caches.match(key,{cacheName:name}).then(hit=>hit||fetch(event.request)));
+});
+
+const pushCopy = {
+ ru: {morning:'Начните утро с дыхания.',day:'Сделайте паузу для движения.',evening:'Выделите время на спокойную практику.'},
+ az: {morning:'Səhərə nəfəs məşqi ilə başlayın.',day:'Hərəkət etmək üçün fasilə verin.',evening:'Sakit məşq üçün vaxt ayırın.'},
+ en: {morning:'Start your morning with breathing.',day:'Take a movement break.',evening:'Make time for a calm practice.'}
+};
+
+self.addEventListener('push',event=>{
+ let payload;
+ try {payload = event.data?.json();}
+ catch {return;}
+ const period = payload?.period;
+ if (!['morning','day','evening'].includes(period) || !/^\d{4}-\d{2}-\d{2}$/.test(payload.day)) return;
+ const copy = Object.hasOwn(pushCopy,payload.locale) ? pushCopy[payload.locale] : pushCopy.en;
+ event.waitUntil(self.registration.showNotification('RESTART',{
+  body:copy[period],tag:'restart-'+payload.day+'-'+period,renotify:false,
+  icon:new URL('../assets/pwa/restart-192.png',base).href
+ }));
+});
+
+self.addEventListener('notificationclick',event=>{
+ if (!/^restart-\d{4}-\d{2}-\d{2}-(morning|day|evening)$/.test(event.notification.tag)) return;
+ event.notification.close();
+ event.waitUntil((async()=>{
+  const windows = await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  const app = windows.find(client=>isAppPage(new URL(client.url)));
+  if (app) return app.focus();
+  return self.clients.openWindow(new URL('./#today',base).href);
+ })());
 });

@@ -1,0 +1,38 @@
+.week-days {
+ list-style:none;
+ padding:0;
+ margin:0;
+}
+.week-day {
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:.75rem 1rem;
+}
+.week-day[aria-current=date] {
+ border-inline-start:3px solid var(--gold);
+}
+.week-day h2,.week-day p {
+ margin:0;
+}
+.week-day-date {
+ display:flex;
+ flex-wrap:wrap;
+ gap:.3rem .7rem;
+ align-items:center;
+ font-size:.875rem;
+}
+.week-day time:first-letter {
+ text-transform:uppercase;
+}
+.week-day-marker {
+ color:var(--gold);
+ font-weight:650;
+}
+.week-day h2 {
+ margin-block:.18rem .25rem;
+}
+.week-progress label,.week-progress progress {
+ margin-block-end:0;
+}
