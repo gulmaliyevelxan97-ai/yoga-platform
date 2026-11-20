@@ -31,6 +31,10 @@ test('school roles, seats, repeat requests, roster privacy and attendance', asyn
     await assert.rejects(create(),{code:'42501'});
     await login(teacher);
     const id = await create();
+    assert.equal(await scalar('select time_zone from public.restart_class_sessions'), null);
+    await assert.rejects(db.query("update public.restart_class_sessions set time_zone='Unknown/Not_A_Zone'"),{code:'22023'});
+    await db.query("update public.restart_class_sessions set time_zone='Asia/Baku',venue='Bakı studiyası'");
+    await assert.rejects(db.query("update public.restart_class_sessions set venue=$1",['Hall\n1']),{code:'23514'});
     assert.equal(await scalar("select starts_at = '2099-01-01 08:00Z'::timestamptz from public.restart_class_sessions"),true);
     const reserve = book => scalar('select public.restart_set_booking($1,$2)',[id,book]);
     const attendance = () => scalar("select public.restart_mark_attendance($1,$2,'present')",[id,b]);
@@ -61,6 +65,7 @@ test('school roles, seats, repeat requests, roster privacy and attendance', asyn
     await login(teacher);
     await db.exec("update public.restart_class_sessions set status='scheduled', starts_at=now()-interval '1 hour',ends_at=now()");
     await login(colleague);
+    assert.equal((await db.query("update public.restart_class_sessions set venue='Another studio' returning venue")).rows.length,0);
     assert.equal(await scalar('select count(*)::int from public.restart_bookings'),0);
     await assert.rejects(attendance(),{code:'42501'});
     await login(teacher);
