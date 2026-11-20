@@ -16,6 +16,7 @@ const copy = {
  repeat: ['Повторить практику', 'Məşqi təkrarla', 'Repeat practice'],
  done: ['Выполнено', 'Tamamlanıb', 'Completed'],
  progress: ['Выполнено на этой неделе', 'Bu həftə tamamlanan məşqlər', 'Completed this week'],
+ jump: ['Дни недели', 'Həftənin günləri', 'Days of the week'],
  planner: ['Настроить свой план', 'Öz planını tənzimlə', 'Set up your own plan']
 };
 
@@ -42,11 +43,18 @@ export function renderWeeklyProgramLink(lang) {
  return '<a class="button" href="#week">' + copy.title[localeIndex(lang)] + '</a>';
 }
 
-export function renderWeeklyProgram({lang, sessions, today} = {}) {
+export function renderWeeklyProgram({lang, sessions, today, selectedDate} = {}) {
  const index = localeIndex(lang);
  const t = id => copy[id][index];
  const dateFormat = new Intl.DateTimeFormat(languages[index], {weekday:'long', day:'numeric', month:'short'});
  const days = weeklyProgramDays(sessions, today);
+ const active = days.find(day=>day.key===selectedDate) || days.find(day=>day.current);
+ const shortDate = new Intl.DateTimeFormat(languages[index], {weekday:'short'});
+ const jump = '<nav class="week-jump" aria-label="' + t('jump') + '">' + days.map(day =>
+  '<a href="#week/' + day.key + '" aria-label="' + dateFormat.format(day.date) + '"' +
+  (day===active ? ' aria-current="date"' : '') + '><span>' + shortDate.format(day.date) +
+  '</span><strong>' + day.date.getDate() + '</strong></a>'
+ ).join('') + '</nav>';
  const total = days.filter(day => day.practice).length;
  const completed = days.filter(day => day.completed).length;
  const items = days.map(day => {
@@ -58,12 +66,12 @@ export function renderWeeklyProgram({lang, sessions, today} = {}) {
   const label = t(completed ? 'repeat' : 'start');
   const action = practice ? '<a class="button" href="#practice/' + practice.id +
    '" aria-label="' + label + ' · ' + heading + '">' + label + '</a>' : '';
-  return '<li class="panel week-day"' + (current ? ' aria-current="date"' : '') + '><div>' +
+  return '<li id="week/' + key + '" tabindex="-1" class="panel week-day"' + (current ? ' aria-current="date"' : '') + '><div>' +
    '<p class="muted week-day-date">' + time + (marker ? '<span class="week-day-marker">' + marker + '</span>' : '') +
    '</p><h2>' + heading + '</h2><p>' + detail + '</p></div>' + action + '</li>';
  }).join('');
  return '<h1>' + t('title') + '</h1><p class="muted">' + t('intro') + '</p>' +
   '<div class="panel week-progress"><label>' + t('progress') + ' · ' + completed + ' / ' + total +
   '<progress value="' + completed + '" max="' + total + '"></progress></label></div>' +
-  '<ol class="week-days">' + items + '</ol><a class="link" href="#profile">' + t('planner') + '</a>';
+  jump + '<ol class="week-days">' + items + '</ol><a class="link" href="#profile">' + t('planner') + '</a>';
 }
