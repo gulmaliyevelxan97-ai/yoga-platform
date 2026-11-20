@@ -1,3 +1,4 @@
+import {practiceGuide,practiceStage} from './practice-guide.mjs';
 import {renderWeeklyProgram, renderWeeklyProgramLink} from './week.mjs';
 import {readNotificationPlan,writeNotificationPlan,renderNotificationPlan,notificationPlanFromForm,dueNotifications,notificationPlanMessage} from './notification-plan.mjs';
 import {renderPersonalPlan,submitPersonalPlan,suggestedPracticeId} from './personal-plan.mjs';
@@ -202,13 +203,17 @@ function practice(id) {
  const active = state().active;
  const own = active?.id === id;
  const video = item.video;
+ const steps = practiceGuide(id,languages.indexOf(lang()));
+ const stage = practiceStage(elapsed(own?active:null,item.minutes*60),item.minutes*60);
  return `<a class="link back" href="#practices">← ${t('practices')}</a><article class="panel practice-detail ${id}">
  <p class="eyebrow">${category(id)} · ${item.minutes} ${t('min')}</p><h1>${title(item)}</h1><p>${tr(item.description)}</p>
  <p class="muted">${t('timer')}</p>
  <p class="timer" id="timer" role="timer" aria-label="${t('timer')}">${displayTime(item.minutes*60-elapsed(own?active:null,item.minutes*60))}</p>
  ${own ? `<div class="actions"><button data-action="${active.startedAt === null?'start':'pause'}">${t(active.startedAt === null?'resume':'pause')}</button><button class="cta" data-action="finish">${t('finish')}</button></div><button class="text-button" data-action="stop">${t('stop')}</button>` :
  active ? `<p>${t('activeOther')}</p><a class="button" href="#practice/${active.id}">${t('resume')}</a>` : `<button class="cta" data-action="start">${t('start')}</button>`}
- </article>${video ? `<article class="panel"><p class="eyebrow">${t('videoNote')} · ${video.language}</p><h2>${video.title}</h2><p>${video.author}</p><a class="link" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer">${t('video')} ↗</a></article>` : ''}`;
+ </article><section class="panel"><h2>${tr(['Этапы практики','Məşqin mərhələləri','Practice steps'])}</h2>
+ <ol class="practice-steps" data-practice-steps>${steps.map((step,index)=>`<li${index===stage?' aria-current="step"':''}>${esc(step)}</li>`).join('')}</ol>
+ </section><a class="link" href="#week">${t('week')}</a>${video ? `<article class="panel"><p class="eyebrow">${t('videoNote')} · ${video.language}</p><h2>${video.title}</h2><p>${video.author}</p><a class="link" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer">${t('video')} ↗</a></article>` : ''}`;
 }
 
 function path() {
@@ -402,7 +407,14 @@ function refreshTimer() {
  if (!value) return;
  const item = itemFor(route().id);
  const active = state().active?.id === item.id ? state().active : null;
- value.textContent = displayTime(item.minutes*60-elapsed(active,item.minutes*60));
+ const seconds = elapsed(active,item.minutes*60);
+ value.textContent = displayTime(item.minutes*60-seconds);
+ const steps = $('[data-practice-steps]');
+ const next = steps?.children[practiceStage(seconds,item.minutes*60)];
+ if (next && next.getAttribute('aria-current')!=='step') {
+  steps.querySelector('[aria-current]')?.removeAttribute('aria-current');
+  next.setAttribute('aria-current','step');
+ }
 }
 
 function render() {
