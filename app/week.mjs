@@ -1,0 +1,67 @@
+import {catalog, categories, strings} from './content.mjs';
+import {dateKey, languages, shiftDate, weekStart} from './state.mjs';
+
+const schedule = ['yoga', 'breathing', 'mobility', 'meditation', 'strength', 'recovery', null];
+const practices = new Map(catalog.map(item => [item.id, item]));
+const copy = {
+ title: ['Программа недели', 'Həftənin proqramı', 'Weekly programme'],
+ intro: [
+  'Короткие практики движения, дыхания и внимания. Выбирайте комфортный темп.',
+  'Hərəkət, nəfəs və diqqət üçün qısa məşqlər. Sizə uyğun temp seçin.',
+  'Short practices in movement, breath and attention. Choose a pace that feels right.'
+ ],
+ rest: ['День отдыха', 'İstirahət günü', 'Rest day'],
+ restNote: ['Оставьте время на восстановление.', 'Bərpa üçün vaxt ayırın.', 'Make time for recovery.'],
+ start: ['Открыть практику', 'Məşqi aç', 'Open practice'],
+ done: ['Выполнено', 'Tamamlanıb', 'Completed'],
+ progress: ['Выполнено на этой неделе', 'Bu həftə tamamlanan məşqlər', 'Completed this week'],
+ planner: ['Настроить свой план', 'Öz planını tənzimlə', 'Set up your own plan']
+};
+
+const localeIndex = lang => Math.max(0, languages.indexOf(lang));
+
+export function weeklyProgramDays(sessions = [], today = new Date()) {
+ const monday = weekStart(today);
+ const todayKey = dateKey(today);
+ const completions = new Set(sessions.map(({day, practice}) => day + '/' + practice));
+ return schedule.map((id, index) => {
+  const date = shiftDate(monday, index);
+  const key = dateKey(date);
+  const practice = practices.get(id) ?? null;
+  return {date, key, practice, current: key === todayKey,
+   completed: Boolean(practice && key <= todayKey && completions.has(key + '/' + id))};
+ });
+}
+
+export function weeklyProgramPracticeId(today = new Date()) {
+ return schedule[(today.getDay() + 6) % 7];
+}
+
+export function renderWeeklyProgramLink(lang) {
+ return '<a class="button" href="#week">' + copy.title[localeIndex(lang)] + '</a>';
+}
+
+export function renderWeeklyProgram({lang, sessions, today} = {}) {
+ const index = localeIndex(lang);
+ const t = id => copy[id][index];
+ const dateFormat = new Intl.DateTimeFormat(languages[index], {weekday:'long', day:'numeric', month:'short'});
+ const days = weeklyProgramDays(sessions, today);
+ const total = days.filter(day => day.practice).length;
+ const completed = days.filter(day => day.completed).length;
+ const items = days.map(day => {
+  const {date, key, practice, current, completed} = day;
+  const time = '<time datetime="' + key + '">' + dateFormat.format(date) + '</time>';
+  const marker = completed ? t('done') : current ? strings.today[index] : '';
+  const heading = practice?.title[index] ?? t('rest');
+  const detail = practice ? categories[practice.id][index] + ' · ' + practice.minutes + ' ' + strings.min[index] : t('restNote');
+  const action = practice && !completed ? '<a class="button" href="#practice/' + practice.id +
+   '" aria-label="' + t('start') + ' · ' + heading + '">' + t('start') + '</a>' : '';
+  return '<li class="panel week-day"' + (current ? ' aria-current="date"' : '') + '><div>' +
+   '<p class="muted week-day-date">' + time + (marker ? '<span class="week-day-marker">' + marker + '</span>' : '') +
+   '</p><h2>' + heading + '</h2><p>' + detail + '</p></div>' + action + '</li>';
+ }).join('');
+ return '<h1>' + t('title') + '</h1><p class="muted">' + t('intro') + '</p>' +
+  '<div class="panel week-progress"><label>' + t('progress') + ' · ' + completed + ' / ' + total +
+  '<progress value="' + completed + '" max="' + total + '"></progress></label></div>' +
+  '<ol class="week-days">' + items + '</ol><a class="link" href="#profile">' + t('planner') + '</a>';
+}

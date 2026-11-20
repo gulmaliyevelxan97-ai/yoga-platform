@@ -1,3 +1,5 @@
+import {renderWeeklyProgram, renderWeeklyProgramLink} from './week.mjs';
+import {readNotificationPlan,writeNotificationPlan,renderNotificationPlan,notificationPlanFromForm,dueNotifications,notificationPlanMessage} from './notification-plan.mjs';
 import {renderPersonalPlan,submitPersonalPlan,suggestedPracticeId} from './personal-plan.mjs';
 import {renderPracticeTrends,renderJournalFilter,filterJournal,journalEmptyLabel} from './progress-view.mjs';
 import {schoolPage, schoolStrings} from './school.mjs';
@@ -9,6 +11,14 @@ import {localRepository, languages, dateKey, fromDateKey, shiftDate, weekStart, 
 
 const $ = selector => document.querySelector(selector);
 const repo = localRepository();
+const seenReminderKey = 'restart.notification.seen.v1';
+let seenReminders = new Set();
+let activeReminder;
+try {
+ const items = JSON.parse(localStorage.getItem(seenReminderKey));
+ if (Array.isArray(items)) seenReminders = new Set(items.filter(item=>typeof item==='string').slice(-12));
+} catch {}
+
 let cloud;
 let pilotClient;
 let renderSequence = 0;
@@ -42,6 +52,7 @@ const mobileStrings = {
  themeSystem:['Как на устройстве','Cihaz ayarına uyğun','System'],
  themeLight:['Светлое','İşıqlı','Light'],
  themeDark:['Тёмное','Tünd','Dark'],
+ week:['Программа недели','Həftəlik proqram','Weekly program'],
  pathTab:['Прогресс','İrəliləyiş','Progress'],
  academyTab:['Академия','Akademiya','Academy'],
  welcomeNote:['Выберите время для движения и внимания к себе.','Hərəkətə və özünüzə diqqət ayırmağa vaxt seçin.','Make time for movement and a moment of attention.'],
@@ -100,7 +111,7 @@ function route() {
  if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
  if (cloudConfig && ['academy','classes','staff'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
- return {name: [...tabs, 'journal', 'schedule', 'mentor'].includes(name) ? name : 'today'};
+ return {name: [...tabs, 'journal', 'schedule', 'mentor', 'week'].includes(name) ? name : 'today'};
 }
 
 function sampleClass(date) {
@@ -144,6 +155,7 @@ function today() {
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
  <div class="today-actions">
+ ${renderWeeklyProgramLink(lang())}
  <a class="button" href="#academy">${icon('academy')} ${t('academyTab')}</a>
  <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a>
  </div>
@@ -272,6 +284,7 @@ function profile() {
  `<option value="${value}">${t(key)}</option>`).join('')}</select></label></div>
  <form id="reminder-form" class="panel"><h2>${t('reminders')}</h2><p class="muted">${t('reminderNote')}</p><label>${t('reminderTime')}<input type="time" name="time" value="${esc(reminder.time)}" required></label>
  ${['practice','schedule','goal'].map((key,i)=>`<label class="check"><input type="checkbox" name="${key}" ${reminder[key]?'checked':''}>${t(['remindPractice','remindSchedule','remindGoal'][i])}</label>`).join('')}<button class="cta">${t('save')}</button></form>
+ ${renderNotificationPlan(readNotificationPlan(),lang())}
  <article class="panel"><h2>${t(running?'installed':'install')}</h2>${running?'':`<p>${t('installHelp')}</p>${installPrompt?`<button data-action="install">${t('install')}</button>`:''}`}
  <p><a class="link" href="../">${t('site')} ↗</a></p></article>`;
 }
@@ -331,7 +344,8 @@ function setActive(active) {
  else repo.write({active});
 }
 
-const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account, academy};
+const week = () => renderWeeklyProgram({lang:lang(),sessions:state().sessions});
+const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account, academy, week};
 
 function refreshBanner() {
  const current = state();
@@ -343,7 +357,22 @@ function refreshBanner() {
  const messages = [];
  if (!navigator.onLine) messages.push(t('offline'));
  if (!repo.available) messages.push(t('storageError'));
- if (reminders.time && time >= reminders.time) {
+ const plan = readNotificationPlan();
+ const due = dueNotifications(plan,{now,windowMinutes:10});
+ if (!due.some(item=>item.id===activeReminder?.id)) activeReminder = null;
+ const pending = due.filter(item=>!seenReminders.has(item.id));
+ if (pending.length && document.visibilityState==='visible') {
+  activeReminder = pending.at(-1);
+  for (const item of pending) seenReminders.add(item.id);
+  seenReminders = new Set([...seenReminders].slice(-12));
+  try {localStorage.setItem(seenReminderKey,JSON.stringify([...seenReminders]));} catch {}
+ }
+ if (activeReminder) {
+  const titles = {morning:['Утро','Səhər','Morning'],day:['День','Gündüz','Daytime'],evening:['Вечер','Axşam','Evening']};
+  const labels = {practice:'practices',academy:'academyTab',schedule:'schedule',journal:'journal',goal:'goal'};
+  messages.push(tr(titles[activeReminder.period])+': '+activeReminder.categories.map(key=>t(labels[key])).join(', '));
+ }
+ if (!plan.enabled && reminders.time && time >= reminders.time) {
   if (reminders.practice && !stats.days.has(dateKey(now))) messages.push(t('remindPractice'));
   if (reminders.schedule && item?.date > now) messages.push(t('remindSchedule'));
   if (reminders.goal && stats.week < current.goal) messages.push(t('remindGoal'));
@@ -383,7 +412,7 @@ function render() {
  if (['schedule','classes'].includes(current.name)) calendar.setAttribute('aria-current','page');
  else calendar.removeAttribute('aria-current');
  $('#mode').textContent = t(cloud?.user ? 'cloudMode' : cloudConfig ? 'cloudLocal' : 'demo');
- const activeTab = {practice:'practices',journal:'profile',account:'profile'}[current.name] || current.name;
+ const activeTab = {practice:'practices',journal:'profile',account:'profile',week:'today'}[current.name] || current.name;
  const tabLabel = name => t({path:'pathTab',academy:'academyTab'}[name] || name);
  $('#tabs').innerHTML = tabs.map(name=>`<a href="#${name}" ${activeTab===name?'aria-current="page"':''}>${icon(name)}<span>${tabLabel(name)}</span></a>`).join('');
  document.title = 'RESTART · '+tabLabel(current.name==='practice'?'practices':current.name);
@@ -542,6 +571,14 @@ screen.addEventListener('submit', async event=>{
  const form = event.target;
  if (form.id==='personal-plan-form') {
   submitPersonalPlan(form,lang(),event.submitter);
+  return;
+ }
+ if (form.id==='notification-plan-form') {
+  let outcome;
+  try {outcome=writeNotificationPlan(notificationPlanFromForm(form))?'saved':'storageError';}
+  catch {outcome='invalid';}
+  form.querySelector('#notification-plan-status').textContent=notificationPlanMessage(lang(),outcome);
+  refreshBanner();
   return;
  }
  const data = Object.fromEntries(new FormData(form));

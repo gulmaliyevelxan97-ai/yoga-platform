@@ -1,4 +1,5 @@
 @import './premium.css';
+@import './week.css';
 
 :root {font:16px/1.55 var(--sans);background:var(--ink);color:var(--paper)}
 *,*::before,*::after{box-sizing:border-box}
