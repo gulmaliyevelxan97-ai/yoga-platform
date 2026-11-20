@@ -1,4 +1,4 @@
-const VERSION = '5ae93fead3ab58';
+const VERSION = '1215f0bc4de6a2';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -37,9 +37,9 @@ const ASSETS = [
   "./assets/lake.jpg",
   "./assets/pwa/restart-512.png",
   "./assets/pwa/restart-maskable.png",
-  "./releases/navigation/design.css?v=a133c5ff8277",
-  "./releases/navigation/shell.js?v=ce3879ac7c54",
-  "./releases/navigation/pages.js?v=535bfece20d3",
+  "./releases/navigation/design.css?v=a3f19b23e002",
+  "./releases/navigation/shell.js?v=364493ff8419",
+  "./releases/navigation/pages.js?v=021612c14cb5",
   "./about.html",
   "./philosophy.html",
   "./code.html",
