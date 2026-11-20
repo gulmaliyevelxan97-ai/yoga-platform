@@ -39,6 +39,10 @@ test('PostgreSQL migrations enforce private CRUD, pilot signup and idempotent im
   for (const file of (await readdir(fixtures)).sort()) {
    await db.exec(await readFile(new URL(file,fixtures),'utf8'));
   }
+  const installedChecks = await readFile(new URL('../supabase/checks/installed_cloud.sql',import.meta.url),'utf8');
+  const checks = (await db.query(installedChecks)).rows;
+  assert.equal(checks.length,10);
+  assert.deepEqual(checks.filter(row=>!row.ok),[]);
   assert((await db.query(preflight)).rows.some(row=>row.object_name==='restart_private'));
   const role = async (name, id='', anonymous=false) => {
    await db.exec('reset role; set role '+name);

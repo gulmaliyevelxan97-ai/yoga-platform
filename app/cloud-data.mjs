@@ -26,11 +26,14 @@ async function result(query) {
 
 async function allRows(client, user, table, columns) {
  const records = [];
- for (let start=0;;start+=pageSize) {
-  const rows = await result(client.from(table).select(columns).eq('user_id',user)
-   .order('client_id').range(start,start+pageSize-1));
+ let lastId;
+ for (;;) {
+  let query = client.from(table).select(columns).eq('user_id',user);
+  if (lastId) query = query.gt('client_id',lastId);
+  const rows = await result(query.order('client_id').limit(pageSize));
   records.push(...rows);
   if (rows.length<pageSize) return records;
+  lastId = rows.at(-1).client_id;
  }
 }
 
@@ -95,7 +98,13 @@ export function studentStore(client, user) {
   complete: session => result(client.from('restart_practice_events').upsert({user_id:user,...practiceRow(session)},
    {onConflict:'user_id,client_id',ignoreDuplicates:true})),
   async import(local) {
-   for (const payload of importBatches(local,user)) await result(client.rpc('restart_import_local',{payload}));
+   const inserted = {journal:0,practices:0};
+   for (const payload of importBatches(local,user)) {
+    const counts = await result(client.rpc('restart_import_local',{payload}));
+    inserted.journal += counts.journal;
+    inserted.practices += counts.practices;
+   }
+   return inserted;
   }
  };
 }

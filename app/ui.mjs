@@ -1,3 +1,4 @@
+import {schoolPage, schoolStrings} from './school.mjs';
 import cloudConfig from './cloud-config.mjs';
 import {cloudAccount, createPilotClient} from './cloud-auth.mjs';
 import {cloudStrings} from './cloud-copy.mjs';
@@ -7,6 +8,8 @@ import {localRepository, languages, dateKey, fromDateKey, shiftDate, weekStart, 
 const $ = selector => document.querySelector(selector);
 const repo = localRepository();
 let cloud;
+let pilotClient;
+let renderSequence = 0;
 const screen = $('#screen');
 const tabs = ['today', 'practices', 'path', 'journal', 'profile'];
 const icons = {
@@ -20,7 +23,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp
 const state = () => cloud?.state || repo.read();
 const lang = () => languages.includes(state().lang) ? state().lang : 'ru';
 const tr = triple => triple[languages.indexOf(lang())];
-const t = key => tr(strings[key] || cloudStrings[key]);
+const t = key => tr(strings[key] || cloudStrings[key] || schoolStrings[key]);
 const dateText = (date, options) => new Intl.DateTimeFormat(lang(), options).format(date);
 const dateLabel = value => dateText(fromDateKey(value), {day:'numeric', month:'long', year:'numeric'});
 const itemFor = id => catalog.find(item => item.id === id);
@@ -41,6 +44,7 @@ let applyingUpdate = false;
 function route() {
  const [name, id] = location.hash.slice(1).split('/');
  if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
+ if (cloudConfig && ['academy','classes','staff'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
  return {name: [...tabs, 'schedule', 'mentor'].includes(name) ? name : 'today'};
 }
@@ -79,6 +83,7 @@ function today() {
  <p>${esc(dateText(next.date,{day:'numeric',month:'short'}))} · ${localTime(next)}</p><a class="link" href="#schedule">${t('sample')} <span aria-hidden="true">→</span></a></article>` : ''}
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
+ ${cloud?.state ? `<nav class="actions"><a class="button" href="#academy">${t('academy')}</a><a class="button" href="#classes">${t('classes')}</a></nav>` : ''}
  <a class="link mentor-link" href="#mentor">${t('meetMentor')} <span aria-hidden="true">→</span></a>`;
 }
 
@@ -122,15 +127,16 @@ function path() {
 }
 
 function journal() {
- const current = state().journal.find(entry=>entry.id===editing) || {};
+ const draft = cloud?.journalDraft;
+ const current = draft || state().journal.find(entry=>entry.id===editing) || {};
  const levels = ['unset','low','medium','high'];
  const scales = ['mood','energy','wellbeing'];
  const fields = ['before','after','notes'];
- return heading('journal')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p><form id="journal-form" class="panel">
+ return heading('journal')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>${draft?`<p role="status">${t('cloudDraft')}</p>`:''}<form id="journal-form" class="panel">
  <label>${t('date')}<input type="date" name="date" value="${esc(current.date||dateKey())}" required></label>
  <div class="field-row">${scales.map(key=>`<label>${t(key)}<select name="${key}">${levels.map((level,i)=>`<option value="${i}" ${current[key]===String(i)?'selected':''}>${t(level)}</option>`).join('')}</select></label>`).join('')}</div>
  ${fields.map(key=>`<label>${t(key)}<textarea name="${key}" rows="2" maxlength="2000">${esc(current[key])}</textarea></label>`).join('')}
- <div class="actions"><button class="cta">${t('save')}</button>${editing?`<button type="button" data-action="cancel-edit">${t('cancel')}</button>`:''}</div></form>
+ <div class="actions"><button class="cta">${t('save')}</button>${(editing||draft)?`<button type="button" data-action="cancel-edit">${t('cancel')}</button>`:''}</div></form>
  <h2>${t('entries')}</h2>
  ${[...state().journal].sort((a,b)=>b.date.localeCompare(a.date)).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
  <dl>${[...scales,...fields].filter(key=>entry[key]&&entry[key]!=='0').map(key=>{
@@ -187,7 +193,12 @@ function mentor() {
  </div>`;
 }
 
+function importCounts(counts) {
+ return t('cloudCounts').replace('{j}',counts.journal).replace('{p}',counts.practices);
+}
+
 function account() {
+ const local = repo.read();
  const email = `<label>${t('cloudEmail')}<input name="email" type="email" autocomplete="email" maxlength="254" required></label>`;
  const password = kind => `<label>${t('cloudPassword')}<input name="password" type="password"
    autocomplete="${kind==='login'?'current-password':'new-password'}" ${kind==='login'?'':'minlength="12"'} maxlength="72" required></label>`;
@@ -199,8 +210,8 @@ function account() {
  return heading('account')+`<div class="panel"><p>${esc(cloud.user.email)}</p><p>${t('cloudNetworkNote')}</p>
   <div class="actions"><button data-action="cloud-refresh">${t('cloudSync')}</button>
   <button data-action="cloud-logout">${t('cloudLogout')}</button></div></div>
-  <form class="panel" data-cloud-auth="import">
-   <h2>${t('cloudImport')}</h2><p>${t('cloudImportNote')}</p>
+  <form class="panel" data-cloud-auth="import" data-owner="${esc(cloud.user.id)}">
+   <h2>${t('cloudImport')}</h2><p>${t('cloudImportNote')}</p><p>${importCounts({journal:local.journal.length,practices:local.sessions.length})}</p>
    <label class="check"><input type="checkbox" name="consent" required>${t('cloudImportConsent')}</label>
    <button>${t('cloudImport')}</button>
   </form>`;
@@ -208,7 +219,8 @@ function account() {
 
 function cloudNotice() {
  const status = $('#cloud-status');
- if (cloud?.notice) status.textContent = t(cloud.notice);
+ status.textContent = cloud?.notice ? t(cloud.notice) : '';
+ if (cloud?.notice==='cloudImported' && cloud.lastImport) status.textContent += ' '+importCounts(cloud.lastImport);
  status.hidden = !status.textContent;
 }
 
@@ -254,6 +266,7 @@ function refreshTimer() {
 }
 
 function render() {
+ const sequence = ++renderSequence;
  const current = route();
  document.documentElement.lang = lang();
  $('#language').value = lang();
@@ -268,7 +281,15 @@ function render() {
  document.title = 'RESTART · '+t(activeTab);
  screen.innerHTML = cloud?.user && !cloud.state && current.name!=='account'
   ? `<h1>${t('account')}</h1><p>${t(cloud.notice==='cloudLoadFailed'?'cloudLoadFailed':'cloudLoading')}</p><a class="button" href="#account">${t('account')}</a>`
-  : screens[current.name](current.id);
+  : ['academy','classes','staff'].includes(current.name)
+    ? '<h1>'+t(current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
+    : screens[current.name](current.id);
+ const outlet = document.getElementById('school-content');
+ if (outlet) {
+  if (cloud?.state && pilotClient) {
+   schoolPage({outlet,client:pilotClient,user:cloud.user.id,route:current,t,esc,lang:lang(),current:()=>sequence===renderSequence && !!cloud?.state && !cloud.recovery});
+  } else outlet.innerHTML = '<a class="button" href="#account">'+t('cloudLogin')+'</a>';
+ }
  cloudNotice();
  refreshBanner();
 }
@@ -347,6 +368,8 @@ document.addEventListener('click',async event=>{
   render();
   screen.querySelector('[data-filter="'+categoryFilter+'"]').focus();
  } else if (edit) {
+  if (cloud?.journalDraft && !confirm(t('cloudDiscard'))) return;
+  cloud?.discardJournalDraft();
   editing = edit;
   render();
   $('#journal-form input').focus();
@@ -362,6 +385,7 @@ document.addEventListener('click',async event=>{
  } else if (week) {
   setScheduleDay(dateKey(shiftDate(weekStart(new Date()),(scheduleOffset+Number(week))*7)));
  } else if (action === 'cancel-edit') {
+  cloud?.discardJournalDraft();
   editing = null;
   render();
   $('#journal-form input').focus({preventScroll:true});
@@ -393,7 +417,7 @@ screen.addEventListener('submit', async event=>{
  const data = Object.fromEntries(new FormData(form));
  if (form.dataset.cloudAuth) {
   const kind = form.dataset.cloudAuth;
-  const ok = kind==='import' ? Boolean(data.consent) && await cloud.save('import',repo.read()) : await cloud.action(kind,data);
+  const ok = kind==='import' ? Boolean(data.consent) && form.dataset.owner===cloud.user?.id && await cloud.save('import',repo.read()) : await cloud.action(kind,data);
   if (ok) render();
   return;
  }
@@ -401,9 +425,14 @@ screen.addEventListener('submit', async event=>{
  const revisions = cloud?.state?.revisions;
  if (form.id === 'journal-form') {
   const original = editing ? state().journal.find(item=>item.id===editing) : null;
-  const entry = {...data, id:editing || (form.dataset.entryId ||= crypto.randomUUID()), revision:original?.revision};
+  const draft = cloud?.journalDraft;
+  const entry = {...data, id:draft?.id || editing || (form.dataset.entryId ||= crypto.randomUUID()), revision:draft ? draft.revision : original?.revision};
   if (cloud?.user) {
-   if (!await cloud.save('saveJournal',entry)) return;
+   if (cloud.busy) return;
+   form.inert = true;
+   try {
+    if (!await cloud.save('saveJournal',entry)) return;
+   } finally { form.inert = false; }
   } else repo.write({journal:upsertEntry(state().journal,entry)});
   editing = null;
  } else if (form.id === 'goal-form') {
@@ -440,7 +469,8 @@ window.addEventListener('appinstalled',()=>{
 render();
 if (cloudConfig) {
  import('./supabase-sdk.mjs').then(({createClient})=>{
-  cloud = cloudAccount(createPilotClient(createClient,cloudConfig),replaceScreen=>{
+  pilotClient = createPilotClient(createClient,cloudConfig);
+  cloud = cloudAccount(pilotClient,replaceScreen=>{
    if (replaceScreen) { editing = null; render(); }
    else cloudNotice();
   },()=>repo.read().lang);
