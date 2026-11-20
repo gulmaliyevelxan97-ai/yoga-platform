@@ -1,4 +1,5 @@
 """Run against a local static server. Requires Playwright and Chromium."""
+from datetime import datetime, timezone
 import os
 import sys
 from urllib.parse import urlparse
@@ -15,6 +16,7 @@ with sync_playwright() as pw:
         page = ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
+        page.clock.set_fixed_time(datetime(2026, 11, 21, 3, 5, tzinfo=timezone.utc))
         page.goto(base)
         page.wait_for_selector("#screen h1")
         page.evaluate("navigator.serviceWorker.ready")
@@ -56,6 +58,7 @@ with sync_playwright() as pw:
         plan.locator('[name="quietStart"]').fill("22:00")
         plan.locator('[name="quietEnd"]').fill("06:00")
         plan.get_by_role("button", name="Save").click()
+        expect(page.locator("#reminder")).to_contain_text("Morning: Practices")
         expect(page.locator("#notification-plan-status")).to_have_text("Reminder schedule saved.")
         page.locator("#restart-theme").select_option("light")
         expect(page.locator("html")).to_have_attribute("data-theme", "light")
@@ -63,7 +66,12 @@ with sync_playwright() as pw:
         expect(page.locator("#restart-theme")).to_have_value("light")
         expect(plan.locator('[name="morning"]')).to_have_value("07:05")
         expect(plan.locator('[name="quietEnd"]')).to_have_value("06:00")
+        expect(page.locator("#reminder")).not_to_contain_text("Morning: Practices")
         ctx.set_offline(True)
+        page.goto(base + "#week")
+        page.reload()
+        expect(page.locator(".week-day")).to_have_count(7)
+        expect(page.locator(".week-day a[href^='#practice/']")).to_have_count(6)
         page.goto(base + "#journal")
         page.reload()
         notes = page.locator("textarea[name=notes]")
