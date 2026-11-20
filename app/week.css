@@ -36,3 +36,36 @@
 .week-progress label,.week-progress progress {
  margin-block-end:0;
 }
+.week-jump {
+ display:grid;
+ grid-template-columns:repeat(7,minmax(44px,1fr));
+ gap:.3rem;
+ margin-block:0 .85rem;
+}
+.week-jump a {
+ display:grid;
+ place-content:center;
+ min-height:48px;
+ border:1px solid var(--line);
+ border-radius:var(--radius-control,10px);
+ background:var(--button-surface,var(--surface));
+ text-align:center;
+ color:var(--muted);
+ font-size:.75rem;
+ line-height:1.2;
+}
+.week-jump a strong {
+ font-size:.975rem;
+ color:var(--paper);
+}
+.week-jump a[aria-current=date] {
+ border-color:var(--gold);
+ background:var(--active-surface,var(--surface));
+ color:var(--paper);
+}
+.week-day {
+ scroll-margin-block-start:1rem;
+}
+@media (max-width:390px) {
+ .week-jump {grid-template-columns:repeat(4,minmax(44px,1fr))}
+}
