@@ -1,4 +1,4 @@
-const VERSION = '1215f0bc4de6a2';
+const VERSION = '705d5eaf4429d3';
 const ASSETS = [
   "./releases/stages-4-5/styles.css?v=a1d433382246",
   "./releases/stages-4-5/languages.js?v=29df1c64cbcf",
@@ -37,9 +37,9 @@ const ASSETS = [
   "./assets/lake.jpg",
   "./assets/pwa/restart-512.png",
   "./assets/pwa/restart-maskable.png",
-  "./releases/navigation/design.css?v=a3f19b23e002",
-  "./releases/navigation/shell.js?v=364493ff8419",
-  "./releases/navigation/pages.js?v=021612c14cb5",
+  "./releases/navigation/design.css?v=b816532f95c0",
+  "./releases/navigation/shell.js?v=6ed58e803f3d",
+  "./releases/navigation/pages.js?v=9134a098364a",
   "./about.html",
   "./philosophy.html",
   "./code.html",
@@ -62,6 +62,9 @@ const ASSETS = [
   "./releases/navigation/analytics.js?v=8a391170c35b",
   "./releases/navigation/motion.css?v=d868e80ff9e6",
   "./releases/navigation/motion.js?v=2888af3b39da",
+  "./assets/founder-workshop-group.webp",
+  "./assets/founder-workshop-talk.webp",
+  "./assets/founder-workshop-outdoors.webp",
   "./assets/founder-nunchaku-first-frame.webp?v=002fc08f6759",
   "./releases/navigation/founder-portrait.js?v=d9db613f69c0"
 ];

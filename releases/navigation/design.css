@@ -147,3 +147,60 @@ body[data-practice-filter=video] main>section:is(#directions,#courses,#classes,#
  .school-bar .all-menu .all-links { left:auto; right:clamp(.8rem,4vw,3.5rem); width:min(20rem,calc(100% - 1.6rem)); max-height:min(66dvh,32rem); overscroll-behavior:contain; }
  html:has(.school-bar .dock) { scroll-padding-bottom:calc(4.2rem + env(safe-area-inset-bottom)); }
 }
+
+/* Editorial pacing for the public school. Shared studio controls retain their existing semantics. */
+[data-page=home] .school-mast {
+ margin-top: clamp(.8rem,3vw,2.5rem);
+ padding: clamp(1.35rem,5.5vw,4.4rem);
+ background: #172b29;
+ border-radius: clamp(.9rem,2.4vw,1.7rem);
+}
+[data-page=home] .school-mast h1 {font-size:clamp(2.45rem,6.6vw,5.6rem);max-width:13ch}
+[data-page=home] .motion-photo {max-width: min(100%,27rem)}
+[data-page=home] .school-mast img {max-width:none;border-radius:.7rem}
+[data-page=home] #home-motto {
+ margin:0;
+ padding:clamp(1.4rem,4vw,3rem) 0;
+ border:0;
+ text-align:center;
+ color:var(--pine);
+ font-size:clamp(1.25rem,3vw,2rem);
+}
+.home-explore,.home-learning {margin-block:clamp(2rem,6vw,4rem)}
+.home-practices {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.7rem,2vw,1.4rem);margin-top:1rem}
+.home-practice {
+ display:block;
+ min-width:0;
+ overflow:hidden;
+ background:var(--panel);
+ border:1px solid var(--line);
+ border-radius:.9rem;
+ text-decoration:none;
+}
+.home-practice img {display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:var(--sage)}
+.home-practice div {padding:clamp(.9rem,2vw,1.35rem)}
+.home-practice h3 {text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}
+.home-practice p {margin:.7rem 0 0}
+.home-practice:hover {border-color:var(--gold)}
+.home-school {
+ display:grid;
+ grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);
+ gap:clamp(1.1rem,5vw,4rem);
+ align-items:center;
+ padding:clamp(1rem,4vw,3rem);
+ background:var(--sage);
+ border-radius:1rem;
+}
+.home-school img {width:100%;height:auto;max-width:20rem;border-radius:.65rem}
+.home-text-link {display:inline-flex;min-height:44px;align-items:center;padding-inline:.5rem;text-underline-offset:.22em}
+.school-main .cta:active {transform:translateY(1px)}
+@media(prefers-reduced-motion:no-preference){
+ .home-practice,.school-main .cta {transition:border-color .16s ease,background-color .16s ease,transform .16s ease}
+}
+@media(max-width:640px){
+ .home-practices,.home-school {grid-template-columns:minmax(0,1fr)}
+ .home-school img {max-width:12rem}
+ .home-practice {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+ .home-practice img {height:100%;aspect-ratio:1;max-height:13rem}
+ .home-practice p {font-size:.93rem}
+}
