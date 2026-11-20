@@ -51,23 +51,26 @@ export function renderWeeklyProgram({lang, sessions, today, selectedDate} = {}) 
  const active = days.find(day=>day.key===selectedDate) || days.find(day=>day.current);
  const shortDate = new Intl.DateTimeFormat(languages[index], {weekday:'short'});
  const jump = '<nav class="week-jump" aria-label="' + t('jump') + '">' + days.map(day =>
-  '<a href="#week/' + day.key + '" aria-label="' + dateFormat.format(day.date) + '"' +
+  '<a href="#week/' + day.key + '" aria-label="' + dateFormat.format(day.date) + (day.completed ? ' · ' + t('done') : '') + '"' +
   (day===active ? ' aria-current="date"' : '') + '><span>' + shortDate.format(day.date) +
-  '</span><strong>' + day.date.getDate() + '</strong></a>'
+  '</span><strong>' + day.date.getDate() + '</strong>' +
+  (day.completed ? '<span class="week-jump-check" aria-hidden="true">✓</span>' : '') + '</a>'
  ).join('') + '</nav>';
  const total = days.filter(day => day.practice).length;
  const completed = days.filter(day => day.completed).length;
  const items = days.map(day => {
   const {date, key, practice, current, completed} = day;
   const time = '<time datetime="' + key + '">' + dateFormat.format(date) + '</time>';
-  const marker = completed ? t('done') : current ? strings.today[index] : '';
+  const markers = [current && strings.today[index], completed && t('done')].filter(Boolean)
+   .map(marker => '<span class="week-day-marker">' + marker + '</span>').join('');
   const heading = practice?.title[index] ?? t('rest');
   const detail = practice ? categories[practice.id][index] + ' · ' + practice.minutes + ' ' + strings.min[index] : t('restNote');
   const label = t(completed ? 'repeat' : 'start');
   const action = practice ? '<a class="button" href="#practice/' + practice.id +
    '" aria-label="' + label + ' · ' + heading + '">' + label + '</a>' : '';
-  return '<li id="week/' + key + '" tabindex="-1" class="panel week-day"' + (current ? ' aria-current="date"' : '') + '><div>' +
-   '<p class="muted week-day-date">' + time + (marker ? '<span class="week-day-marker">' + marker + '</span>' : '') +
+  return '<li id="week/' + key + '" tabindex="-1" class="panel week-day"' + (current ? ' aria-current="date"' : '') +
+   (selectedDate===key ? ' data-selected' : '') + '><div>' +
+   '<p class="muted week-day-date">' + time + markers +
    '</p><h2>' + heading + '</h2><p>' + detail + '</p></div>' + action + '</li>';
  }).join('');
  return '<h1>' + t('title') + '</h1><p class="muted">' + t('intro') + '</p>' +

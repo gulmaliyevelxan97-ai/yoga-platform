@@ -55,3 +55,10 @@ test('Week day links expose localized dates and match focusable day cards',()=>{
  const expired = renderWeeklyProgram({lang:'en',today:week,selectedDate:'2026-11-15'});
  assert.match(expired,/href="#week\/2026-11-20" aria-label="[^"]+" aria-current="date"/);
 });
+
+test('A practice completed today identifies both its day and completion in week navigation',()=>{
+ const html = renderWeeklyProgram({lang:'en',today:week,sessions:[{day:'2026-11-20',practice:'strength'}]});
+ assert.match(html,/href="#week\/2026-11-20" aria-label="[^"]+ · Completed" aria-current="date"/);
+ assert.match(html,/<span class="week-jump-check" aria-hidden="true">✓<\/span>/);
+ assert.match(html,/<span class="week-day-marker">Today<\/span><span class="week-day-marker">Completed<\/span>/);
+});
