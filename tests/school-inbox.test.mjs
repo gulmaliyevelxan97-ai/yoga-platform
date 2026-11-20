@@ -8,6 +8,8 @@ test('School notices respect consent, enrollment and account boundaries; metrics
  const admin = '00000000-0000-4000-8000-000000000001';
  const student = '00000000-0000-4000-8000-000000000002';
  const other = '00000000-0000-4000-8000-000000000003';
+ const owner = '00000000-0000-4000-8000-000000000004';
+ const instructor = '00000000-0000-4000-8000-000000000005';
  const assume = async (id, anonymous = false) => {
    await db.exec('reset role; set role authenticated');
    await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:id,is_anonymous:anonymous})]);
@@ -24,8 +26,11 @@ test('School notices respect consent, enrollment and account boundaries; metrics
      grant usage on schema auth to authenticated, anon;`);
    const dir = new URL('../supabase/migrations/',import.meta.url);
    for (const name of (await readdir(dir)).sort()) await db.exec(await readFile(new URL(name,dir),'utf8'));
-   for (const id of [student,other,admin]) await db.query('insert into auth.users(id) values($1)',[id]);
-   await db.query("insert into public.restart_school_roles values($1,'admin')",[admin]);
+   for (const id of [student,other,admin,owner,instructor]) await db.query('insert into auth.users(id) values($1)',[id]);
+   await db.query("insert into public.restart_school_roles values($1,'admin'),($2,'owner'),($3,'instructor')",[admin,owner,instructor]);
+   await db.exec(`insert into auth.users(id,email_confirmed_at,deleted_at,is_anonymous)
+     values (gen_random_uuid(),null,null,false), (gen_random_uuid(),now(),now(),false),
+       (gen_random_uuid(),now(),null,true)`);
    const {id:session} = await first(`insert into public.restart_class_sessions(instructor_id,title,starts_at,ends_at,kind,format,capacity)
      values($1,'test',now()+interval '1 day',now()+interval '2 days','group','online',2) returning id`,[admin]);
    await assume(student);
@@ -41,6 +46,11 @@ test('School notices respect consent, enrollment and account boundaries; metrics
    const {metrics} = await first('select public.restart_school_metrics() as metrics');
    assert.equal(metrics.registered_students,2);
    assert.equal(metrics.bookings,2);
+   await assume(owner);
+   assert.deepEqual((await first('select public.restart_school_metrics() as metrics')).metrics,metrics);
+   await assume(instructor);
+   await assert.rejects(db.query('select public.restart_school_metrics()'),denied);
+   await assume(admin);
    await db.query("update public.restart_class_sessions set status='cancelled' where id=$1",[session]);
    await assume(student);
    assert.equal(await counts(),2);
@@ -60,6 +70,7 @@ test('School notices respect consent, enrollment and account boundaries; metrics
    await assert.rejects(db.query('select public.restart_school_metrics()'),denied);
    await db.exec('reset role; set role anon');
    await assert.rejects(db.query('select * from public.restart_inbox'),denied);
+   await assert.rejects(db.query('select public.restart_school_metrics()'),denied);
  } finally {await db.close();}
 });
 
