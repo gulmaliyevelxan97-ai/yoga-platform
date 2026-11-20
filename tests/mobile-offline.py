@@ -2,7 +2,7 @@
 import os
 import sys
 from urllib.parse import urlparse
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 base = sys.argv[1]
 assert urlparse(base).hostname in ("localhost", "127.0.0.1")
@@ -25,12 +25,32 @@ with sync_playwright() as pw:
         for lang in ("ru", "az", "en"):
             page.locator("#language").select_option(lang)
             page.wait_for_function("lang => document.documentElement.lang === lang", arg=lang)
-            for route in ("today", "practices", "path", "journal", "profile", "schedule", "mentor"):
+            for route in ("today", "practices", "academy", "path", "journal", "profile", "schedule", "mentor"):
                 page.evaluate("r => location.hash=r", route)
                 page.wait_for_function("r => location.hash === '#'+r", arg=route)
                 page.wait_for_timeout(40)
                 assert page.locator("#screen h1").inner_text().strip()
                 assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), (width, lang, route)
+        tabs = page.locator("#tabs a")
+        assert tabs.count() == 5
+        tabs.filter(has_text="Academy").click()
+        expect(page.locator("#tabs a[aria-current]")).to_have_text("Academy")
+        expect(page.locator("main h1")).to_have_text("Academy")
+        tabs.filter(has_text="Practices").click()
+        expect(page.locator(".practice-card")).to_have_count(6)
+        page.locator('[data-practice-choice="duration"]').select_option("short")
+        expect(page.locator(".practice-card")).to_have_count(2)
+        page.locator('[data-practice-choice="level"]').select_option("familiar")
+        expect(page.locator(".practice-card")).to_have_count(0)
+        page.locator('[data-action="clear-practice-filters"]').click()
+        expect(page.locator(".practice-card")).to_have_count(6)
+        page.locator('[data-practice-choice="goal"]').select_option("rest")
+        expect(page.locator(".practice-card")).to_have_count(1)
+        tabs.filter(has_text="Profile").click()
+        page.locator("#restart-theme").select_option("light")
+        expect(page.locator("html")).to_have_attribute("data-theme", "light")
+        page.reload()
+        expect(page.locator("#restart-theme")).to_have_value("light")
         ctx.set_offline(True)
         page.goto(base + "#journal")
         page.reload()

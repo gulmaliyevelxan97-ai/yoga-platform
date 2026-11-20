@@ -17,9 +17,17 @@ $('#skip-to-content').addEventListener('click',()=>{
  screen.focus();
  screen.scrollIntoView({block:'start'});
 });
-const tabs = ['today', 'practices', 'path', 'journal', 'profile'];
+const tabs = ['today', 'practices', 'academy', 'path', 'profile'];
 const icons = {
- today:'M3 10l9-7 9 7v10H3z M9 20v-6h6v6', practices:'M4 12h16 M12 4v16 M6.4 6.4l11.2 11.2 M17.6 6.4L6.4 17.6',
+ today:'M3 10l9-7 9 7v10H3z M9 20v-6h6v6', practices:'M4 16c5-8 11-8 16 0 M8 17c2-4 6-4 8 0 M12 4v2 M5 7l1.5 1.5 M19 7l-1.5 1.5',
+ academy:'M12 6c-3-2-6-3-9-2v15c3-1 6 0 9 2 3-2 6-3 9-2V4c-3-1-6 0-9 2v15',
+ check:'M5 12l4 4L19 6',
+ yoga:'M12 4a2 2 0 1 0 0 4 2 2 0 1 0 0-4 M8 19H5a2 2 0 0 1-1-3l4-3 4-3 4 3 4 3a2 2 0 0 1-1 3h-7 M12 10v6',
+ meditation:'M12 20C6 20 3 17 3 12c4 0 6 1 9 5 3-4 5-5 9-5 0 5-3 8-9 8 M8 13c0-4 2-7 4-9 2 2 4 5 4 9',
+ breathing:'M3 8h11a2 2 0 1 0-2-2 M3 12h16a2 2 0 1 1-2 2 M3 16h8a2 2 0 1 1-2 2',
+ mobility:'M4 10a8 8 0 0 1 13-4l3 3 M20 4v5h-5 M20 14a8 8 0 0 1-13 4l-3-3 M4 20v-5h5',
+ strength:'M8 12h8 M5 5h3v14H5z M16 5h3v14h-3z M2 9h3v6H2z M19 9h3v6h-3z',
+ recovery:'M20 16a8 8 0 0 1-12-12 8.5 8.5 0 1 0 12 12',
  path:'M3 20h18 M5 16l5-6 4 3 5-8 M15 5h4v4', journal:'M5 4h13v16H5z M8 8h7 M8 12h7 M8 16h4',
  profile:'M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0z M4 21v-2a8 8 0 0 1 16 0v2',
  schedule:'M4 6h16v14H4z M8 3v6 M16 3v6 M4 11h16 M8 15h2 M14 15h2', arrow:'M6 18L18 6 M9 6h9v9'
@@ -29,7 +37,33 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp
 const state = () => cloud?.state || repo.read();
 const lang = () => languages.includes(state().lang) ? state().lang : 'ru';
 const tr = triple => triple[languages.indexOf(lang())];
-const t = key => tr(strings[key] || cloudStrings[key] || schoolStrings[key]);
+const mobileStrings = {
+ theme:['Оформление','Görünüş','Appearance'],
+ themeSystem:['Как на устройстве','Cihaz ayarına uyğun','System'],
+ themeLight:['Светлое','İşıqlı','Light'],
+ themeDark:['Тёмное','Tünd','Dark'],
+ pathTab:['Прогресс','İrəliləyiş','Progress'],
+ academyTab:['Академия','Akademiya','Academy'],
+ welcomeNote:['Выберите время для движения и внимания к себе.','Hərəkətə və özünüzə diqqət ayırmağa vaxt seçin.','Make time for movement and a moment of attention.'],
+ dailyDone:['Выполнено сегодня','Bu gün tamamlanıb','Completed today'],
+ dailyActive:['Практика начата','Məşq başlayıb','Practice in progress'],
+ selectDuration:['Длительность','Müddət','Duration'],
+ shortDuration:['До 4 мин','4 dəqiqəyədək','Up to 4 min'],
+ longDuration:['5–6 мин','5–6 dəqiqə','5–6 min'],
+ noResults:['Под эти фильтры ничего не подходит.','Bu filtrlərə uyğun məşq yoxdur.','No practices match these filters.'],
+ practiceLevel:['Подготовка','Hazırlıq','Experience'],
+ practiceGuided:['Без подготовки','Hazırlıq tələb olunmur','No experience needed'],
+ practiceFamiliar:['Знакомые упражнения','Tanış hərəkətlər','Familiar exercises'],
+ practiceGoal:['Цель практики','Məşqin məqsədi','Practice goal'],
+ goalMove:['Движение','Hərəkət','Movement'],
+ goalFocus:['Внимание','Diqqət','Focus'],
+ goalRest:['Отдых','İstirahət','Rest'],
+ clearFilters:['Сбросить фильтры','Filtrləri sıfırla','Clear filters'],
+ academyWelcome:['Авторские программы RESTART','RESTART-ın müəllif proqramları','RESTART programmes'],
+ academyOverview:['О программе','Proqram haqqında','Explore the programme'],
+ academyLocal:['Откройте программу школы, чтобы узнать о её направлениях и формате обучения.','Məktəbin istiqamətləri və tədris formatı ilə tanış olmaq üçün proqramı açın.','Explore the school’s programme, learning format and areas of focus.']
+};
+const t = key => tr(mobileStrings[key] || strings[key] || cloudStrings[key] || schoolStrings[key]);
 const dateText = (date, options) => new Intl.DateTimeFormat(lang(), options).format(date);
 const dateLabel = value => dateText(fromDateKey(value), {day:'numeric', month:'long', year:'numeric'});
 const itemFor = id => catalog.find(item => item.id === id);
@@ -40,10 +74,23 @@ const displayTime = seconds => Math.floor(seconds/60) + ':' + String(seconds%60)
 const duration = seconds => Math.floor(seconds/60) + ' ' + t('min') + ' ' + seconds%60 + ' ' + t('sec');
 const heading = key => '<h1>'+t(key)+'</h1>';
 let filter = 'all';
+const practiceFilters = [
+ {key:'duration',label:'selectDuration',options:{short:'shortDuration',long:'longDuration'}},
+ {key:'level',label:'practiceLevel',options:{open:'practiceGuided',familiar:'practiceFamiliar'}},
+ {key:'goal',label:'practiceGoal',options:{move:'goalMove',focus:'goalFocus',rest:'goalRest'}}
+];
+const practiceChoices = {duration:'all',level:'all',goal:'all'};
+const practiceLevels = practiceFilters.find(({key})=>key==='level').options;
+const practiceDetails = {
+ yoga:{level:'familiar',goal:'move'}, meditation:{level:'open',goal:'focus'},
+ breathing:{level:'open',goal:'focus'}, mobility:{level:'open',goal:'move'},
+ strength:{level:'familiar',goal:'move'}, recovery:{level:'open',goal:'rest'}
+};
 let selectedDay = dateKey();
 let scheduleOffset = 0;
 let editing = null;
 let journalPeriod = 'all';
+let journalQuery = '';
 let installPrompt;
 let waitingWorker;
 let applyingUpdate = false;
@@ -53,7 +100,7 @@ function route() {
  if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
  if (cloudConfig && ['academy','classes','staff'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
- return {name: [...tabs, 'schedule', 'mentor'].includes(name) ? name : 'today'};
+ return {name: [...tabs, 'journal', 'schedule', 'mentor'].includes(name) ? name : 'today'};
 }
 
 function sampleClass(date) {
@@ -77,12 +124,18 @@ function today() {
  const suggested = itemFor(current.active?.id) || itemFor(suggestedPracticeId(now)) || catalog[now.getDay() % catalog.length];
  const next = nextClass(now);
  const stats = metrics(current.sessions, now);
+ const complete = current.sessions.some(session=>session.practice===suggested.id && session.day===dateKey(now));
+ const avatar = current.name ? esc(Array.from(current.name.trim())[0]?.toLocaleUpperCase(lang()) || '') : icon('profile');
  return `
- <div class="today-heading"><p class="eyebrow">${esc(dateText(now,{weekday:'long',day:'numeric',month:'long'}))}</p>
- <h1>${t('welcome')}${current.name ? ', '+esc(current.name) : ''}</h1></div>
- <article class="today-practice"><p class="eyebrow">${t('daily')} · ${category(suggested.id)} · ${suggested.minutes} ${t('min')}</p>
+ <div class="today-heading"><div><p class="eyebrow">${esc(dateText(now,{weekday:'long',day:'numeric',month:'long'}))}</p>
+ <h1>${t('welcome')}${current.name ? ', '+esc(current.name) : ''}</h1><p class="muted">${t('welcomeNote')}</p></div>
+ <a class="today-avatar" href="#profile" aria-label="${t('profile')}">${avatar}</a></div>
+ <article class="today-practice practice-cover-${suggested.id}"><div class="today-copy">
+ <p class="eyebrow">${t('daily')} · ${category(suggested.id)} · ${suggested.minutes} ${t('min')}</p>
  <h2>${title(suggested)}</h2>
- <a class="cta" href="#practice/${suggested.id}">${t(current.active ? 'resume' : 'start')} <span class="arrow" aria-hidden="true">${icon('arrow')}</span></a></article>
+ <p class="practice-level">${t(practiceLevels[practiceDetails[suggested.id].level])}</p>
+ ${current.active || complete ? `<p class="practice-state">${icon(current.active?'practices':'check')} ${t(current.active?'dailyActive':'dailyDone')}</p>` : ''}
+ <a class="cta" href="#practice/${suggested.id}">${t(current.active ? 'resume' : 'start')} <span class="arrow" aria-hidden="true">${icon('arrow')}</span></a></div></article>
  <div class="home-grid">
  <article class="panel goal-card"><p class="eyebrow">${t('progress')}</p><h2>${stats.week} <span class="muted">/ ${current.goal}</span></h2>
  <progress aria-label="${t('progress')}" value="${stats.week}" max="${current.goal}"></progress><a class="link" href="#path">${t('goal')} <span aria-hidden="true">→</span></a></article>
@@ -90,14 +143,41 @@ function today() {
  <p>${esc(dateText(next.date,{day:'numeric',month:'short'}))} · ${localTime(next)}</p><a class="link" href="#schedule">${t('sample')} <span aria-hidden="true">→</span></a></article>` : ''}
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
- ${cloud?.state ? `<nav class="actions"><a class="button" href="#academy">${t('academy')}</a><a class="button" href="#classes">${t('classes')}</a></nav>` : ''}
+ <div class="today-actions">
+ <a class="button" href="#academy">${icon('academy')} ${t('academyTab')}</a>
+ <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a>
+ </div>
  <a class="link mentor-link" href="#mentor">${t('meetMentor')} <span aria-hidden="true">→</span></a>`;
 }
 
 function practices() {
- return heading('practices') + '<p class="muted">'+t('timer')+'</p><div class="filters">'+['all',...catalog.map(p=>p.id)].map(id=>
-  `<button data-filter="${id}" aria-pressed="${filter === id}">${id === 'all' ? t('all') : category(id)}</button>`).join('')+'</div><div class="practice-grid">'+
- catalog.filter(item=>filter==='all'||filter===item.id).map(item=>`<a class="practice-card ${item.id}" href="#practice/${item.id}"><span class="eyebrow">${category(item.id)} · ${item.minutes} ${t('min')}</span><h2>${title(item)}</h2><span class="arrow" aria-hidden="true">${icon('arrow')}</span></a>`).join('')+'</div>';
+ const matching = catalog.filter(item=>{
+  const values = {duration:item.minutes<=4?'short':'long',...practiceDetails[item.id]};
+  return (filter==='all' || filter===item.id) &&
+   practiceFilters.every(({key})=>practiceChoices[key]==='all' || practiceChoices[key]===values[key]);
+ });
+ const options = practiceFilters.map(({key,label,options})=>
+  `<label>${t(label)}<select data-practice-choice="${key}">
+   ${Object.entries({all:'all',...options}).map(([value,name])=>
+   `<option value="${value}" ${value===practiceChoices[key]?'selected':''}>${t(name)}</option>`).join('')}
+  </select></label>`).join('');
+ return heading('practices') + `<p class="muted">${t('timer')}</p>
+ <div class="filters practice-filters">${['all',...catalog.map(p=>p.id)].map(id=>
+  `<button data-filter="${id}" aria-pressed="${filter===id}">${id==='all'?t('all'):category(id)}</button>`).join('')}</div>
+ <div class="field-row practice-options">${options}</div>
+ ${matching.length ? `<div class="practice-grid">${matching.map(item=>
+  `<a class="practice-card practice-cover-${item.id}" href="#practice/${item.id}">
+  <div class="practice-card-art">${icon(item.id)}</div><div class="practice-card-copy">
+  <p class="eyebrow">${category(item.id)} · ${item.minutes} ${t('min')}</p>
+  <h2>${title(item)}</h2><div class="practice-card-footer"><small>${t(practiceLevels[practiceDetails[item.id].level])}</small>
+  <span class="arrow">${icon('arrow')}</span></div></div></a>`).join('')}</div>`
+  : `<div class="panel" role="status"><p>${t('noResults')}</p><button data-action="clear-practice-filters">${t('clearFilters')}</button></div>`}`;
+}
+
+function academy() {
+ return heading('academyTab')+`<article class="panel academy-intro">${icon('academy')}
+ <h2>${t('academyWelcome')}</h2><p>${t('academyLocal')}</p>
+ <a class="cta" href="../programme.html">${t('academyOverview')}</a></article>`;
 }
 
 function practice(id) {
@@ -148,11 +228,19 @@ function journal() {
  <div class="actions"><button class="cta">${t('save')}</button>${(editing||draft)?`<button type="button" data-action="cancel-edit">${t('cancel')}</button>`:''}</div></form>
  <h2>${t('entries')}</h2>
  ${renderJournalFilter(journalPeriod,lang())}
- ${filterJournal(state().journal,journalPeriod).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
+ <form id="journal-search" class="panel"><label>${tr(['Поиск по записям','Qeydlərdə axtarış','Search entries'])}<input name="query" type="search" maxlength="120" value="${esc(journalQuery)}" autocomplete="off"></label><button>${tr(['Найти','Axtar','Search'])}</button></form>
+ <div id="journal-results" aria-live="polite">${journalEntries()}</div>`;
+}
+
+function journalEntries() {
+ const levels = ['unset','low','medium','high'];
+ const scales = ['mood','energy','wellbeing'];
+ const fields = ['before','after','notes'];
+ return filterJournal(state().journal,journalPeriod,new Date(),journalQuery,lang()).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
  <dl>${[...scales,...fields].filter(key=>entry[key]&&entry[key]!=='0').map(key=>{
   const value = scales.includes(key) ? t(levels[Number(entry[key])]||'unset') : esc(entry[key]);
   return `<dt>${t(key)}</dt><dd>${value}</dd>`;
- }).join('')}</dl><div class="actions"><button data-edit="${esc(entry.id)}">${t('edit')}</button><button data-remove="${esc(entry.id)}">${t('remove')}</button></div></article>`).join('') || '<p class="muted">'+esc(journalEmptyLabel(journalPeriod,lang()))+'</p>'}`;
+ }).join('')}</dl><div class="actions"><button data-edit="${esc(entry.id)}">${t('edit')}</button><button data-remove="${esc(entry.id)}">${t('remove')}</button></div></article>`).join('') || '<p class="muted">'+esc(journalQuery ? tr(['Совпадений нет.','Uyğun qeyd tapılmadı.','No matching entries.']) : journalEmptyLabel(journalPeriod,lang()))+'</p>';
 }
 
 function schedule() {
@@ -175,9 +263,13 @@ function profile() {
  const current = state();
  const reminder = current.reminders;
  const running = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
- return heading('profile')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>
+ return heading('profile')+`<div class="today-actions"><a class="button" href="#journal">${icon('journal')} ${t('journal')}</a>
+ <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a></div><p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>
  ${cloudConfig?`<p><a class="button" href="#account">${t('account')}</a></p>`:''}
  <form id="profile-form" class="panel"><label>${t('name')}<input name="name" maxlength="40" value="${esc(current.name)}"></label><button class="cta">${t('save')}</button></form>
+ <div class="panel"><label for="restart-theme">${t('theme')}<select id="restart-theme">
+ ${[['system','themeSystem'],['light','themeLight'],['dark','themeDark']].map(([value,key])=>
+ `<option value="${value}">${t(key)}</option>`).join('')}</select></label></div>
  <form id="reminder-form" class="panel"><h2>${t('reminders')}</h2><p class="muted">${t('reminderNote')}</p><label>${t('reminderTime')}<input type="time" name="time" value="${esc(reminder.time)}" required></label>
  ${['practice','schedule','goal'].map((key,i)=>`<label class="check"><input type="checkbox" name="${key}" ${reminder[key]?'checked':''}>${t(['remindPractice','remindSchedule','remindGoal'][i])}</label>`).join('')}<button class="cta">${t('save')}</button></form>
  <article class="panel"><h2>${t(running?'installed':'install')}</h2>${running?'':`<p>${t('installHelp')}</p>${installPrompt?`<button data-action="install">${t('install')}</button>`:''}`}
@@ -239,7 +331,7 @@ function setActive(active) {
  else repo.write({active});
 }
 
-const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account};
+const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account, academy};
 
 function refreshBanner() {
  const current = state();
@@ -287,16 +379,18 @@ function render() {
  const calendar = $('#schedule-link');
  calendar.innerHTML = icon('schedule');
  calendar.setAttribute('aria-label',t('schedule'));
- if (current.name === 'schedule') calendar.setAttribute('aria-current','page');
+ calendar.href = cloud?.user ? '#classes' : '#schedule';
+ if (['schedule','classes'].includes(current.name)) calendar.setAttribute('aria-current','page');
  else calendar.removeAttribute('aria-current');
  $('#mode').textContent = t(cloud?.user ? 'cloudMode' : cloudConfig ? 'cloudLocal' : 'demo');
- const activeTab = current.name === 'practice' ? 'practices' : current.name;
- $('#tabs').innerHTML = tabs.map(name=>`<a href="#${name}" ${activeTab===name?'aria-current="page"':''}>${icon(name)}<span>${t(name)}</span></a>`).join('');
- document.title = 'RESTART · '+t(activeTab);
+ const activeTab = {practice:'practices',journal:'profile',account:'profile'}[current.name] || current.name;
+ const tabLabel = name => t({path:'pathTab',academy:'academyTab'}[name] || name);
+ $('#tabs').innerHTML = tabs.map(name=>`<a href="#${name}" ${activeTab===name?'aria-current="page"':''}>${icon(name)}<span>${tabLabel(name)}</span></a>`).join('');
+ document.title = 'RESTART · '+tabLabel(current.name==='practice'?'practices':current.name);
  screen.innerHTML = cloud?.user && !cloud.state && current.name!=='account'
   ? `<h1>${t('account')}</h1><p>${t(cloud.notice==='cloudLoadFailed'?'cloudLoadFailed':'cloudLoading')}</p><a class="button" href="#account">${t('account')}</a>`
   : ['academy','classes','staff'].includes(current.name)
-    ? '<h1>'+t(current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
+    && cloudConfig ? '<h1>'+t(current.name==='academy'?'academyTab':current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
     : screens[current.name](current.id);
  const outlet = document.getElementById('school-content');
  if (outlet) {
@@ -381,6 +475,11 @@ document.addEventListener('click',async event=>{
   filter = categoryFilter;
   render();
   screen.querySelector('[data-filter="'+categoryFilter+'"]').focus();
+ } else if (action === 'clear-practice-filters') {
+  filter = 'all';
+  for (const {key} of practiceFilters) practiceChoices[key] = 'all';
+  render();
+  screen.querySelector('[data-filter="all"]').focus();
  } else if (edit) {
   if (cloud?.journalDraft && !confirm(t('cloudDiscard'))) return;
   cloud?.discardJournalDraft();
@@ -426,10 +525,16 @@ document.addEventListener('click',async event=>{
 });
 
 screen.addEventListener('change', event=>{
+ const {practiceChoice} = event.target.dataset;
+ if (practiceChoice) {
+  practiceChoices[practiceChoice] = event.target.value;
+  render();
+  screen.querySelector('[data-practice-choice="'+practiceChoice+'"]')?.focus({preventScroll:true});
+  return;
+ }
  if (!event.target.matches('[data-journal-period]')) return;
  journalPeriod = event.target.value;
- render();
- screen.querySelector('[data-journal-period]')?.focus({preventScroll:true});
+ $('#journal-results').innerHTML = journalEntries();
 });
 
 screen.addEventListener('submit', async event=>{
@@ -440,6 +545,11 @@ screen.addEventListener('submit', async event=>{
   return;
  }
  const data = Object.fromEntries(new FormData(form));
+ if (form.id==='journal-search') {
+  journalQuery = data.query.trim();
+  $('#journal-results').innerHTML = journalEntries();
+  return;
+ }
  if (form.dataset.cloudAuth) {
   const kind = form.dataset.cloudAuth;
   const ok = kind==='import' ? Boolean(data.consent) && form.dataset.owner===cloud.user?.id && await cloud.save('import',repo.read()) : await cloud.action(kind,data);
@@ -496,7 +606,7 @@ if (cloudConfig) {
  import('./supabase-sdk.mjs').then(({createClient})=>{
   pilotClient = createPilotClient(createClient,cloudConfig);
   cloud = cloudAccount(pilotClient,replaceScreen=>{
-   if (replaceScreen) { editing = null; journalPeriod = 'all'; render(); }
+   if (replaceScreen) { editing = null; journalPeriod = 'all'; journalQuery = ''; render(); }
    else cloudNotice();
   },()=>repo.read().lang);
   return cloud.init();

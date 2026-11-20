@@ -53,3 +53,23 @@ test('Legacy home hashes open their canonical school destinations', () => {
     assert.equal(redirected,expected);
   }
 });
+
+test('Public home renders original media and links to studios without JavaScript', () => {
+  const home = read('index.html');
+  const studio = read('practices.html');
+  for (const destination of ['courses', 'live']) {
+    assert.match(home, new RegExp('href="\\./practices\\.html#' + destination + '"'));
+    assert.match(studio, new RegExp('id="' + destination + '"'));
+  }
+  for (const route of ['yoga', 'breathing', 'listening']) {
+    assert.ok(home.includes('href="./practices.html#course/' + route + '"'));
+    assert.ok(studio.includes('href="#course/' + route + '"'));
+  }
+  for (const relative of ['brand/restart-1188.webp', 'author.webp', 'yoga.webp', 'breath.webp', 'meditation.webp']) {
+    assert.ok(home.includes('src="./assets/' + relative + '"'));
+    assert.ok(readFileSync(root + '/assets/' + relative).length > 0);
+  }
+  for (const picture of ['group', 'talk', 'outdoors']) {
+    assert.ok(read('service-worker.js').includes('"./assets/founder-workshop-' + picture + '.webp"'));
+  }
+});

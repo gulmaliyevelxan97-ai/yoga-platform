@@ -1,5 +1,5 @@
 import {build} from 'esbuild';
-import {readFile,writeFile,cp,mkdir,readdir} from 'node:fs/promises';
+import {readFile,writeFile,cp,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
@@ -32,8 +32,9 @@ try {
  throw new Error('Pilot output already exists. Set RESTART_PILOT_OUTPUT to a new directory.');
 }
 const runtimeFiles = {
- app:['index.html','style.css','ui.mjs','content.mjs','state.mjs','manifest.webmanifest','sw.js',
+ app:['index.html','style.css','premium.css','theme.js','ui.mjs','content.mjs','state.mjs','manifest.webmanifest','sw.js',
   'cloud-auth.mjs','cloud-copy.mjs','cloud-data.mjs','school.mjs','school-notices.mjs','academy-programs.mjs','booking-calendar.mjs','personal-plan.mjs','progress-view.mjs'],
+ assets:['yoga.webp','meditation.webp','breath.webp','founder-yoga.webp','performance.webp','lake.jpg'],
  'assets/brand':['restart-640.webp','restart-1188.webp'],
  'assets/pwa':['restart-192.png','restart-512.png','restart-maskable.png','restart-apple.png']
 };
@@ -52,7 +53,14 @@ await writeFile(index,html.replace("default-src 'self';", "default-src 'self'; c
 await build({...bundle,outfile:fileURLToPath(new URL('app/supabase-sdk.mjs',out))});
 
 const revision = createHash('sha256');
-for (const name of (await readdir(new URL('app/',out))).sort()) revision.update(await readFile(new URL('app/'+name,out)));
+const packaged = Object.entries(runtimeFiles).flatMap(([folder, files]) =>
+ files.map(file => folder+'/'+file));
+packaged.push('app/cloud-config.mjs','app/supabase-sdk.mjs');
+for (const path of packaged.sort()) {
+ const contents = await readFile(new URL(path,out));
+ revision.update(JSON.stringify([path, contents.length]));
+ revision.update(contents);
+}
 const serviceWorker = new URL('app/sw.js',out);
 const source = await readFile(serviceWorker,'utf8');
 const workerVersion = "const VERSION = 'pilot-"+revision.digest('hex').slice(0,16)+"';";
