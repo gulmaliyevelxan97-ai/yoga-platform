@@ -67,11 +67,14 @@ export function renderPracticeTrends(sessions, language, today = new Date()) {
  }).join('')+'</ul></section>'+renderMilestones(sessions,language,today);
 }
 
-export function filterJournal(entries, period, today = new Date()) {
+export function filterJournal(entries, period, today = new Date(), query = '', language = 'ru') {
+ const normalize = value => String(value ?? '').normalize('NFC').toLocaleLowerCase(language);
+ const terms = normalize(query).trim().split(/\s+/u).filter(Boolean);
  const days = journalPeriods.get(period);
  const latest = dateKey(today);
  const earliest = days ? dateKey(shiftDate(today,1-days)) : null;
  return entries.filter(entry=>earliest === null || (entry.date >= earliest && entry.date <= latest))
+  .filter(entry=>terms.every(term=>['before','after','notes'].some(field=>normalize(entry[field]).includes(term))))
   .sort((left,right)=>right.date.localeCompare(left.date));
 }
 

@@ -58,3 +58,13 @@ test('Practice milestones require completed records on distinct past or current 
  assert.doesNotMatch(renderPracticeTrends([...records.slice(0,6),records[0],future],'en',today),/Seven practice days/);
  assert.match(renderPracticeTrends(records,'en',today),/Seven practice days/);
 });
+
+test('Journal search applies the date filter and locale-aware case folding locally',()=>{
+ const entries = [
+  {id:'match',date:'2026-11-20',before:'İDMAN',notes:'Sakit nəfəs'},
+  {id:'other',date:'2026-11-19',notes:'İdman'},
+  {id:'old',date:'2026-10-01',notes:'İdman nəfəs'}
+ ];
+ assert.deepEqual(filterJournal(entries,'week',today,'idman NƏFƏS','az').map(entry=>entry.id),['match']);
+ assert.equal(entries[0].notes,'Sakit nəfəs');
+});

@@ -90,6 +90,7 @@ let selectedDay = dateKey();
 let scheduleOffset = 0;
 let editing = null;
 let journalPeriod = 'all';
+let journalQuery = '';
 let installPrompt;
 let waitingWorker;
 let applyingUpdate = false;
@@ -227,11 +228,19 @@ function journal() {
  <div class="actions"><button class="cta">${t('save')}</button>${(editing||draft)?`<button type="button" data-action="cancel-edit">${t('cancel')}</button>`:''}</div></form>
  <h2>${t('entries')}</h2>
  ${renderJournalFilter(journalPeriod,lang())}
- ${filterJournal(state().journal,journalPeriod).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
+ <form id="journal-search" class="panel"><label>${tr(['Поиск по записям','Qeydlərdə axtarış','Search entries'])}<input name="query" type="search" maxlength="120" value="${esc(journalQuery)}" autocomplete="off"></label><button>${tr(['Найти','Axtar','Search'])}</button></form>
+ <div id="journal-results" aria-live="polite">${journalEntries()}</div>`;
+}
+
+function journalEntries() {
+ const levels = ['unset','low','medium','high'];
+ const scales = ['mood','energy','wellbeing'];
+ const fields = ['before','after','notes'];
+ return filterJournal(state().journal,journalPeriod,new Date(),journalQuery,lang()).map(entry=>`<article class="panel entry"><h3>${esc(dateLabel(entry.date))}</h3>
  <dl>${[...scales,...fields].filter(key=>entry[key]&&entry[key]!=='0').map(key=>{
   const value = scales.includes(key) ? t(levels[Number(entry[key])]||'unset') : esc(entry[key]);
   return `<dt>${t(key)}</dt><dd>${value}</dd>`;
- }).join('')}</dl><div class="actions"><button data-edit="${esc(entry.id)}">${t('edit')}</button><button data-remove="${esc(entry.id)}">${t('remove')}</button></div></article>`).join('') || '<p class="muted">'+esc(journalEmptyLabel(journalPeriod,lang()))+'</p>'}`;
+ }).join('')}</dl><div class="actions"><button data-edit="${esc(entry.id)}">${t('edit')}</button><button data-remove="${esc(entry.id)}">${t('remove')}</button></div></article>`).join('') || '<p class="muted">'+esc(journalQuery ? tr(['Совпадений нет.','Uyğun qeyd tapılmadı.','No matching entries.']) : journalEmptyLabel(journalPeriod,lang()))+'</p>';
 }
 
 function schedule() {
@@ -525,8 +534,7 @@ screen.addEventListener('change', event=>{
  }
  if (!event.target.matches('[data-journal-period]')) return;
  journalPeriod = event.target.value;
- render();
- screen.querySelector('[data-journal-period]')?.focus({preventScroll:true});
+ $('#journal-results').innerHTML = journalEntries();
 });
 
 screen.addEventListener('submit', async event=>{
@@ -537,6 +545,11 @@ screen.addEventListener('submit', async event=>{
   return;
  }
  const data = Object.fromEntries(new FormData(form));
+ if (form.id==='journal-search') {
+  journalQuery = data.query.trim();
+  $('#journal-results').innerHTML = journalEntries();
+  return;
+ }
  if (form.dataset.cloudAuth) {
   const kind = form.dataset.cloudAuth;
   const ok = kind==='import' ? Boolean(data.consent) && form.dataset.owner===cloud.user?.id && await cloud.save('import',repo.read()) : await cloud.action(kind,data);
@@ -593,7 +606,7 @@ if (cloudConfig) {
  import('./supabase-sdk.mjs').then(({createClient})=>{
   pilotClient = createPilotClient(createClient,cloudConfig);
   cloud = cloudAccount(pilotClient,replaceScreen=>{
-   if (replaceScreen) { editing = null; journalPeriod = 'all'; render(); }
+   if (replaceScreen) { editing = null; journalPeriod = 'all'; journalQuery = ''; render(); }
    else cloudNotice();
   },()=>repo.read().lang);
   return cloud.init();
