@@ -1,6 +1,6 @@
 import {practiceGuide,practiceStage} from './practice-guide.mjs';
 import {renderWeeklyProgram, renderWeeklyProgramLink} from './week.mjs';
-import {readNotificationPlan,writeNotificationPlan,renderNotificationPlan,notificationPlanFromForm,dueNotifications,notificationPlanMessage} from './notification-plan.mjs';
+import {readNotificationPlan,writeNotificationPlan,renderNotificationPlan,notificationPlanFromForm,dueNotifications,notificationPlanMessage,reminderPrompt} from './notification-plan.mjs';
 import {renderPersonalPlan,submitPersonalPlan,suggestedPracticeId} from './personal-plan.mjs';
 import {renderPracticeTrends,renderJournalFilter,filterJournal,journalEmptyLabel} from './progress-view.mjs';
 import {schoolPage, schoolStrings} from './school.mjs';
@@ -363,7 +363,7 @@ function cloudNotice() {
 }
 
 function setActive(active) {
- if (cloud?.state) cloud.state.active = active;
+ if (cloud?.user) cloud.setActivePractice(active);
  else repo.write({active});
 }
 
@@ -393,9 +393,8 @@ function refreshBanner() {
   try {localStorage.setItem(seenReminderKey,JSON.stringify([...seenReminders]));} catch {}
  }
  if (activeReminder) {
-  const titles = {morning:['Утро','Səhər','Morning'],day:['День','Gündüz','Daytime'],evening:['Вечер','Axşam','Evening']};
   const labels = {practice:'practices',academy:'academyTab',schedule:'schedule',journal:'journal',goal:'goal'};
-  messages.push(tr(titles[activeReminder.period])+': '+activeReminder.categories.map(key=>t(labels[key])).join(', '));
+  messages.push(reminderPrompt(lang(),activeReminder.period));
   const routes = {practice:'#week',academy:'#academy',schedule:cloud?.user?'#classes':'#schedule',journal:'#journal',goal:'#path'};
   for (const key of activeReminder.categories) reminderLinks.push([routes[key],t(labels[key])]);
  }
@@ -544,7 +543,6 @@ async function updatePractice(action) {
   const session = {id: active.sessionId, practice:id, seconds:elapsed(active,item.minutes*60,now), day:dateKey()};
   if (cloud?.user) {
    if (!await cloud.save('complete',session)) return;
-   if (cloud.state) cloud.state.active = null;
   } else repo.write({active:null,sessions:[...current.sessions,session]});
   $('#status').textContent=t('completed');
   location.hash='path/'+session.id;

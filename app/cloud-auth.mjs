@@ -1,6 +1,8 @@
 import {studentStore} from './cloud-data.mjs';
+import {catalog} from './content.mjs';
 
 const recoveryKey = 'restart.cloud.recovery';
+const activePracticeKey = 'restart.cloud.practice.pending.v1';
 const journalDraftKey = 'restart.cloud.journal.pending.v1';
 export const createPilotClient = (createClient, config) => createClient(config.url,config.key,{
  auth:{flowType:'pkce',detectSessionInUrl:false,storageKey:'restart.cloud.auth.v1'}
@@ -25,6 +27,32 @@ export function cloudAccount(client, onChange, guestLocale) {
  let notice = '';
  let lastImport = null;
  let journalDraft = null;
+ let activePractice = null;
+
+ function setActivePractice(active) {
+  if (!store) return;
+  activePractice = active;
+  if (state) state.active = active;
+  try {
+   if (active) sessionStorage.setItem(activePracticeKey,JSON.stringify({owner:user.id,active}));
+   else sessionStorage.removeItem(activePracticeKey);
+  } catch {
+   // The timer can continue in memory when session storage is unavailable.
+  }
+ }
+
+ function restoreActivePractice() {
+  try {
+   const saved = JSON.parse(sessionStorage.getItem(activePracticeKey));
+   const active = saved?.active;
+   if (store && user.id===saved?.owner && catalog.some(item=>item.id===active?.id) &&
+       typeof active.sessionId==='string' && /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(active.sessionId) &&
+       Number.isSafeInteger(active.accumulated) && active.accumulated>=0 &&
+       (active.startedAt===null || (Number.isSafeInteger(active.startedAt) && active.startedAt>=0))) return active;
+   sessionStorage.removeItem(activePracticeKey);
+  } catch {}
+  return null;
+ }
 
  function setJournalDraft(entry) {
   journalDraft = entry;
@@ -50,14 +78,18 @@ export function cloudAccount(client, onChange, guestLocale) {
   const current = epoch;
   const next = await store.read(state?.lang || guestLocale());
   if (current !== epoch) throw new Error('restart_session_changed');
-  state = {...next,active:state?.active || null};
+  if (activePractice && next.sessions.some(session=>session.id===activePractice.sessionId)) setActivePractice(null);
+  state = {...next,active:activePractice};
  }
 
  async function adopt(session, isRecovery = false) {
   const nextUser = session?.user ?? null;
   if (user?.id === nextUser?.id && recovery === isRecovery) {
    user = nextUser;
-   if (!user) setJournalDraft(null);
+   if (!user) {
+    setJournalDraft(null);
+    restoreActivePractice();
+   }
    return;
   }
   epoch++;
@@ -67,6 +99,7 @@ export function cloudAccount(client, onChange, guestLocale) {
   recovery = isRecovery;
   store = user && !recovery ? studentStore(client,user.id) : null;
   journalDraft = restoreJournalDraft();
+  activePractice = restoreActivePractice();
   state = null;
   if (recovery) sessionStorage.setItem(recoveryKey,user.id);
   else sessionStorage.removeItem(recoveryKey);
@@ -122,6 +155,7 @@ export function cloudAccount(client, onChange, guestLocale) {
    if (startEpoch !== epoch) return false;
    if (operation === 'import') lastImport = result;
    if (operation === 'saveJournal') setJournalDraft(null);
+   if (operation === 'complete' && values[0]?.id===activePractice?.sessionId) setActivePractice(null);
    // Acknowledged writes should not be retried just because the follow-up read failed.
    try {
     await reload();
@@ -152,7 +186,7 @@ export function cloudAccount(client, onChange, guestLocale) {
   get journalDraft() {return journalDraft;},
   discardJournalDraft() {setJournalDraft(null);},
   get lastImport() {return lastImport;}, get notice() {return notice;}, get busy() {return busy;},
-  action, save,
+  action, save, setActivePractice,
   async init() {
    try {
     const url = new URL(location.href);

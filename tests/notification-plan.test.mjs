@@ -70,3 +70,19 @@ test('Preference form is localized, has schedule fields and does not claim backg
  }
  assert.match(renderNotificationPlan(baku,'en'),/while RESTART is open/);
 });
+
+test('Older schedules retain all weekdays and new selections survive reload',()=>{
+ const store = storage(JSON.stringify({...baku,version:1}));
+ assert.deepEqual(readNotificationPlan(store).days,['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+ assert.equal(writeNotificationPlan({...baku,days:['Sat','invalid','Sat','Mon']},store),true);
+ assert.deepEqual(readNotificationPlan(store).days,['Mon','Sat']);
+ assert.deepEqual(dueNotifications({...baku,days:[]},{now:instant('2026-11-21T04:00:00Z')}),[]);
+});
+
+test('Weekday selection uses the schedule time zone and blocks catch-up into disabled days',()=>{
+ const plan = {...baku,days:['Fri'],times:{morning:'23:59'}};
+ assert.equal(dueNotifications(plan,{now:instant('2026-11-20T19:59:00Z')}).length,1);
+ assert.deepEqual(dueNotifications(plan,{now:instant('2026-11-20T20:00:00Z'),windowMinutes:2}),[]);
+ const saturday = {...baku,days:['Sat'],times:{morning:'00:01'}};
+ assert.equal(dueNotifications(saturday,{now:instant('2026-11-20T20:01:00Z')})[0].date,'2026-11-21');
+});
