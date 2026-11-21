@@ -76,5 +76,5 @@ export function renderWeeklyProgram({lang, sessions, today, selectedDate} = {}) 
  return '<h1>' + t('title') + '</h1><p class="muted">' + t('intro') + '</p>' +
   '<div class="panel week-progress"><label>' + t('progress') + ' · ' + completed + ' / ' + total +
   '<progress value="' + completed + '" max="' + total + '"></progress></label></div>' +
-  jump + '<ol class="week-days">' + items + '</ol><a class="link" href="#profile">' + t('planner') + '</a>';
+  jump + '<ol class="week-days">' + items + '</ol><a class="link" href="#path">' + t('planner') + '</a>';
 }

@@ -365,6 +365,7 @@ function refreshBanner() {
  const stats = metrics(current.sessions, now);
  const item = sampleClass(now);
  const messages = [];
+ const reminderLinks = [];
  if (!navigator.onLine) messages.push(t('offline'));
  if (!repo.available) messages.push(t('storageError'));
  const plan = readNotificationPlan();
@@ -382,6 +383,8 @@ function refreshBanner() {
   const titles = {morning:['Утро','Səhər','Morning'],day:['День','Gündüz','Daytime'],evening:['Вечер','Axşam','Evening']};
   const labels = {practice:'practices',academy:'academyTab',schedule:'schedule',journal:'journal',goal:'goal'};
   messages.push(tr(titles[activeReminder.period])+': '+activeReminder.categories.map(key=>t(labels[key])).join(', '));
+  const routes = {practice:'#week',academy:'#academy',schedule:cloud?.user?'#classes':'#schedule',journal:'#journal',goal:'#path'};
+  for (const key of activeReminder.categories) reminderLinks.push([routes[key],t(labels[key])]);
  }
  if (!plan.enabled && reminders.time && time >= reminders.time) {
   if (reminders.practice && !stats.days.has(dateKey(now))) messages.push(t('remindPractice'));
@@ -392,8 +395,23 @@ function refreshBanner() {
  banner.hidden = !messages.length && !waitingWorker;
  const bannerText = messages.join(' · ');
  const existingUpdate = banner.querySelector('[data-action=update]');
- if (banner.firstChild?.textContent === bannerText && Boolean(existingUpdate) === Boolean(waitingWorker)) return;
+ const linksKey = JSON.stringify(reminderLinks);
+ if (banner.firstChild?.textContent === bannerText && banner.dataset.links===linksKey &&
+     Boolean(existingUpdate) === Boolean(waitingWorker)) return;
+ banner.dataset.links = linksKey;
  banner.replaceChildren(document.createTextNode(bannerText));
+ if (reminderLinks.length) {
+  const actions = document.createElement('div');
+  actions.className = 'actions reminder-links';
+  for (const [route,label] of reminderLinks) {
+   const link = document.createElement('a');
+   link.className = 'button';
+   link.href = route;
+   link.textContent = label;
+   actions.append(link);
+  }
+  banner.append(actions);
+ }
  if (waitingWorker) {
   const button = document.createElement('button');
   button.dataset.action = 'update';
@@ -605,7 +623,7 @@ screen.addEventListener('submit', async event=>{
  if (form.id==='notification-plan-form') {
   let outcome;
   try {outcome=writeNotificationPlan(notificationPlanFromForm(form))?'saved':'storageError';}
-  catch {outcome='invalid';}
+  catch (error) {outcome=error.message==='missingSchedule'?'missingSchedule':'invalid';}
   form.querySelector('#notification-plan-status').textContent=notificationPlanMessage(lang(),outcome);
   refreshBanner();
   return;

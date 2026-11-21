@@ -13,6 +13,7 @@ const copy = {
   topics:'Темы напоминаний', practice:'Практики', academy:'Академия', schedule:'Расписание занятий',
   journal:'Дневник', goal:'Недельная цель', save:'Сохранить',
   saved:'Расписание напоминаний сохранено.', invalid:'Проверьте часовой пояс и заполните оба поля тихих часов.',
+  missingSchedule:'Укажите хотя бы одно время и выберите тему напоминания.',
   storageError:'Устройство не сохранило расписание напоминаний.'
  },
  az: {
@@ -23,6 +24,7 @@ const copy = {
   topics:'Xatırlatma mövzuları', practice:'Məşqlər', academy:'Akademiya', schedule:'Məşğələlərin cədvəli',
   journal:'Gündəlik', goal:'Həftəlik məqsəd', save:'Yadda saxla',
   saved:'Xatırlatma cədvəli yadda saxlanıldı.', invalid:'Saat qurşağını yoxlayın və sakit saatlar üçün hər iki sahəni doldurun.',
+  missingSchedule:'Ən azı bir vaxt və bir xatırlatma mövzusu seçin.',
   storageError:'Cihaz xatırlatma cədvəlini yadda saxlaya bilmədi.'
  },
  en: {
@@ -33,6 +35,7 @@ const copy = {
   topics:'Reminder topics', practice:'Practices', academy:'Academy', schedule:'Class schedule',
   journal:'Journal', goal:'Weekly goal', save:'Save',
   saved:'Reminder schedule saved.', invalid:'Check the time zone and fill in both quiet-hour fields.',
+  missingSchedule:'Choose at least one time and one reminder topic.',
   storageError:'The device could not save the reminder schedule.'
  }
 };
@@ -125,11 +128,15 @@ export function notificationPlanFromForm(form) {
      (quiet.start && (!validTime(quiet.start) || !validTime(quiet.end) || quiet.start===quiet.end))) {
   throw new RangeError('Invalid reminder schedule');
  }
- return normalize({
+ const plan = normalize({
   enabled:data.has('enabled'),timeZone,quiet,
   times:Object.fromEntries(periods.map(period=>[period,data.get(period)])),
   categories:data.getAll('topics')
  });
+ if (plan.enabled && (!plan.categories.length || !Object.values(plan.times).some(Boolean))) {
+  throw new RangeError('missingSchedule');
+ }
+ return plan;
 }
 
 export function notificationPlanMessage(lang,key) {

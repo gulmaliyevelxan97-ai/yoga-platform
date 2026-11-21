@@ -39,6 +39,7 @@ test('Programme localizes the date, links and truthful progress', () => {
   assert.match(html, /<progress value="1" max="6">/);
   assert.match(html, /<time datetime="2026-11-20">/);
   assert.match(html, /href="#practice\/strength"/);
+  assert.match(html, /href="#path"/);
   assert.ok(html.includes('href="#practice/yoga" aria-label="' + repeat));
   assert.ok(renderWeeklyProgramLink(lang).includes('href="#week">' + title));
  }
