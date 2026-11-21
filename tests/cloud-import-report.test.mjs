@@ -91,3 +91,43 @@ test('Offline journal draft survives reload for its owner and clears on save, si
   assert.equal(storage.size,0);
  }finally{Object.assign(globalThis,original)}
 });
+
+test('Cloud practice resumes after reload and clears after save or account change',async()=>{
+ const {cloudAccount}=await import('../app/cloud-auth.mjs');
+ const original={location:globalThis.location,sessionStorage:globalThis.sessionStorage};
+ globalThis.location={href:'https://pilot.example.invalid/app/'};
+ const storage=new Map();
+ globalThis.sessionStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)};
+ let user={id:'test-a'};
+ let offline=true;
+ const client={from(){return {
+  select(){return this},eq(){return this},order(){return this},limit(){return {data:[]}},
+  maybeSingle(){return {data:null}},
+  upsert(){return offline ? {error:new Error('offline')} : {data:null}}
+ }},auth:{async getSession(){return {data:{session:{user}}}},onAuthStateChange(){},async signOut(){return {}}}};
+ const start=async()=>{
+  const account=cloudAccount(client,()=>{},()=> 'en');
+  await account.init();
+  return account;
+ };
+ try{
+  const active={id:'breathing',sessionId:'57b9975e-30bf-4b26-80b9-32a8463b9fe2',accumulated:12000,startedAt:null};
+  const session={id:active.sessionId,practice:active.id,seconds:12,day:'2026-11-21'};
+  (await start()).setActivePractice(active);
+  const reloaded=await start();
+  assert.deepEqual(reloaded.state.active,active);
+  assert.equal(await reloaded.save('complete',session),false);
+  assert.deepEqual((await start()).state.active,active);
+  offline=false;
+  assert.equal(await reloaded.save('complete',session),true);
+  assert.equal((await start()).state.active,null);
+  const first=await start();
+  first.setActivePractice(active);
+  await first.action('logout');
+  assert.equal((await start()).state.active,null);
+  (await start()).setActivePractice(active);
+  user={id:'test-b'};
+  assert.equal((await start()).state.active,null);
+  assert.equal(storage.size,0);
+ }finally{Object.assign(globalThis,original)}
+});
