@@ -3,6 +3,9 @@ import {classVenueField,classLocationFields,classDetailMarkup,classCalendarLink,
 import {schoolNotices, saveLessonPreference} from './school-notices.mjs';
 export const schoolStrings = {
  ...academyCopy,
+ classKindFilter:['Тип занятия','Məşğələnin növü','Class type'],
+ allClassKinds:['Все типы','Bütün növlər','All types'],
+ myBookingsFilter:['Только мои записи','Yalnız mənim qeydiyyatlarım','Only my bookings'],
  lessonMedia:['Видео урока (YouTube или Vimeo)','Dərsin videosu (YouTube və ya Vimeo)','Lesson video (YouTube or Vimeo)'],
  lessonMediaWatch:['Открыть видео ↗','Videonu aç ↗','Open video ↗'],
  lessonMediaInvalid:['Укажите прямую HTTPS-ссылку на видео YouTube или Vimeo без дополнительных параметров.','Əlavə parametr olmadan YouTube və ya Vimeo videosunun birbaşa HTTPS keçidini daxil edin.','Enter a direct HTTPS YouTube or Vimeo video link without extra parameters.'],
@@ -14,7 +17,7 @@ export const schoolStrings = {
  nextLesson:['Следующий урок','Növbəti dərs','Next lesson'],
  classFormatFilter:['Формат занятия','Məşğələnin formatı','Class format'],
  allFormats:['Все форматы','Bütün formatlar','All formats'],
- noMatchingClasses:['Для этого формата занятий пока нет.','Bu formatda hələ məşğələ yoxdur.','There are no classes in this format yet.'],
+ noMatchingClasses:['По выбранным фильтрам занятий нет.','Seçilmiş filtrlərə uyğun məşğələ yoxdur.','No classes match the selected filters.'],
  noUpcomingClasses:['Ближайших занятий пока нет.','Hələ qarşıdakı məşğələlər yoxdur.','No upcoming classes yet.'],
  bookingHistory:['История записей','Qeydiyyat tarixçəsi','Booking history'],
  bookingCancelled:['Запись отменена','Qeydiyyat ləğv olunub','Booking cancelled'],
@@ -129,7 +132,9 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current,dr
  let busy = false;
  let role = '';
  let isOwner = false;
- let classFormat = '';
+ const classFilters = {format:'',kind:'',mine:false};
+ const classMatches = ({format,kind,own}) => (!classFilters.format || format===classFilters.format) &&
+  (!classFilters.kind || kind===classFilters.kind) && (!classFilters.mine || own);
  let lessonMediaAvailable = false;
  function lessonValues(values) {
   const fields = {title:values.title,body:values.body,position:Number(values.position),kind:values.kind};
@@ -227,20 +232,25 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current,dr
   const history = bookings.length ? await data(table('class_sessions')
    .select('id,title,starts_at,status,restart_bookings!inner(status)')
    .eq('restart_bookings.user_id',user).lt('starts_at',now).order('starts_at',{ascending:false}).limit(30)) : [];
-  const options = [['','allFormats'],['onsite','onsite'],['online','online']];
-  const filters = '<label>'+t('classFormatFilter')+'<select data-class-format>'+options.map(([value,label])=>
-   '<option value="'+value+'"'+(value===classFormat?' selected':'')+'>'+t(label)+'</option>').join('')+'</select></label>';
+  const filterSelect = (name,label,options) => '<label>'+t(label)+'<select data-class-filter="'+name+'">'+
+   options.map(([value,key])=>'<option value="'+value+'"'+(value===classFilters[name]?' selected':'')+'>'+t(key)+'</option>').join('')+
+   '</select></label>';
+  const filters = '<div class="panel">'+
+   filterSelect('format','classFormatFilter',[['','allFormats'],['onsite','onsite'],['online','online']])+
+   filterSelect('kind','classKindFilter',[['','allClassKinds'],['group','group'],['individual','individual'],['event','event']])+
+   '<label><input type="checkbox" data-class-filter="mine"'+(classFilters.mine?' checked':'')+'> '+t('myBookingsFilter')+'</label></div>';
   const cards = sessions.map(s=>{
    const places=Math.max(0,s.capacity-s.seats_taken);
    const owns = byId.get(s.id)==='booked';
    const status = s.status==='cancelled' ? '<p>'+t('cancelled')+'</p>' :
     '<p>'+(places ? t('free')+' · '+places+' / '+s.capacity : t('classFull'))+'</p>'+
     (owns?'<p>'+t('confirmed')+'</p>'+classCalendarLink(s,lang)+form('cancel','cancelBooking','',s.id):places>0?form('book','book','',s.id):'');
-   return '<article class="panel" data-class-card="'+esc(s.format)+'"'+(classFormat && s.format!==classFormat?' hidden':'')+
+   return '<article class="panel" data-class-card data-format="'+esc(s.format)+'" data-kind="'+esc(s.kind)+'" data-own="'+owns+'"'+
+    (classMatches({...s,own:owns})?'':' hidden')+
     '><h2>'+esc(s.title)+'</h2><p>'+esc(date(s.starts_at))+' · '+t('localClock')+'</p>'+
     '<p>'+t(s.format)+' · '+t(s.kind)+'</p>'+classDetailMarkup(s,lang,esc)+status+'</article>';
   }).join('');
-  const hasMatches = sessions.some(s=>!classFormat || s.format===classFormat);
+  const hasMatches = sessions.some(s=>classMatches({...s,own:byId.get(s.id)==='booked'}));
   const historyItems=history.map(s=>'<li><strong>'+esc(s.title)+'</strong> · '+esc(date(s.starts_at))+' · '+
    t(s.status==='cancelled'?'cancelled':s.restart_bookings[0]?.status==='booked'?'confirmed':'bookingCancelled')+'</li>').join('');
   return (sessions.length?filters:'')+'<p data-class-empty role="status"'+(hasMatches?' hidden':'')+'>'+t(sessions.length?'noMatchingClasses':'noUpcomingClasses')+'</p>'+cards+
@@ -276,10 +286,14 @@ export async function schoolPage({outlet,client,user,route,t,esc,lang,current,dr
  }
  function error() { outlet.innerHTML='<p role="alert">'+t('schoolError')+'</p>'+form('refresh','reload'); }
  outlet.onchange=e=>{
-  if (!current() || !e.target.matches('select[data-class-format]')) return;
-  classFormat=e.target.value;
+  const filter=e.target.dataset.classFilter;
+  if (!current() || !Object.hasOwn(classFilters,filter)) return;
+  classFilters[filter]=filter==='mine'?e.target.checked:e.target.value;
   const cards=[...outlet.querySelectorAll('[data-class-card]')];
-  for (const card of cards) card.hidden=!!classFormat && card.dataset.classCard!==classFormat;
+  for (const card of cards) {
+   const {format,kind,own}=card.dataset;
+   card.hidden=!classMatches({format,kind,own:own==='true'});
+  }
   outlet.querySelector('[data-class-empty]').hidden=cards.some(card=>!card.hidden);
  };
  outlet.oninput=e=>{

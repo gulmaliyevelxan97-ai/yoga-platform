@@ -49,17 +49,39 @@ test('Week day links expose localized dates and match focusable day cards',()=>{
  const html = renderWeeklyProgram({lang:'en',today:week,selectedDate:'2026-11-22'});
  const nav = html.match(/<nav class="week-jump"[^>]*>(.*?)<\/nav>/)?.[1];
  assert.equal((nav.match(/href="#week\//g) || []).length,7);
- assert.match(nav,/href="#week\/2026-11-22" aria-label="[^"]+" aria-current="date"/);
- for (const [,id] of nav.matchAll(/href="#(week\/[\d-]+)"/g)) {
-  assert.ok(html.includes('id="'+id+'" tabindex="-1"'));
+ assert.match(nav,/href="#week\/2026-11-22" aria-describedby="week-date-[\d-]+" aria-current="date"/);
+ const dayLinks = [...nav.matchAll(/href="#week\/([\d-]+)" aria-describedby="week-date-([\d-]+)"[^>]*><span>[^<]+<\/span> <strong>\d+<\/strong><span id="week-date-([\d-]+)" hidden>[^<]+<\/span>/g)];
+ assert.equal(dayLinks.length,7);
+ for (const [,date,descriptionId,reference] of dayLinks) {
+  assert.equal(descriptionId,date);
+  assert.equal(reference,date);
+  assert.ok(html.includes('id="week/'+date+'" tabindex="-1"'));
  }
  const expired = renderWeeklyProgram({lang:'en',today:week,selectedDate:'2026-11-15'});
- assert.match(expired,/href="#week\/2026-11-20" aria-label="[^"]+" aria-current="date"/);
+ assert.match(expired,/href="#week\/2026-11-20" aria-describedby="week-date-[\d-]+" aria-current="date"/);
 });
 
 test('A practice completed today identifies both its day and completion in week navigation',()=>{
  const html = renderWeeklyProgram({lang:'en',today:week,sessions:[{day:'2026-11-20',practice:'strength'}]});
- assert.match(html,/href="#week\/2026-11-20" aria-label="[^"]+ · Completed" aria-current="date"/);
+ assert.match(html,/href="#week\/2026-11-20" aria-describedby="week-date-2026-11-20" aria-current="date"/);
+ assert.match(html,/<span id="week-date-2026-11-20" hidden>[^<]+ · Completed<\/span>/);
  assert.match(html,/<span class="week-jump-check" aria-hidden="true">✓<\/span>/);
  assert.match(html,/<span class="week-day-marker">Today<\/span><span class="week-day-marker">Completed<\/span>/);
+});
+
+test('Every day presents localized coaching phases and keeps rest free of practice actions', () => {
+ for (const [lang, phases, level] of [
+  ['ru', ['Утро', 'Основная практика', 'Вечер'], 'Знакомые упражнения'],
+  ['az', ['Səhər', 'Əsas məşq', 'Axşam'], 'Tanış məşqlər'],
+  ['en', ['Morning', 'Main practice', 'Evening'], 'Familiar exercises']
+ ]) {
+  const html = renderWeeklyProgram({lang,today:week});
+  for (const phase of phases) assert.equal(html.split('<h3>'+phase+'</h3>').length - 1, 7);
+  const rest = html.match(/<li id="week\/2026-11-22"[\s\S]*?<\/li>/)?.[0];
+  assert.ok(rest);
+  assert.doesNotMatch(rest, /href="#practice\//);
+  assert.match(rest, /href="#journal"/);
+  assert.equal(html.split('href="#practice/').length - 1, 6);
+  assert.ok(html.includes(level));
+ }
 });

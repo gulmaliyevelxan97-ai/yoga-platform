@@ -287,7 +287,9 @@ function schedule() {
  <div class="calendar-header"><button data-week="-1" aria-label="${t('previous')}">←</button><h2>${esc(dateText(first,{month:'long',year:'numeric'}))}</h2><button data-week="1" aria-label="${t('nextWeek')}">→</button></div>
  <div class="schedule-grid">${days.map(day=>{
   const value = dateKey(day);
-  return `<button data-day="${value}" aria-pressed="${selectedDay===value}" aria-label="${esc(dateLabel(value))}"><small>${esc(dateText(day,{weekday:'short'}))}</small>${day.getDate()}${sampleClass(day)?'<span aria-hidden="true">·</span>':''}</button>`;
+  const weekday = dateText(day,{weekday:'short'});
+  const number = day.getDate();
+  return `<button data-day="${value}" aria-pressed="${selectedDay===value}" aria-describedby="schedule-date-${value}"><small>${esc(weekday)}</small> ${number}<span id="schedule-date-${value}" hidden>${esc(dateLabel(value))}</span>${sampleClass(day)?'<span aria-hidden="true">·</span>':''}</button>`;
  }).join('')}</div></article>
  <article class="panel"><p class="eyebrow">${esc(dateLabel(selectedDay))} · ${t('sample')}</p>
  ${item?`<h2>${t('classTitle')}</h2><p>${localTime(item)} · ${item.minutes} ${t('min')}</p><p>${t('classDetail')}</p>`:`<p>${t('noClass')}</p>`}</article>
