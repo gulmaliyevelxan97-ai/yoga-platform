@@ -73,12 +73,26 @@ test('Schedule shows Baku time, real history and a filter that hides other forma
  assert.match(html,/11:30 · Время Баку/);
  assert.match(html,/Свободных мест нет/);
  assert.match(html,/Past class.*Запись отменена/);
- const cards=[{dataset:{classCard:'onsite'}},{dataset:{classCard:'online'}}];
+ assert.match(html,/data-class-filter="kind"/);
+ assert.match(html,/data-class-filter="mine"/);
+ const cards=[
+  {dataset:{format:'onsite',kind:'group',own:'false'}},
+  {dataset:{format:'online',kind:'individual',own:'false'}},
+  {dataset:{format:'online',kind:'group',own:'true'}}
+ ];
  const empty={};
  outlet.querySelectorAll=()=>cards;
  outlet.querySelector=()=>empty;
- outlet.onchange({target:{matches:()=>true,value:'online'}});
- assert.deepEqual(cards.map(card=>card.hidden),[true,false]);
+ const change = (classFilter, properties) => outlet.onchange({target:{dataset:{classFilter},...properties}});
+ change('format',{value:'online'});
+ assert.deepEqual(cards.map(card=>card.hidden),[true,false,false]);
+ change('mine',{checked:true});
+ assert.deepEqual(cards.map(card=>card.hidden),[true,true,false]);
+ change('kind',{value:'individual'});
+ assert.deepEqual(cards.map(card=>card.hidden),[true,true,true]);
+ assert.equal(empty.hidden,false);
+ change('mine',{checked:false});
+ assert.deepEqual(cards.map(card=>card.hidden),[true,false,true]);
  assert.equal(empty.hidden,true);
 });
 
