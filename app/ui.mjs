@@ -116,6 +116,9 @@ function route() {
  if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
  if (cloudConfig && ['academy','classes','staff'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
+ if (name === 'path' || name === 'journal') {
+  return {name,id:/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)?id:undefined};
+ }
  if (name === 'week') return {name, id:/^\d{4}-\d{2}-\d{2}$/.test(id) ? id : undefined};
  return {name: [...tabs, 'journal', 'schedule', 'mentor'].includes(name) ? name : 'today'};
 }
@@ -216,7 +219,11 @@ function practice(id) {
  </section><a class="link" href="#week">${t('week')}</a>${video ? `<article class="panel"><p class="eyebrow">${t('videoNote')} · ${video.language}</p><h2>${video.title}</h2><p>${video.author}</p><a class="link" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer">${t('video')} ↗</a></article>` : ''}`;
 }
 
-function path() {
+function completedPractice(id) {
+ return id && state().sessions.find(session=>session.id===id && itemFor(session.practice));
+}
+
+function path(id) {
  const current = state();
  const stats = metrics(current.sessions);
  const days = Array.from({length:28}, (_,i)=>shiftDate(new Date(), i-27));
@@ -224,7 +231,12 @@ function path() {
   const item = itemFor(session.practice);
   return `<li><div><strong>${item ? title(item) : 'RESTART'}</strong><small>${esc(dateLabel(session.day))}</small></div><span>${duration(session.seconds)}</span></li>`;
  }).join('');
- return heading('path') + `
+ const completed = completedPractice(id);
+ const reflection = completed ? `<section class="panel reflection" aria-labelledby="practice-summary">
+ <div><h2 id="practice-summary">${t('completed')}</h2><p>${title(itemFor(completed.practice))} · ${duration(completed.seconds)}</p></div>
+ <a class="button" href="#journal/${esc(completed.id)}">${t('addJournal')}</a>
+ <a class="link" href="#week">${t('week')}</a></section>` : '';
+ return heading('path') + reflection + `
  <div class="stats"><div><strong>${stats.count}</strong><span>${t('sessions')}</span></div><div><strong>${duration(stats.seconds)}</strong><span>${t('total')}</span></div><div><strong>${stats.streak}</strong><span>${t('streak')}</span></div></div>
  <article class="panel"><h2>${t('calendar')}</h2><ol class="activity">${days.map(day=>{
   const done = stats.days.has(dateKey(day));
@@ -237,14 +249,15 @@ function path() {
  <article class="panel"><h2>${t('history')}</h2>${history?'<ul class="history">'+history+'</ul>':'<p class="muted">'+t('noSessions')+'</p>'}</article>`;
 }
 
-function journal() {
+function journal(id) {
  const draft = cloud?.journalDraft;
  const current = draft || state().journal.find(entry=>entry.id===editing) || {};
+ const completed = !draft && !editing && completedPractice(id);
  const levels = ['unset','low','medium','high'];
  const scales = ['mood','energy','wellbeing'];
  const fields = ['before','after','notes'];
- return heading('journal')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>${draft?`<p role="status">${t('cloudDraft')}</p>`:''}<form id="journal-form" class="panel">
- <label>${t('date')}<input type="date" name="date" value="${esc(current.date||dateKey())}" required></label>
+ return heading('journal')+`<p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>${draft?`<p role="status">${t('cloudDraft')}</p>`:''}${completed?'<p class="muted">'+t('after')+' · '+title(itemFor(completed.practice))+'</p>':''}<form id="journal-form" class="panel">
+ <label>${t('date')}<input type="date" name="date" value="${esc(current.date||completed?.day||dateKey())}" required></label>
  <div class="field-row">${scales.map(key=>`<label>${t(key)}<select name="${key}">${levels.map((level,i)=>`<option value="${i}" ${current[key]===String(i)?'selected':''}>${t(level)}</option>`).join('')}</select></label>`).join('')}</div>
  ${fields.map(key=>`<label>${t(key)}<textarea name="${key}" rows="2" maxlength="2000">${esc(current[key])}</textarea></label>`).join('')}
  <div class="actions"><button class="cta">${t('save')}</button>${(editing||draft)?`<button type="button" data-action="cancel-edit">${t('cancel')}</button>`:''}</div></form>
@@ -534,7 +547,7 @@ async function updatePractice(action) {
    if (cloud.state) cloud.state.active = null;
   } else repo.write({active:null,sessions:[...current.sessions,session]});
   $('#status').textContent=t('completed');
-  location.hash='path';
+  location.hash='path/'+session.id;
   return;
  } else if (active && action === 'stop') {
   setActive(null);
