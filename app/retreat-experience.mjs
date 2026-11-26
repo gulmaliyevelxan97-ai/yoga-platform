@@ -45,7 +45,8 @@ export function renderRetreatExperience(lang,{signedIn=false,intention=''}={}) {
  return '<a class="link" href="#today">'+t('back')+'</a><header class="retreat-feature">'+
   '<span class="eyebrow">BODY · MIND · SPIRIT</span><h1>'+title+'</h1><p>'+t('welcome')+'</p></header>'+
   '<section class="panel"><h2>'+t('welcome')+'</h2><p>'+t('philosophy')+'</p></section>'+
-  '<section class="panel"><h2>'+t('details')+'</h2><ul class="retreat-details">'+details.map(label=>
+  (signedIn?'<div id="retreat-event-details-outlet"></div>':'')+
+  '<section class="panel"><h2>'+t('details')+'</h2><ul class="retreat-details">'+(signedIn?details.slice(-1):details).map(label=>
    '<li>'+ (copy[label]?t(label):'WHITE &amp; BLACK EXPERIENCE')+'</li>').join('')+'</ul><p class="muted">'+t('pending')+'</p></section>'+
   '<section class="panel"><h2>'+t('prepare')+'</h2><div class="actions">'+
   link('practice/breathing','breathe')+link('practice/meditation','meditate')+'</div></section>'+

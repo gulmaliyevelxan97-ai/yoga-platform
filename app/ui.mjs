@@ -1,3 +1,4 @@
+import {retreatEventDetailsPage} from './retreat-event-details.mjs';
 import {renderRetreatCard,renderRetreatExperience} from './retreat-experience.mjs';
 import {readRetreatUnreadTotal,retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
 import {retreatMentorTasks} from './retreat-mentor-tasks.mjs';
@@ -539,7 +540,7 @@ function render() {
     : current.name==='retreat-programme'
     ? heading('retreat-programme')+'<div id="retreat-programme-outlet"></div>'
     : current.name==='retreat-mentor'
-    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section><section id="retreat-mentor-tasks"></section>'
+    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section><section id="retreat-event-editor"></section><section id="retreat-mentor-tasks"></section>'
     : ['academy','classes','staff'].includes(current.name)
     && cloudConfig ? '<h1>'+t(current.name==='academy'?'academyTab':current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
     : screens[current.name](current.id);
@@ -557,8 +558,15 @@ function render() {
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery};
    retreatMentorAdmissions({outlet:retreatOutlet,...context});
    mentorProgrammeEditor({outlet:document.getElementById('retreat-programme-editor'),...context});
+   retreatEventDetailsPage({outlet:document.getElementById('retreat-event-editor'),...context,mentor:true});
    retreatMentorTasks({outlet:document.getElementById('retreat-mentor-tasks'),...context});
   } else retreatOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
+ }
+ const detailsOutlet = document.getElementById('retreat-event-details-outlet');
+ if (detailsOutlet && cloud?.user && !cloud.user.is_anonymous && pilotClient) {
+  const user=cloud.user;
+  retreatEventDetailsPage({outlet:detailsOutlet,client:pilotClient,user,lang:lang(),esc,
+   current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
  }
  const programmeOutlet = document.getElementById('retreat-programme-outlet');
  if (programmeOutlet) {
