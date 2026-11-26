@@ -1,6 +1,7 @@
 import {enableTabSwipe} from './swipe-navigation.mjs';
 import {practiceGuide,practiceStage} from './practice-guide.mjs';
 import {renderWeeklyProgram} from './week.mjs';
+import {readRetreatIntention,renderRetreatIntention,retreatIntentionMessage,updateRetreatIntention} from './retreat-intention.mjs';
 import {retreatWelcomeTitle, renderRetreatWelcome} from './retreat-welcome.mjs';
 import {readNotificationPlan,writeNotificationPlan,renderNotificationPlan,notificationPlanFromForm,dueNotifications,notificationPlanMessage,reminderPrompt} from './notification-plan.mjs';
 import {renderPersonalPlan,submitPersonalPlan,suggestedPracticeId} from './personal-plan.mjs';
@@ -154,6 +155,7 @@ function today() {
  <h1>${retreatWelcomeTitle(lang())}</h1></div>
  <a class="today-avatar" href="#profile" aria-label="${t('profile')}">${avatar}</a></div>
  ${renderRetreatWelcome(lang())}
+ ${!cloud?.user ? renderRetreatIntention(lang(),readRetreatIntention(),esc) : ''}
  <article class="today-practice practice-cover-${suggested.id}"><div class="today-copy">
  <p class="eyebrow">${t('daily')} · ${category(suggested.id)} · ${suggested.minutes} ${t('min')}</p>
  <h2>${title(suggested)}</h2>
@@ -677,6 +679,13 @@ screen.addEventListener('change', event=>{
 screen.addEventListener('submit', async event=>{
  event.preventDefault();
  const form = event.target;
+ if (form.id==='retreat-intention-form') {
+  const field = form.elements.intention;
+  const outcome = updateRetreatIntention(event.submitter?.value==='delete' ? '' : field.value);
+  if (outcome==='removed') field.value = '';
+  form.querySelector('[data-intention-status]').textContent = retreatIntentionMessage(lang(),outcome);
+  return;
+ }
  if (form.id==='personal-plan-form') {
   submitPersonalPlan(form,lang(),event.submitter);
   return;
@@ -752,6 +761,7 @@ if (cloudConfig) {
  import('./supabase-sdk.mjs').then(({createClient})=>{
   pilotClient = createPilotClient(createClient,cloudConfig);
   cloud = cloudAccount(pilotClient,replaceScreen=>{
+   if (cloud.user) updateRetreatIntention('');
    if (replaceScreen) { editing = null; journalPeriod = 'all'; journalQuery = ''; render(); }
    else cloudNotice();
   },()=>repo.read().lang);

@@ -41,7 +41,7 @@ try {
  throw new Error('Pilot output already exists. Set RESTART_PILOT_OUTPUT to a new directory.');
 }
 const runtimeFiles = {
- app:['index.html','style.css','premium.css','week.css','week.mjs','retreat-welcome.mjs','swipe-navigation.mjs','practice-guide.mjs','notification-plan.mjs','theme.js','ui.mjs','content.mjs','state.mjs','manifest.webmanifest','sw.js',
+ app:['index.html','style.css','premium.css','week.css','week.mjs','retreat-welcome.mjs','retreat-intention.mjs','swipe-navigation.mjs','practice-guide.mjs','notification-plan.mjs','theme.js','ui.mjs','content.mjs','state.mjs','manifest.webmanifest','sw.js',
   'cloud-auth.mjs','cloud-copy.mjs','cloud-data.mjs','school.mjs','school-notices.mjs','academy-programs.mjs','booking-calendar.mjs','personal-plan.mjs','progress-view.mjs'],
  'assets/pwa':['restart-192.png','restart-512.png','restart-maskable.png','restart-apple.png']
 };
