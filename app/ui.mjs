@@ -15,6 +15,7 @@ const repo = localRepository();
 const seenReminderKey = 'restart.notification.seen.v1';
 let seenReminders = new Set();
 let activeReminder;
+let guidePreview = null;
 function syncSeenReminders() {
  try {
   const items = JSON.parse(localStorage.getItem(seenReminderKey));
@@ -208,6 +209,7 @@ function practice(id) {
  const video = item.video;
  const steps = practiceGuide(id,languages.indexOf(lang()));
  const stage = practiceStage(elapsed(own?active:null,item.minutes*60),item.minutes*60);
+ const reviewed = guidePreview?.id === id ? guidePreview.index : null;
  return `<a class="link back" href="#practices">← ${t('practices')}</a><article class="panel practice-detail ${id}">
  <p class="eyebrow">${category(id)} · ${item.minutes} ${t('min')}</p><h1>${title(item)}</h1><p>${tr(item.description)}</p>
  <p class="muted">${t('timer')}</p>
@@ -216,6 +218,12 @@ function practice(id) {
  active ? `<p>${t('activeOther')}</p><a class="button" href="#practice/${active.id}">${t('resume')}</a>` : `<button class="cta" data-action="start">${t('start')}</button>`}
  </article><section class="panel"><h2>${tr(['Этапы практики','Məşqin mərhələləri','Practice steps'])}</h2>
  <ol class="practice-steps" data-practice-steps>${steps.map((step,index)=>`<li${index===stage?' aria-current="step"':''}>${esc(step)}</li>`).join('')}</ol>
+ <div class="actions">
+ <button type="button" data-action="guide-prev" aria-disabled="${(reviewed ?? stage)===0}">${tr(['Предыдущий этап','Əvvəlki mərhələ','Previous step'])}</button>
+ <button type="button" data-action="guide-next" aria-disabled="${(reviewed ?? stage)===steps.length-1}">${tr(['Следующий этап','Növbəti mərhələ','Next step'])}</button>
+ </div>
+ <p class="muted" data-guide-review role="status">${reviewed===null?'':esc(steps[reviewed])}</p>
+ <button type="button" data-action="guide-follow" ${reviewed===null?'hidden':''}>${tr(['Вернуться к этапу таймера','Taymerin mərhələsinə qayıt','Return to the timed step'])}</button>
  </section><a class="link" href="#week">${t('week')}</a>${video ? `<article class="panel"><p class="eyebrow">${t('videoNote')} · ${video.language}</p><h2>${video.title}</h2><p>${video.author}</p><a class="link" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer">${t('video')} ↗</a></article>` : ''}`;
 }
 
@@ -442,11 +450,37 @@ function refreshTimer() {
  const seconds = elapsed(active,item.minutes*60);
  value.textContent = displayTime(item.minutes*60-seconds);
  const steps = $('[data-practice-steps]');
- const next = steps?.children[practiceStage(seconds,item.minutes*60)];
- if (next && next.getAttribute('aria-current')!=='step') {
+ const timedIndex = practiceStage(seconds,item.minutes*60);
+ const next = steps.children[timedIndex];
+ if (next.getAttribute('aria-current')!=='step') {
   steps.querySelector('[aria-current]')?.removeAttribute('aria-current');
   next.setAttribute('aria-current','step');
  }
+ const reviewed = guidePreview?.id === item.id ? guidePreview.index : null;
+ const index = reviewed ?? timedIndex;
+ $('[data-action="guide-prev"]').setAttribute('aria-disabled',index===0);
+ $('[data-action="guide-next"]').setAttribute('aria-disabled',index===steps.children.length-1);
+ const review = $('[data-guide-review]');
+ const text = reviewed===null ? '' : steps.children[reviewed].textContent;
+ if (review.textContent!==text) review.textContent = text;
+ $('[data-action="guide-follow"]').hidden = reviewed===null;
+}
+
+function reviewPracticeStep(action,button) {
+ const steps = $('[data-practice-steps]');
+ if (action==='guide-follow') {
+  guidePreview = null;
+  refreshTimer();
+  steps.querySelector('[aria-current]').tabIndex = -1;
+  steps.querySelector('[aria-current]').focus();
+  return;
+ }
+ if (button.getAttribute('aria-disabled')==='true') return;
+ const id = route().id;
+ const startingIndex = guidePreview?.id === id ? guidePreview.index :
+  [...steps.children].findIndex(step=>step.hasAttribute('aria-current'));
+ guidePreview = {id,index:startingIndex + (action==='guide-prev' ? -1 : 1)};
+ refreshTimer();
 }
 
 function render() {
@@ -538,6 +572,7 @@ async function updatePractice(action) {
  const now = Date.now();
  if (active && active.id !== id) return;
  if (action === 'start') {
+  guidePreview = null;
   setActive({...(active || {id, sessionId:crypto.randomUUID(), accumulated:0}), startedAt: now});
  } else if (active && action === 'pause') {
   setActive(pause(active,item.minutes*60,now));
@@ -608,6 +643,8 @@ document.addEventListener('click',async event=>{
    applyingUpdate = true;
    waitingWorker.postMessage({type:'ACTIVATE'});
   }
+ } else if (['guide-prev','guide-next','guide-follow'].includes(action)) {
+  reviewPracticeStep(action,button);
  } else if (['start','pause','finish','stop'].includes(action)) {
   updatePractice(action);
  }

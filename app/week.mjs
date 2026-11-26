@@ -40,6 +40,10 @@ const copy = {
  morning:['Утро','Səhər','Morning'],
  main:['Основная практика','Əsas məşq','Main practice'],
  evening:['Вечер','Axşam','Evening'],
+ support:['Дополнительные практики','Əlavə məşqlər','Optional practices'],
+ warmup:['Перед занятием · разминка и подвижность','Məşqdən əvvəl · isinmə və hərəkətlilik','Before the session · warm-up and mobility'],
+ breathe:['После занятия · спокойное дыхание','Məşqdən sonra · sakit nəfəs','After the session · gentle breathing'],
+ settle:['Завершение · медитация или восстановление','Yekun · meditasiya və ya bərpa','To finish · meditation or recovery'],
  open:['Для любого уровня','Bütün səviyyələr üçün','All levels'],
  familiar:['Знакомые упражнения','Tanış məşqlər','Familiar exercises'],
  rest: ['День отдыха', 'İstirahət günü', 'Rest day'],
@@ -92,6 +96,12 @@ export function renderWeeklyProgram({lang, sessions, today, selectedDate} = {}) 
    '<span id="week-date-' + day.key + '" hidden>' + description + '</span>' +
    (day.completed ? '<span class="week-jump-check" aria-hidden="true">✓</span>' : '') + '</a>';
  }).join('') + '</nav>';
+ const supportLink = (id, label) => '<p>' + t(label) + '<br><a class="link" href="#practice/' +
+  id + '">' + practices.get(id).title[index] + '</a></p>';
+ const support = '<details class="week-phase"><summary>' + t('support') + '</summary>' +
+  supportLink('mobility','warmup') + supportLink('breathing','breathe') +
+  '<p>' + t('settle') + '<br><a class="link" href="#practice/meditation">' + practices.get('meditation').title[index] +
+  '</a> · <a class="link" href="#practice/recovery">' + practices.get('recovery').title[index] + '</a></p></details>';
  const total = days.filter(day => day.practice).length;
  const completed = days.filter(day => day.completed).length;
  const items = days.map(day => {
@@ -111,7 +121,7 @@ export function renderWeeklyProgram({lang, sessions, today, selectedDate} = {}) 
    '<div class="week-phases"><section class="week-phase"><h3>' + t('morning') + '</h3><p>' + morning[index] +
    '</p></section><section class="week-phase week-phase-main"><h3>' + t('main') + '</h3><p>' +
    (practice?.description[index] ?? t('restNote')) + '</p>' + action +
-   '</section><section class="week-phase"><h3>' + t('evening') + '</h3><p>' + evening[index] +
+   '</section>' + (practice ? support : '') + '<section class="week-phase"><h3>' + t('evening') + '</h3><p>' + evening[index] +
    '</p><a class="link" href="#journal">' + strings.addJournal[index] + '</a></section></div></li>';
  }).join('');
  return '<h1>' + t('title') + '</h1><p>' + t('intro') + '</p><p class="muted">' + t('safety') + '</p>' +

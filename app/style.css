@@ -251,6 +251,8 @@ html{scroll-padding-block-end:var(--nav-clearance)}
 
 .practice-steps{padding-inline-start:1.5rem;margin-block:.75rem 0}
 .practice-steps li{padding:.5rem .65rem;border-inline-start:2px solid transparent}
+[data-guide-review]:empty{display:none}
+[data-action^="guide-"][aria-disabled=true]{opacity:.65;cursor:default}
 .practice-steps li[aria-current=step]{background:var(--active-surface);border-inline-start-color:var(--gold);border-radius:var(--radius-control)}
 
 .reminder-links{margin-block-start:.5rem}

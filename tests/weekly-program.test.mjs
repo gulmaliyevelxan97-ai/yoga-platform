@@ -81,7 +81,11 @@ test('Every day presents localized coaching phases and keeps rest free of practi
   assert.ok(rest);
   assert.doesNotMatch(rest, /href="#practice\//);
   assert.match(rest, /href="#journal"/);
-  assert.equal(html.split('href="#practice/').length - 1, 6);
+  assert.equal(html.split('class="button" href="#practice/').length - 1, 6);
+  assert.equal(html.split('<details class="week-phase">').length - 1, 6);
+  for (const id of ['mobility','breathing','meditation','recovery']) {
+   assert.equal(html.split('class="link" href="#practice/'+id+'"').length - 1, 6);
+  }
   assert.ok(html.includes(level));
  }
 });
