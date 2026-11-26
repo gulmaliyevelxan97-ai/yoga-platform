@@ -1,4 +1,6 @@
-import {renderRetreatCard,renderRetreatExperience} from './retreat-experience.mjs';
+import {renderRetreatPreparation,bindRetreatPreparation} from './retreat-preparation.mjs';
+import {retreatEventDetailsPage} from './retreat-event-details.mjs';
+import {renderRetreatCard,renderRetreatExperience,retreatSection} from './retreat-experience.mjs';
 import {readRetreatUnreadTotal,retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
 import {retreatMentorTasks} from './retreat-mentor-tasks.mjs';
 import {retreatFormsPage} from './retreat-forms.mjs';
@@ -139,6 +141,7 @@ function route() {
  if (name === 'path' || name === 'journal') {
   return {name,id:/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)?id:undefined};
  }
+ if (name === 'retreat') return {name,id:retreatSection(id)};
  if (name === 'week') return {name, id:/^\d{4}-\d{2}-\d{2}$/.test(id) ? id : undefined};
  return {name: [...tabs, 'journal', 'schedule', 'mentor', 'retreat'].includes(name) ? name : 'today'};
 }
@@ -400,7 +403,10 @@ function setActive(active) {
 }
 
 const week = selectedDate => renderWeeklyProgram({lang:lang(),sessions:state().sessions,selectedDate});
-const retreat = () => renderRetreatExperience(lang(),{
+const retreat = section => renderRetreatExperience(lang(),{
+ section,
+ preparation: section==='preparation' ? renderRetreatPreparation(lang(),esc) : '',
+ reflection: section==='after' ? renderRetreatPreparation(lang(),esc,undefined,true) : '',
  signedIn: Boolean(cloud?.user && !cloud.user.is_anonymous),
  intention: !cloud?.user ? renderRetreatIntention(lang(),readRetreatIntention(),esc) : ''
 });
@@ -539,7 +545,7 @@ function render() {
     : current.name==='retreat-programme'
     ? heading('retreat-programme')+'<div id="retreat-programme-outlet"></div>'
     : current.name==='retreat-mentor'
-    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section><section id="retreat-mentor-tasks"></section>'
+    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section><section id="retreat-event-editor"></section><section id="retreat-mentor-tasks"></section>'
     : ['academy','classes','staff'].includes(current.name)
     && cloudConfig ? '<h1>'+t(current.name==='academy'?'academyTab':current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
     : screens[current.name](current.id);
@@ -549,6 +555,7 @@ function render() {
    schoolPage({outlet,client:pilotClient,user:cloud.user.id,route:current,t,esc,lang:lang(),current:()=>sequence===renderSequence && !!cloud?.state && !cloud.recovery});
   } else outlet.innerHTML = '<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
+ bindRetreatPreparation(screen,lang());
  const retreatOutlet = document.getElementById('retreat-mentor-outlet');
  if (retreatOutlet) {
   const user = cloud?.user;
@@ -557,8 +564,15 @@ function render() {
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery};
    retreatMentorAdmissions({outlet:retreatOutlet,...context});
    mentorProgrammeEditor({outlet:document.getElementById('retreat-programme-editor'),...context});
+   retreatEventDetailsPage({outlet:document.getElementById('retreat-event-editor'),...context,mentor:true});
    retreatMentorTasks({outlet:document.getElementById('retreat-mentor-tasks'),...context});
   } else retreatOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
+ }
+ const detailsOutlet = document.getElementById('retreat-event-details-outlet');
+ if (detailsOutlet && cloud?.user && !cloud.user.is_anonymous && pilotClient) {
+  const user=cloud.user;
+  retreatEventDetailsPage({outlet:detailsOutlet,client:pilotClient,user,lang:lang(),esc,
+   current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
  }
  const programmeOutlet = document.getElementById('retreat-programme-outlet');
  if (programmeOutlet) {
