@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
- readRetreatConnectContacts, readRetreatConnectFeed, readRetreatConnectMemberships, retreatConnectPage,
+ readRetreatConnectContacts, readRetreatConnectFeed, readRetreatConnectMemberships, readRetreatUnreadTotal, retreatConnectPage,
  retreatConnectSendArgs, retreatReplyTarget
 } from '../app/retreat-connect.mjs';
 
@@ -103,4 +103,19 @@ test('Mentors can start direct messages from their approved applications without
  assert.match(outlet.innerHTML,/data-connect-action="write"/);
  assert.match(outlet.innerHTML,/data-connect-action="announce"/);
  assert.match(outlet.innerHTML,/Alex &lt;name&gt;/);
+});
+
+test('Today aggregates unread counts for unique cohorts without fetching message bodies',async()=>{
+ const other={...group,cohort_id:'other'};
+ const {client,calls}=fixture({groups:[group,group,other],unread:'2'});
+ assert.equal(await readRetreatUnreadTotal(client,{...participant,is_anonymous:true}),0);
+ assert.deepEqual(calls,[]);
+ assert.equal(await readRetreatUnreadTotal(client,participant),4);
+ assert.deepEqual(calls.filter(([name])=>name==='restart_retreat_unread_count'),[
+  ['restart_retreat_unread_count',{p_cohort_id:'group'}],
+  ['restart_retreat_unread_count',{p_cohort_id:'other'}]
+ ]);
+ assert.equal(calls.some(([name])=>name==='restart_retreat_messages'),false);
+ const invalid=fixture({unread:-1});
+ await assert.rejects(readRetreatUnreadTotal(invalid.client,participant),/Invalid unread count/);
 });

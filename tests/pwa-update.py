@@ -93,7 +93,7 @@ def check_update(base, app):
         # A complete update waits until the user explicitly accepts.
         html.write_text(html.read_text().replace("<body>", '<body data-release="fixture-current">', 1))
         worker.write_text(initial.replace(version, "fixture-current"))
-        page.evaluate("async () => (await navigator.serviceWorker.ready).update()")
+        page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
         update = page.locator('[data-action="update"]')
         expect(update).to_be_visible()
         expect(page.locator("body")).not_to_have_attribute("data-release", "fixture-current")

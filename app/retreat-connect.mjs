@@ -49,6 +49,18 @@ export async function readRetreatConnectMemberships(client,user) {
   .select('cohort_id,role,restart_retreat_cohorts(title)').eq('user_id',user.id).order('cohort_id'));
 }
 
+export async function readRetreatUnreadTotal(client,user) {
+ const groups=await readRetreatConnectMemberships(client,user);
+ const cohorts=[...new Set(groups.map(group=>group.cohort_id))];
+ const counts=await Promise.all(cohorts.map(cohort=>
+  result(client.rpc('restart_retreat_unread_count',{p_cohort_id:cohort}))));
+ return counts.reduce((total,value)=>{
+  const count=Number(value);
+  if (!Number.isSafeInteger(count) || count<0) throw new Error('Invalid unread count');
+  return total+count;
+ },0);
+}
+
 export async function readRetreatConnectFeed(client,user,group,page=0) {
  const first=page*pageSize;
  const [feed,count]=await Promise.all([

@@ -1,4 +1,4 @@
-import {retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
+import {readRetreatUnreadTotal,retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
 import {retreatMentorTasks} from './retreat-mentor-tasks.mjs';
 import {retreatFormsPage} from './retreat-forms.mjs';
 import {retreatTasksTitle,retreatTasksPage} from './retreat-tasks.mjs';
@@ -184,7 +184,7 @@ function today() {
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
  <div class="today-actions">
- ${cloud?.user && !cloud.user.is_anonymous? `<a class="button" href="#retreat-tasks">${t('retreat-tasks')}</a><a class="button" href="#retreat-connect">${t('retreat-connect')}</a><a class="button" href="#retreat-forms">${t('retreat-forms')}</a>`:''}
+ ${cloud?.user && !cloud.user.is_anonymous? `<a class="button" href="#retreat-tasks">${t('retreat-tasks')}</a><a class="button" href="#retreat-connect">${t('retreat-connect')}<span data-retreat-unread hidden></span></a><a class="button" href="#retreat-forms">${t('retreat-forms')}</a>`:''}
  <a class="button" href="#academy">${icon('academy')} ${t('academyTab')}</a>
  <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a>
  </div>
@@ -594,6 +594,16 @@ function render() {
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
   } else formsOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
+ const badge=screen.querySelector('[data-retreat-unread]');
+ const account=cloud?.user;
+ if (badge && account && !account.is_anonymous && pilotClient && navigator.onLine) {
+  readRetreatUnreadTotal(pilotClient,account).then(count=>{
+   if (!count || sequence!==renderSequence || cloud?.user?.id!==account.id) return;
+   const total=new Intl.NumberFormat(lang()).format(count);
+   badge.textContent=' · '+tr(['Непрочитано: ','Oxunmamış: ','Unread: '])+total;
+   badge.hidden=false;
+  }).catch(()=>{});
+ }
  cloudNotice();
  refreshBanner();
 }
@@ -881,5 +891,15 @@ if ('serviceWorker' in navigator && !globalThis.Capacitor?.isNativePlatform?.())
    registration.installing?.addEventListener('statechange',offerUpdate);
   });
   navigator.serviceWorker.addEventListener('controllerchange',offerUpdate);
+  let lastUpdateCheck = -Infinity;
+  function checkForUpdate() {
+   const now = performance.now();
+   if (!navigator.onLine || document.visibilityState!=='visible' ||
+       registration.installing || registration.waiting || now-lastUpdateCheck<300000) return;
+   lastUpdateCheck = now;
+   registration.update().then(offerUpdate).catch(()=>{});
+  }
+  document.addEventListener('visibilitychange',checkForUpdate);
+  window.addEventListener('online',checkForUpdate);
  }).catch(()=>{});
 }
