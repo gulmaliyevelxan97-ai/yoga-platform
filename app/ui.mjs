@@ -1,3 +1,4 @@
+import {retreatControlTitle,retreatControlSection,retreatControlPage} from './retreat-control.mjs';
 import {renderRetreatPreparation,bindRetreatPreparation} from './retreat-preparation.mjs';
 import {retreatEventDetailsPage} from './retreat-event-details.mjs';
 import {renderRetreatCard,renderRetreatExperience,retreatSection} from './retreat-experience.mjs';
@@ -8,7 +9,7 @@ import {retreatTasksTitle,retreatTasksPage} from './retreat-tasks.mjs';
 import {retreatAdmissionRequestTitle,retreatAdmissionRequestPage} from './retreat-admission-request.mjs';
 import {retreatProgrammeTitle,retreatProgrammePage} from './retreat-programme.mjs';
 import {mentorProgrammeEditor} from './retreat-programme-editor.mjs';
-import {retreatAdmissionTitle,retreatMentorAdmissions} from './retreat-mentor-admissions.mjs';
+import {retreatMentorAdmissions} from './retreat-mentor-admissions.mjs';
 import {enableTabSwipe} from './swipe-navigation.mjs';
 import {practiceGuide,practiceStage} from './practice-guide.mjs';
 import {renderWeeklyProgram} from './week.mjs';
@@ -69,7 +70,7 @@ const lang = () => languages.includes(state().lang) ? state().lang : 'ru';
 const tr = triple => triple[languages.indexOf(lang())];
 const mobileStrings = {
  retreat:['RESTART RETREAT','RESTART RETREAT','RESTART RETREAT'],
- 'retreat-mentor':retreatAdmissionTitle,
+ 'retreat-mentor':retreatControlTitle,
  'retreat-connect':retreatConnectTitle,
  'retreat-forms':['Анкеты ретрита','Retrit anketləri','Retreat forms'],
  'retreat-programme':retreatProgrammeTitle,
@@ -545,7 +546,7 @@ function render() {
     : current.name==='retreat-programme'
     ? heading('retreat-programme')+'<div id="retreat-programme-outlet"></div>'
     : current.name==='retreat-mentor'
-    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section><section id="retreat-event-editor"></section><section id="retreat-mentor-tasks"></section>'
+    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div>'
     : ['academy','classes','staff'].includes(current.name)
     && cloudConfig ? '<h1>'+t(current.name==='academy'?'academyTab':current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
     : screens[current.name](current.id);
@@ -562,10 +563,11 @@ function render() {
   if (user && !user.is_anonymous && pilotClient) {
    const context={client:pilotClient,user,lang:lang(),esc,
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery};
-   retreatMentorAdmissions({outlet:retreatOutlet,...context});
-   mentorProgrammeEditor({outlet:document.getElementById('retreat-programme-editor'),...context});
-   retreatEventDetailsPage({outlet:document.getElementById('retreat-event-editor'),...context,mentor:true});
-   retreatMentorTasks({outlet:document.getElementById('retreat-mentor-tasks'),...context});
+   const pages={events:options=>retreatEventDetailsPage({...options,mentor:true}),
+    participants:retreatMentorAdmissions,programme:mentorProgrammeEditor,forms:retreatFormsPage,
+    tasks:retreatMentorTasks,messages:retreatConnectPage};
+   retreatControlPage({outlet:retreatOutlet,...context,section:retreatControlSection(current.id),
+    mount:(page,outlet)=>pages[page]({outlet,...context})});
   } else retreatOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
  const detailsOutlet = document.getElementById('retreat-event-details-outlet');
