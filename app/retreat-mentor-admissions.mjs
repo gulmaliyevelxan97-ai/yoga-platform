@@ -1,5 +1,6 @@
 import {languages} from './state.mjs';
 
+const approvedPageSize = 25;
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const copy = {
  title:['Заявки на ретрит','Retrit müraciətləri','Retreat applications'],
@@ -11,7 +12,12 @@ const copy = {
  approvedOn:['Дата одобрения','Təsdiq tarixi','Approved on'],
  noParticipants:['Одобренных заявок пока нет.','Hələ təsdiqlənmiş müraciət yoxdur.','No applications have been approved yet.'],
  noMatches:['Совпадений нет.','Uyğun nəticə yoxdur.','No matching names.'],
- recentOnly:['Показаны последние 100 одобренных заявок.','Son 100 təsdiqlənmiş müraciət göstərilir.','Showing the latest 100 approved applications.'],
+ group:['Группа','Qrup','Group'],
+ allGroups:['Все группы','Bütün qruplar','All groups'],
+ search:['Найти','Axtar','Search'],
+ previous:['Предыдущая','Əvvəlki','Previous'],
+ next:['Следующая','Növbəti','Next'],
+ page:['Страница','Səhifə','Page'],
  approve:['Одобрить','Təsdiqlə','Approve'],
  decline:['Отклонить','Rədd et','Decline'],
  confirm:['Отклонить заявку?','Müraciət rədd edilsin?','Decline this application?'],
@@ -29,30 +35,31 @@ async function rows(query) {
  return data;
 }
 
-export async function loadMentorAdmissions(client, user) {
+export async function loadMentorAdmissions(client, user, {search='', group='', page=0}={}) {
  if (!user?.id || user.is_anonymous) return null;
- const memberships = await rows(client.from('restart_retreat_members').select('cohort_id')
+ const memberships = await rows(client.from('restart_retreat_members').select('cohort_id,restart_retreat_cohorts(title)')
   .eq('user_id',user.id).eq('role','mentor'));
  if (!memberships.length) return null;
  const cohorts=memberships.map(member=>member.cohort_id);
  const select=(fields,status)=>client.from('restart_retreat_admissions')
   .select(fields+',restart_retreat_cohorts(title)').in('cohort_id',cohorts).eq('status',status);
+ const selectedGroup=cohorts.includes(group)?group:'';
+ let approvedQuery=select('full_name,approved_at','approved');
+ if (selectedGroup) approvedQuery=approvedQuery.eq('cohort_id',selectedGroup);
+ const name=search.trim().slice(0,160);
+ // PostgREST encodes the filter value as one query parameter. Escape PostgreSQL regex metacharacters.
+ if (name) approvedQuery=approvedQuery.filter('full_name','imatch',name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+ const start=page*approvedPageSize;
  const [pending,approved]=await Promise.all([
   rows(select('id,full_name,submitted_at','pending').order('submitted_at').order('id').limit(50)),
-  rows(select('full_name,approved_at','approved').order('approved_at',{ascending:false}).order('id').limit(101))
+  rows(approvedQuery.order('approved_at',{ascending:false}).order('id').range(start,start+approvedPageSize))
  ]);
- return {pending,approved:approved.slice(0,100),limited:approved.length>100};
+ return {pending,approved:approved.slice(0,approvedPageSize),hasNext:approved.length>approvedPageSize,memberships,selectedGroup};
 }
 
 export async function decideRetreatAdmission(client,id,action) {
  if (!uuid.test(id) || !['approve','decline'].includes(action)) throw new Error('Invalid retreat decision');
  return rows(client.rpc('restart_'+action+'_retreat_admission',{p_request_id:id}));
-}
-
-export function filterApprovedAdmissions(approved,query,lang) {
- const normalize=value=>value.normalize('NFKC').toLocaleLowerCase(lang).trim();
- const term=normalize(query);
- return approved.filter(row=>normalize(row.full_name).includes(term));
 }
 
 export async function retreatMentorAdmissions({outlet,client,user,lang,esc,current}) {
@@ -61,12 +68,14 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
  const refresh = '<button type="button" data-admission-action="refresh">'+t('refresh')+'</button>';
  let queue;
  let search = '';
+ let group = '';
+ let page = 0;
  const approvedList=()=>{
-  const participants=filterApprovedAdmissions(queue.approved,search,lang);
+  const participants=queue.approved;
   return participants.length?'<ul class="history">'+participants.map(row=>'<li><div><strong>'+
    esc(row.full_name)+'</strong><small>'+esc(row.restart_retreat_cohorts?.title)+'</small></div><small>'+
    t('approvedOn')+': '+esc(date.format(new Date(row.approved_at)))+'</small></li>').join('')+'</ul>':
-   '<p>'+t(queue.approved.length?'noMatches':'noParticipants')+'</p>';
+   '<p>'+t(search || group ? 'noMatches':'noParticipants')+'</p>';
  };
  let busy = false;
 
@@ -74,12 +83,13 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
   if (!current()) return;
   outlet.textContent=t('loading');
   try {
-   queue = await loadMentorAdmissions(client,user);
+   queue = await loadMentorAdmissions(client,user,{search,group,page});
    if (!current()) return;
    if (!queue) {
     outlet.innerHTML='<p role="status">'+t('denied')+'</p>';
     return;
    }
+   group=queue.selectedGroup;
    const body = queue.pending.map(req=>'<article class="panel"><h2>'+esc(req.full_name)+'</h2><p>'+
     esc(req.restart_retreat_cohorts?.title)+' · '+esc(date.format(new Date(req.submitted_at)))+
     '</p><div class="actions">'+['approve','decline'].map(action=>
@@ -88,9 +98,15 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
    outlet.innerHTML=(notice?'<p role="status" tabindex="-1">'+t(notice)+'</p>':'')+
     (body || '<p>'+t('empty')+'</p>')+refresh+
     '<section class="panel"><h2>'+t('participants')+'</h2>'+
-    (queue.limited?'<p class="muted">'+t('recentOnly')+'</p>':'')+
-    (queue.approved.length?'<label>'+t('nameSearch')+'<input type="search" data-approved-search maxlength="160" autocomplete="off" value="'+esc(search)+'"></label>':'')+
-    '<div data-approved-results aria-live="polite">'+approvedList()+'</div></section>';
+    '<form data-approved-filters><div class="field-row"><label>'+t('group')+'<select name="group"><option value="">'+t('allGroups')+'</option>'+
+    queue.memberships.map(row=>'<option value="'+esc(row.cohort_id)+'"'+(group===row.cohort_id?' selected':'')+'>'+
+     esc(row.restart_retreat_cohorts?.title ?? row.cohort_id)+'</option>').join('')+'</select></label>'+
+    '<label>'+t('nameSearch')+'<input type="search" name="search" maxlength="160" autocomplete="off" value="'+esc(search)+'"></label></div>'+
+    '<button type="submit">'+t('search')+'</button></form>'+
+    '<div data-approved-results aria-live="polite">'+approvedList()+'</div>'+
+    '<div class="actions"><button type="button" data-admission-action="previous"'+(!page?' disabled':'')+'>'+t('previous')+'</button>'+
+    '<p>'+t('page')+' '+(page+1)+'</p>'+
+    '<button type="button" data-admission-action="next"'+(!queue.hasNext?' disabled':'')+'>'+t('next')+'</button></div></section>';
    if (notice) outlet.querySelector('[role=status]')?.focus();
   } catch {
    if (current()) outlet.innerHTML=(notice?'<p role="status">'+t(notice)+'</p>':'')+
@@ -98,16 +114,25 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
   }
  }
 
- outlet.oninput=event=>{
-  if (!current() || !queue || !event.target.matches('[data-approved-search]')) return;
-  search=event.target.value;
-  outlet.querySelector('[data-approved-results]').innerHTML=approvedList();
+ outlet.onsubmit=async event=>{
+  if (!event.target.matches('[data-approved-filters]')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (!current() || busy) return;
+  const data=new FormData(event.target);
+  search=String(data.get('search') ?? '').trim().slice(0,160);
+  group=String(data.get('group') ?? '');
+  page=0;
+  busy=true;
+  try {await load();} finally {busy=false;}
  };
  outlet.onclick=async event=>{
   const button = event.target.closest('[data-admission-action]');
   if (!button || !current() || busy) return;
   const {admissionAction:action,request:id} = button.dataset;
-  if (action==='refresh') {
+  if (action==='refresh' || action==='previous' || action==='next') {
+   if ((action==='previous' && !page) || (action==='next' && !queue?.hasNext)) return;
+   page=action==='previous'?page-1:action==='next'?page+1:0;
    busy=true;
    try { await load(); } finally { busy=false; }
    return;
@@ -115,7 +140,8 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
   if (!queue?.pending.some(row=>row.id===id)) return;
   if (action==='decline' && !confirm(t('confirm'))) return;
   busy=true;
-  for (const control of outlet.querySelectorAll('button')) control.disabled=true;
+  const controls=Array.from(outlet.querySelectorAll('button:not(:disabled)'));
+  for (const control of controls) control.disabled=true;
   try {
    await decideRetreatAdmission(client,id,action);
    await load(action==='approve'?'approved':'declined');
@@ -129,7 +155,7 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
    }
   } finally {
    busy=false;
-   if (current()) for (const control of outlet.querySelectorAll('button')) control.disabled=false;
+   for (const control of controls) control.disabled=false;
   }
  };
  busy=true;

@@ -1,3 +1,7 @@
+import {retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
+import {retreatMentorTasks} from './retreat-mentor-tasks.mjs';
+import {retreatFormsPage} from './retreat-forms.mjs';
+import {retreatTasksTitle,retreatTasksPage} from './retreat-tasks.mjs';
 import {retreatAdmissionRequestTitle,retreatAdmissionRequestPage} from './retreat-admission-request.mjs';
 import {retreatProgrammeTitle,retreatProgrammePage} from './retreat-programme.mjs';
 import {mentorProgrammeEditor} from './retreat-programme-editor.mjs';
@@ -62,8 +66,11 @@ const lang = () => languages.includes(state().lang) ? state().lang : 'ru';
 const tr = triple => triple[languages.indexOf(lang())];
 const mobileStrings = {
  'retreat-mentor':retreatAdmissionTitle,
+ 'retreat-connect':retreatConnectTitle,
+ 'retreat-forms':['Анкеты ретрита','Retrit anketləri','Retreat forms'],
  'retreat-programme':retreatProgrammeTitle,
  'retreat-request':retreatAdmissionRequestTitle,
+ 'retreat-tasks':retreatTasksTitle,
  theme:['Оформление','Görünüş','Appearance'],
  themeSystem:['Как на устройстве','Cihaz ayarına uyğun','System'],
  themeLight:['Светлое','İşıqlı','Light'],
@@ -125,7 +132,7 @@ let applyingUpdate = false;
 function route() {
  const [name, id] = location.hash.slice(1).split('/');
  if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
- if (cloudConfig && ['academy','classes','staff','retreat-mentor','retreat-programme','retreat-request'].includes(name)) return {name,id};
+ if (cloudConfig && ['academy','classes','staff','retreat-mentor','retreat-programme','retreat-request','retreat-forms','retreat-tasks','retreat-connect'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
  if (name === 'path' || name === 'journal') {
   return {name,id:/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)?id:undefined};
@@ -177,6 +184,7 @@ function today() {
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
  <div class="today-actions">
+ ${cloud?.user && !cloud.user.is_anonymous? `<a class="button" href="#retreat-tasks">${t('retreat-tasks')}</a><a class="button" href="#retreat-connect">${t('retreat-connect')}</a><a class="button" href="#retreat-forms">${t('retreat-forms')}</a>`:''}
  <a class="button" href="#academy">${icon('academy')} ${t('academyTab')}</a>
  <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a>
  </div>
@@ -323,6 +331,7 @@ function profile() {
  <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a></div><p class="muted">${t(cloud?.user?'cloudNetworkNote':'localNote')}</p>
  ${cloudConfig?`<p><a class="button" href="#account">${t('account')}</a></p>`:''}
  ${cloud?.user && !cloud.user.is_anonymous ? `<div class="actions"><a class="button" href="#retreat-programme">${t('retreat-programme')}</a>
+ <a class="button" href="#retreat-forms">${t('retreat-forms')}</a>
  <a class="button" href="#retreat-request">${t('retreat-request')}</a>
  <a class="button" href="#retreat-mentor">${t('retreat-mentor')}</a></div>` : ''}
  <form id="profile-form" class="panel"><label>${t('name')}<input name="name" maxlength="40" value="${esc(current.name)}"></label><button class="cta">${t('save')}</button></form>
@@ -507,18 +516,24 @@ function render() {
  if (['schedule','classes'].includes(current.name)) calendar.setAttribute('aria-current','page');
  else calendar.removeAttribute('aria-current');
  $('#mode').textContent = t(cloud?.user ? 'cloudMode' : cloudConfig ? 'cloudLocal' : 'demo');
- const activeTab = {practice:'practices',journal:'profile',account:'profile','retreat-mentor':'profile','retreat-programme':'profile','retreat-request':'profile',week:'today'}[current.name] || current.name;
+ const activeTab = {practice:'practices',journal:'profile',account:'profile','retreat-mentor':'profile','retreat-programme':'profile','retreat-request':'profile','retreat-forms':'profile','retreat-tasks':'today','retreat-connect':'today',week:'today'}[current.name] || current.name;
  const tabLabel = name => t({path:'pathTab',academy:'academyTab'}[name] || name);
  $('#tabs').innerHTML = tabs.map(name=>`<a href="#${name}" ${activeTab===name?'aria-current="page"':''}>${icon(name)}<span>${tabLabel(name)}</span></a>`).join('');
  document.title = 'RESTART · '+tabLabel(current.name==='practice'?'practices':current.name);
  screen.innerHTML = cloud?.user && !cloud.state && current.name!=='account'
   ? `<h1>${t('account')}</h1><p>${t(cloud.notice==='cloudLoadFailed'?'cloudLoadFailed':'cloudLoading')}</p><a class="button" href="#account">${t('account')}</a>`
+  : current.name==='retreat-connect'
+    ? heading('retreat-connect')+'<div id="retreat-connect-outlet"></div>'
+  : current.name==='retreat-tasks'
+    ? heading('retreat-tasks')+'<div id="retreat-tasks-outlet"></div>'
+    : current.name==='retreat-forms'
+    ? heading('retreat-forms')+'<div id="retreat-forms-outlet"></div>'
   : current.name==='retreat-request'
     ? heading('retreat-request')+'<div id="retreat-request-outlet"></div>'
     : current.name==='retreat-programme'
     ? heading('retreat-programme')+'<div id="retreat-programme-outlet"></div>'
     : current.name==='retreat-mentor'
-    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section>'
+    ? heading('retreat-mentor')+'<div id="retreat-mentor-outlet"></div><section id="retreat-programme-editor"></section><section id="retreat-mentor-tasks"></section>'
     : ['academy','classes','staff'].includes(current.name)
     && cloudConfig ? '<h1>'+t(current.name==='academy'?'academyTab':current.name)+'</h1><div id="school-content" aria-live="polite"></div>'
     : screens[current.name](current.id);
@@ -536,6 +551,7 @@ function render() {
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery};
    retreatMentorAdmissions({outlet:retreatOutlet,...context});
    mentorProgrammeEditor({outlet:document.getElementById('retreat-programme-editor'),...context});
+   retreatMentorTasks({outlet:document.getElementById('retreat-mentor-tasks'),...context});
   } else retreatOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
  const programmeOutlet = document.getElementById('retreat-programme-outlet');
@@ -553,6 +569,30 @@ function render() {
    retreatAdmissionRequestPage({outlet:requestOutlet,client:pilotClient,user,lang:lang(),esc,
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
   } else requestOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
+ }
+ const connectOutlet = document.getElementById('retreat-connect-outlet');
+ if (connectOutlet) {
+  const user = cloud?.user;
+  if (user && !user.is_anonymous && pilotClient) {
+   retreatConnectPage({outlet:connectOutlet,client:pilotClient,user,lang:lang(),esc,
+    current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
+  } else connectOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
+ }
+ const tasksOutlet = document.getElementById('retreat-tasks-outlet');
+ if (tasksOutlet) {
+  const user = cloud?.user;
+  if (user && !user.is_anonymous && pilotClient) {
+   retreatTasksPage({outlet:tasksOutlet,client:pilotClient,user,lang:lang(),esc,
+    current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
+  } else tasksOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
+ }
+ const formsOutlet = document.getElementById('retreat-forms-outlet');
+ if (formsOutlet) {
+  const user = cloud?.user;
+  if (user && !user.is_anonymous && pilotClient) {
+   retreatFormsPage({outlet:formsOutlet,client:pilotClient,user,lang:lang(),esc,
+    current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery});
+  } else formsOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
  cloudNotice();
  refreshBanner();
