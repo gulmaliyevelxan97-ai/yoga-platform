@@ -1,13 +1,12 @@
 /* The app has an independent scope and cache. Bump VERSION when shell assets change. */
-const VERSION = '2.3.13';
+const VERSION = '2.3.14';
 const base = new URL(self.registration.scope);
 const prefix = 'restart-app:' + base.pathname + ':';
 const name = prefix + VERSION;
 const shell = new URL('./index.html',base).href;
 const resources = new Set([
- './practice-guide.mjs','./week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./index.html','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
- '../assets/yoga.webp','../assets/meditation.webp','../assets/breath.webp','../assets/founder-yoga.webp','../assets/performance.webp','../assets/lake.jpg',
- '../assets/brand/restart-640.webp','../assets/brand/restart-1188.webp','../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
+ './swipe-navigation.mjs','./retreat-welcome.mjs','./practice-guide.mjs','./week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./index.html','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
+ '../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
  '../assets/pwa/restart-maskable.png','../assets/pwa/restart-apple.png'
 ].map(path=>new URL(path,base).href));
 

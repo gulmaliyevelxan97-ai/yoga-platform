@@ -66,6 +66,17 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
    assert.equal(new URL(url).origin,new URL(scope).origin);
    await readFile(path.join(dir,'dist',new URL(url).pathname));
   }
+  const guest = {...stage,env:{...stage.env,RESTART_PILOT_OUTPUT:'dist-guest'}};
+  execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs','--guest'],guest);
+  assert.equal(await readFile(path.join(dir,'dist-guest/app/cloud-config.mjs'),'utf8'),'export default null;\n');
+  await assert.rejects(readFile(path.join(dir,'dist-guest/app/supabase-sdk.mjs')),{code:'ENOENT'});
+  const guestWorker = await readFile(path.join(dir,'dist-guest/app/sw.js'),'utf8');
+  assert(version(guestWorker));
+  assert.notEqual(version(guestWorker),version(script));
+  assert.doesNotMatch(guestWorker,/supabase-sdk|offline-build-fixture/);
+  assert.throws(()=>execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs','--guest','--staging'],guest),
+   {message:/Guest mode requires a separate build/});
+
  } finally {
   await rm(dir,{recursive:true,force:true});
  }

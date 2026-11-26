@@ -1,5 +1,7 @@
+import {enableTabSwipe} from './swipe-navigation.mjs';
 import {practiceGuide,practiceStage} from './practice-guide.mjs';
-import {renderWeeklyProgram, renderWeeklyProgramLink} from './week.mjs';
+import {renderWeeklyProgram} from './week.mjs';
+import {retreatWelcomeTitle, renderRetreatWelcome} from './retreat-welcome.mjs';
 import {readNotificationPlan,writeNotificationPlan,renderNotificationPlan,notificationPlanFromForm,dueNotifications,notificationPlanMessage,reminderPrompt} from './notification-plan.mjs';
 import {renderPersonalPlan,submitPersonalPlan,suggestedPracticeId} from './personal-plan.mjs';
 import {renderPracticeTrends,renderJournalFilter,filterJournal,journalEmptyLabel} from './progress-view.mjs';
@@ -149,8 +151,9 @@ function today() {
  const avatar = current.name ? esc(Array.from(current.name.trim())[0]?.toLocaleUpperCase(lang()) || '') : icon('profile');
  return `
  <div class="today-heading"><div><p class="eyebrow">${esc(dateText(now,{weekday:'long',day:'numeric',month:'long'}))}</p>
- <h1>${t('welcome')}${current.name ? ', '+esc(current.name) : ''}</h1><p class="muted">${t('welcomeNote')}</p></div>
+ <h1>${retreatWelcomeTitle(lang())}</h1></div>
  <a class="today-avatar" href="#profile" aria-label="${t('profile')}">${avatar}</a></div>
+ ${renderRetreatWelcome(lang())}
  <article class="today-practice practice-cover-${suggested.id}"><div class="today-copy">
  <p class="eyebrow">${t('daily')} · ${category(suggested.id)} · ${suggested.minutes} ${t('min')}</p>
  <h2>${title(suggested)}</h2>
@@ -165,7 +168,6 @@ function today() {
  </div>
  <article class="panel reflection"><div><p class="eyebrow">${t('journal')}</p><h2>${t('reflect')}</h2></div><a class="button" href="#journal">${t('addJournal')}</a></article>
  <div class="today-actions">
- ${renderWeeklyProgramLink(lang())}
  <a class="button" href="#academy">${icon('academy')} ${t('academyTab')}</a>
  <a class="button" href="#${cloud?.user?'classes':'schedule'}">${icon('schedule')} ${t('schedule')}</a>
  </div>
@@ -328,9 +330,6 @@ function mentor() {
  <div class="mentor-hero">
  <div class="mentor-intro"><p class="eyebrow">${t('mentor')}</p><h1>Elxan Gülmalıyev</h1>
  <p>${t('mentorRole')}</p></div>
- <img class="mentor-portrait" src="../assets/brand/restart-1188.webp"
-      srcset="../assets/brand/restart-640.webp 640w, ../assets/brand/restart-1188.webp 1188w"
-      sizes="(max-width: 640px) 92vw, 340px" width="1188" height="1536" alt="Elxan Gülmalıyev">
  </div>
  <div class="mentor-details">
  <section class="panel"><h2>${t('mentorStory')}</h2><p>${tr(history)}</p></section>
@@ -541,6 +540,17 @@ function focusWeekDay(current) {
  return true;
 }
 
+const tabScrollPositions = new Map();
+let pendingSwipeTab;
+enableTabSwipe(screen,tabs,()=>{
+ const current = route();
+ return current.id || location.hash.includes('/') || cloud?.recovery || (cloud?.user && !cloud.state) ? null : current.name;
+},(from,to,top)=>{
+ tabScrollPositions.set(from,top);
+ pendingSwipeTab = to;
+ location.hash = to;
+});
+
 window.addEventListener('hashchange',()=>{
  editing = null;
  const current = route();
@@ -550,9 +560,10 @@ window.addEventListener('hashchange',()=>{
  }
  render();
  if (!focusWeekDay(current)) {
-  screen.focus();
-  window.scrollTo(0,0);
+  screen.focus({preventScroll:true});
+  window.scrollTo(0,pendingSwipeTab===current.name ? (tabScrollPositions.get(current.name) ?? 0) : 0);
  }
+ pendingSwipeTab = undefined;
 });
 
 function setScheduleDay(day) {

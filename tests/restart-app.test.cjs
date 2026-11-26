@@ -74,7 +74,11 @@ test('Manifest and worker use the app scope, use existing RESTART assets and exc
   assert(captures.includes(scope+'index.html'));
   const portraits = [...read('index.html').matchAll(/assets\/brand\/restart-\d+\.webp/g)];
   assert.equal(new Set(portraits.map(match=>match[0])).size,2);
-  for (const [portrait] of portraits) assert(captures.includes(new URL('../'+portrait,scope).href));
+  for (const [portrait] of portraits) {
+   assert(existsSync(resolve(__dirname,'..',portrait)));
+   assert(!captures.includes(new URL('../'+portrait,scope).href));
+  }
+  for (const file of ['swipe-navigation.mjs','retreat-welcome.mjs']) assert(captures.includes(scope+file));
   assert(!captures.includes(new URL('../assets/hero.webp',scope).href));
   assert(captures.every(url=>url.startsWith(scope)||url.startsWith('https://example.test/yoga-platform/assets/')));
   let response;
