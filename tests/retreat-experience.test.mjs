@@ -28,3 +28,17 @@ test('Authenticated retreat links lead to existing enrolment-scoped screens',()=
   assert.doesNotMatch(view,/retreat-intention-form/);
  }
 });
+
+test('The journey links all six stages and lets guests return to a local letter',()=>{
+ for (const lang of ['ru','az','en']) {
+  const html=renderRetreatExperience(lang);
+  const journey=html.split('class="retreat-journey"')[1].split('</div>')[0];
+  assert.equal((journey.match(/<li>/g)||[]).length,6);
+  assert.match(journey,/#retreat\/letter/);
+  assert.match(html,/<details class="retreat-white">/);
+  assert.match(html,/<details class="retreat-black">/);
+  assert.match(renderRetreatExperience(lang,{section:'after'}),/#retreat\/intention/);
+ }
+ assert.match(renderRetreatExperience('en',{signedIn:true}),/id="retreat-event-details-outlet"/);
+ assert.doesNotMatch(renderRetreatExperience('en'),/id="retreat-event-details-outlet"/);
+});

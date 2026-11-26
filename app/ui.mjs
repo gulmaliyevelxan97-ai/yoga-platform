@@ -1,3 +1,4 @@
+import {renderRetreatLetter,bindRetreatLetter} from './retreat-letter.mjs';
 import {retreatControlTitle,retreatControlSection,retreatControlPage} from './retreat-control.mjs';
 import {renderRetreatPreparation,bindRetreatPreparation} from './retreat-preparation.mjs';
 import {retreatEventDetailsPage} from './retreat-event-details.mjs';
@@ -406,6 +407,7 @@ function setActive(active) {
 const week = selectedDate => renderWeeklyProgram({lang:lang(),sessions:state().sessions,selectedDate});
 const retreat = section => renderRetreatExperience(lang(),{
  section,
+ letter: section==='letter' ? renderRetreatLetter(lang(),esc) : '',
  preparation: section==='preparation' ? renderRetreatPreparation(lang(),esc) : '',
  reflection: section==='after' ? renderRetreatPreparation(lang(),esc,undefined,true) : '',
  signedIn: Boolean(cloud?.user && !cloud.user.is_anonymous),
@@ -557,6 +559,7 @@ function render() {
   } else outlet.innerHTML = '<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
  bindRetreatPreparation(screen,lang());
+ bindRetreatLetter(screen,lang());
  const retreatOutlet = document.getElementById('retreat-mentor-outlet');
  if (retreatOutlet) {
   const user = cloud?.user;
