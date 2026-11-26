@@ -318,3 +318,45 @@ html{scroll-padding-block-end:var(--nav-clearance)}
  .retreat-panel {animation: retreat-reveal .22s ease-out;}
  @keyframes retreat-reveal {from {opacity: .6; transform: translateY(4px);} to {opacity: 1; transform: translateY(0);}}
 }
+
+.retreat-hero h1 {
+ font-family: Georgia, 'Times New Roman', serif;
+ font-weight: 500;
+ font-size: clamp(2rem, 8vw, 4.4rem);
+ letter-spacing: .035em;
+ text-wrap: balance;
+}
+.retreat-hero {
+ background: radial-gradient(ellipse at 85% 110%, #315748, transparent 65%), #122a22;
+}
+.retreat-journey section {
+ padding: .8rem 0;
+ border-block-start: 1px solid #a98b5366;
+}
+.retreat-journey h3 {font-size: .875rem; margin: 0 0 .5rem;}
+.retreat-journey ol {padding: 0; margin: 0; list-style: none;}
+.retreat-journey a {
+ display: flex;
+ gap: .8rem;
+ align-items: center;
+ min-height: 44px;
+ color: inherit;
+}
+.retreat-journey a span {
+ font-variant-numeric: tabular-nums;
+ border-inline-end: 1px solid #a98b53;
+ padding-inline-end: .8rem;
+}
+.retreat-experiences details {
+ padding: clamp(.75rem, 3vw, 1.5rem);
+ border-radius: .9rem;
+ overflow-wrap: anywhere;
+}
+.retreat-experiences summary {font-weight: 700; min-height: 44px; cursor: pointer;}
+.retreat-experiences details p {padding-block-end: .4rem;}
+@media (min-width: 680px) {
+ .retreat-journey {display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem;}
+}
+@media (prefers-reduced-motion: no-preference) {
+ .retreat-hero h1 {animation: retreat-reveal .35s ease-out;}
+}
