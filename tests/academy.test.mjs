@@ -1,3 +1,4 @@
+import {btree_gist} from '@electric-sql/pglite/contrib/btree_gist';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
@@ -5,7 +6,7 @@ import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 
 test('Academy protects drafts, enrollments, progress, roles and journals independently',async()=>{
- const db=new PGlite();
+ const db=new PGlite({extensions:{btree_gist}});
  try {
   const [admin,teacher,student,other]=Array.from({length:4},randomUUID);
   await db.exec(`create role anon; create role authenticated; create role supabase_auth_admin;

@@ -1,3 +1,4 @@
+import {btree_gist} from '@electric-sql/pglite/contrib/btree_gist';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
@@ -17,7 +18,7 @@ const local = {...initialState(),name:'Pilot A',goal:4,
 const fixtures = new URL('../supabase/migrations/',import.meta.url);
 
 test('PostgreSQL migrations enforce private CRUD, pilot signup and idempotent import', async ()=>{
- const db = new PGlite();
+ const db = new PGlite({extensions:{btree_gist}});
  try {
   await db.exec(`
   create role anon;

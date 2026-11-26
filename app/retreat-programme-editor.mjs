@@ -154,7 +154,7 @@ export async function mentorProgrammeEditor({outlet,client,user,lang,esc,current
    await result(client.rpc(publish?'restart_publish_retreat_programme_item':'restart_save_retreat_programme_item',args));
    await load(publish?'shared':'saved',cohort);
   } catch (error) {
-   if (current()) message.textContent=t(error.code==='40001'?'stale':'error');
+   if (current()) message.textContent=t(error.code==='23P01'?'overlap':error.code==='40001'?'stale':'error');
   } finally {
    busy=false;
    buttons.forEach(button=>{button.disabled=false;});

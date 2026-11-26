@@ -1,3 +1,4 @@
+import {btree_gist} from '@electric-sql/pglite/contrib/btree_gist';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile, readdir} from 'node:fs/promises';
@@ -5,7 +6,7 @@ import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 
 test('school roles, seats, repeat requests, roster privacy and attendance', async () => {
-  const db = new PGlite();
+  const db = new PGlite({extensions:{btree_gist}});
   const fixtures = new URL('../supabase/migrations/', import.meta.url);
   const [teacher, colleague, a, b] = Array.from({length:4}, () => randomUUID());
   try {

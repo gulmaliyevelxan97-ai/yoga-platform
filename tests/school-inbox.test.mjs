@@ -1,10 +1,11 @@
+import {btree_gist} from '@electric-sql/pglite/contrib/btree_gist';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 
 test('School notices respect consent, enrollment and account boundaries; metrics require school admin', async () => {
- const db = new PGlite();
+ const db = new PGlite({extensions:{btree_gist}});
  const admin = '00000000-0000-4000-8000-000000000001';
  const student = '00000000-0000-4000-8000-000000000002';
  const other = '00000000-0000-4000-8000-000000000003';
