@@ -1,10 +1,11 @@
+import {btree_gist} from '@electric-sql/pglite/contrib/btree_gist';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 
 test('School catalog check reports missing and weakened schema without reading student records',async()=>{
- const db = new PGlite();
+ const db = new PGlite({extensions:{btree_gist}});
  const migrations = new URL('../supabase/migrations/',import.meta.url);
  const sql = await readFile(new URL('../supabase/checks/installed_school.sql',import.meta.url),'utf8');
  try {

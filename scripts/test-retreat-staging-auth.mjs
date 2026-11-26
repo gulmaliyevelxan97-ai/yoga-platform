@@ -14,7 +14,7 @@ const admin=createClient(url,serviceKey,options);
 const fixture=randomUUID();
 const users=[];
 let step='setup';
-let groupCreated=false;
+let cohortId;
 
 function ok(result) {
  if (result.error) throw new Error('Supabase rejected the request' +
@@ -44,56 +44,61 @@ try {
  const mentor=await testAccount('mentor');
  const participant=await testAccount('participant');
  const outsider=await testAccount('outsider');
- step='seed isolated cohort';
- ok(await admin.from('restart_retreat_cohorts').insert({id:fixture,title:'Synthetic QA '+fixture,admission_open:true}));
- groupCreated=true;
- ok(await admin.from('restart_retreat_members').insert({cohort_id:fixture,user_id:mentor.id,role:'mentor'}));
-
- step='open three independent sessions';
+ step='assign synthetic founder role and open three independent sessions';
+ ok(await admin.from('restart_school_roles').insert({user_id:mentor.id,role:'owner'}));
  const m=await signIn(mentor);
  let p=await signIn(participant);
  const o=await signIn(outsider);
+ step='create retreat through the founder session';
+ if ((await p.rpc('restart_create_retreat',{p_title:'Forbidden'})).error?.code!=='42501') {
+  throw new Error('Participant could create a retreat');
+ }
+ cohortId=ok(await m.rpc('restart_create_retreat',{p_title:'Synthetic QA '+fixture}));
+ ok(await admin.from('restart_retreat_cohorts').update({admission_open:true}).eq('id',cohortId));
  step='submit, approve and publish';
- const request=ok(await p.rpc('restart_submit_retreat_admission',{p_cohort_id:fixture,p_full_name:'Synthetic participant'}));
+ const request=ok(await p.rpc('restart_submit_retreat_admission',{p_cohort_id:cohortId,p_full_name:'Synthetic participant'}));
  const ownRequest=ok(await p.from('restart_retreat_admissions').select('status').eq('id',request).single());
  if (ownRequest.status!=='pending') throw new Error('Approval must be pending');
  if (ok(await o.from('restart_retreat_admissions').select('id').eq('id',request)).length!==0) throw new Error('Outsider saw admission');
  ok(await m.rpc('restart_approve_retreat_admission',{p_request_id:request}));
  const event=ok(await m.rpc('restart_save_retreat_programme_item',{
-  p_cohort_id:fixture,p_item_id:null,p_expected_revision:null,p_title:'Synthetic event',
+  p_cohort_id:cohortId,p_item_id:null,p_expected_revision:null,p_title:'Synthetic event',
   p_description:'',p_starts_at:'2026-11-29T10:00:00+04:00',p_ends_at:null
  }));
  ok(await m.rpc('restart_publish_retreat_programme_item',{
-  p_cohort_id:fixture,p_item_id:event.id,p_expected_revision:event.revision
+  p_cohort_id:cohortId,p_item_id:event.id,p_expected_revision:event.revision
  }));
+ step='approve the second participant';
+ const second=ok(await o.rpc('restart_submit_retreat_admission',{p_cohort_id:cohortId,p_full_name:'Synthetic participant two'}));
+ ok(await m.rpc('restart_approve_retreat_admission',{p_request_id:second}));
  step='sign out and read programme from a new client';
  ok(await p.auth.signOut());
  p=await signIn(participant);
  const selectEvent=client=>client.from('restart_retreat_programme_items').select('id').eq('id',event.id);
- if (ok(await selectEvent(p)).length!==1 || ok(await selectEvent(o)).length!==0) throw new Error('Publication visibility mismatch');
+ if (ok(await selectEvent(p)).length!==1 || ok(await selectEvent(o)).length!==1) throw new Error('Publication visibility mismatch');
  step='sync a direct message from another session';
  const message=ok(await m.rpc('restart_send_retreat_message',{
-  p_cohort_id:fixture,p_recipient_id:participant.id,p_body:'Synthetic QA message'
+  p_cohort_id:cohortId,p_recipient_id:participant.id,p_body:'Synthetic QA message'
  }));
- if (ok(await p.rpc('restart_retreat_unread_count',{p_cohort_id:fixture}))!==1) {
+ if (ok(await p.rpc('restart_retreat_unread_count',{p_cohort_id:cohortId}))!==1) {
   throw new Error('Unread message was not visible');
  }
  if (ok(await o.from('restart_retreat_messages').select('id').eq('id',message)).length!==0) {
-  throw new Error('Outsider saw a direct message');
+  throw new Error('Another approved participant saw a direct message');
  }
  ok(await p.rpc('restart_mark_retreat_message_read',{p_message_id:message}));
  const secondDevice=await signIn(participant);
- if (ok(await secondDevice.rpc('restart_retreat_unread_count',{p_cohort_id:fixture}))!==0) {
+ if (ok(await secondDevice.rpc('restart_retreat_unread_count',{p_cohort_id:cohortId}))!==0) {
   throw new Error('Read receipt did not sync');
  }
- console.log('Password sign-in, approval, publication, repeat sign-in, outsider isolation and receipt sync passed.');
+ console.log('Founder creation, password sign-in, approval, publication, repeat sign-in, message isolation and receipt sync passed.');
 } catch (error) {
  console.error('Staging smoke stopped at '+step+': '+(error instanceof Error && error.message.startsWith('Supabase rejected') ? error.message : 'unexpected test failure'));
  process.exitCode=1;
 } finally {
- if (groupCreated) {
-  const result=await admin.from('restart_retreat_cohorts').delete().eq('id',fixture);
-  if (result.error) {console.error('Synthetic cohort cleanup requires attention: '+fixture);process.exitCode=1;}
+ if (cohortId) {
+  const result=await admin.from('restart_retreat_cohorts').delete().eq('id',cohortId);
+  if (result.error) {console.error('Synthetic cohort cleanup requires attention: '+cohortId);process.exitCode=1;}
  }
  for (const id of users) {
   const result=await admin.auth.admin.deleteUser(id);
