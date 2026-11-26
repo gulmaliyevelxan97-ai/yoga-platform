@@ -269,3 +269,52 @@ html{scroll-padding-block-end:var(--nav-clearance)}
 .retreat-feature strong{font-size:clamp(1.4rem,6vw,2rem);letter-spacing:.035em}
 .retreat-feature h1,.retreat-feature p{margin:0;color:inherit}
 .retreat-details{padding-inline-start:1.3rem;line-height:1.64}
+
+.retreat-hero {
+ position: relative;
+ isolation: isolate;
+ overflow: hidden;
+ padding-block: clamp(1.6rem, 6vw, 3.5rem);
+}
+.retreat-hero::after {
+ content: "";
+ position: absolute;
+ z-index: -1;
+ border: 1px solid #eac98244;
+ border-radius: 50%;
+ inset-block-end: -5rem;
+ inset-inline-end: -2.5rem;
+ width: 15rem;
+ aspect-ratio: 1;
+ box-shadow: 0 0 0 1.2rem #eac98211, 0 0 0 2.4rem #eac9820c;
+}
+.retreat-nav,.retreat-experiences {
+ display: grid;
+ grid-template-columns: repeat(2,minmax(0,1fr));
+ gap: .55rem;
+}
+.retreat-nav {margin: 1rem 0;}
+.retreat-nav a {
+ display: grid;
+ place-items: center;
+ min-height: 44px;
+ padding: .45rem .5rem;
+ border: 1px solid currentColor;
+ border-radius: .8rem;
+ text-align: center;
+ color: inherit;
+ overflow-wrap: anywhere;
+}
+.retreat-nav a[aria-current="page"] {background: #19392d; color: #f4db9e; border-color: #b19558;}
+.retreat-experiences article {padding: clamp(.65rem,3vw,1.5rem); border-radius: .9rem; overflow-wrap: anywhere;}
+.retreat-experiences h3 {margin-block: 0 .45rem; font-size: .85rem; letter-spacing: .04em;}
+.retreat-experiences p {margin: 0;}
+.retreat-white {background: #f5eddd; color: #292820;}
+.retreat-black {background: #202522; color: #f5e7ca;}
+.retreat-logistics {display: flex; flex-wrap: wrap; gap: .5rem 1.25rem;}
+.retreat-logistics dt {font-weight: 600;}
+@media (min-width: 540px) {.retreat-nav {grid-template-columns: repeat(3,minmax(0,1fr));}}
+@media (prefers-reduced-motion: no-preference) {
+ .retreat-panel {animation: retreat-reveal .22s ease-out;}
+ @keyframes retreat-reveal {from {opacity: .6; transform: translateY(4px);} to {opacity: 1; transform: translateY(0);}}
+}

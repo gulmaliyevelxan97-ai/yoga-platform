@@ -14,6 +14,10 @@ const copy={
  today:['Ретрит сегодня','Retrit bu gündür','The retreat is today'],
  visible:['Показывать участникам группы','Qrup iştirakçılarına göstər','Show to cohort participants'],
  confirm:['Сохранить и показать эти данные участникам группы?','Bu məlumat yadda saxlanılsın və qrup iştirakçılarına göstərilsin?','Save these details and show them to cohort participants?'],
+ preview:['Предпросмотр','Ön baxış','Preview'],
+ previewOnly:['Так участники увидят сведения после публикации. Изменения пока не сохранены.','Dərc edildikdən sonra iştirakçılar məlumatı bu şəkildə görəcəklər. Dəyişikliklər hələ saxlanılmayıb.','This is how participants will see the details after publication. Changes have not been saved.'],
+ previewEmpty:['Добавьте хотя бы одно поле и проверьте дату.','Ən azı bir xananı doldurun və tarixi yoxlayın.','Fill in at least one field and check the date.'],
+ withdraw:['Сохранить изменения и скрыть сведения от участников?','Dəyişikliklər saxlanılsın və məlumat iştirakçılardan gizlədilsin?','Save changes and hide these details from participants?'],
  save:['Сохранить','Yadda saxla','Save'],
  saved:['Информация сохранена.','Məlumat yadda saxlanıldı.','Details saved.'],
  invalid:['Проверьте дату и заполненные поля.','Tarixi və doldurulmuş sahələri yoxlayın.','Check the date and the form fields.'],
@@ -97,6 +101,14 @@ export function renderRetreatEventDetails({groups,details},lang,esc,now=new Date
  }).join('');
 }
 
+export function renderRetreatEventPreview(group,values,lang,esc,now=new Date()) {
+ const t=labels(lang);
+ const args=eventDetailsSaveArgs(group.cohort_id,null,{...values,visible:'yes'});
+ if (!args) return '<p>'+t('previewEmpty')+'</p>';
+ const row=Object.fromEntries(['cohort_id','event_date','location','dress_code','packing_list','published'].map(field=>[field,args['p_'+field]]));
+ return '<p class="muted">'+t('previewOnly')+'</p>'+renderRetreatEventDetails({groups:[group],details:[row]},lang,esc,now);
+}
+
 export async function retreatEventDetailsPage({outlet,client,user,lang,esc,current,mentor=false}) {
  if (!current() || !user?.id || user.is_anonymous) return;
  const t=labels(lang);
@@ -108,12 +120,15 @@ export async function retreatEventDetailsPage({outlet,client,user,lang,esc,curre
   if (!snapshot.groups.length) return '';
   return '<h2>'+t('title')+'</h2>'+snapshot.groups.map(group=>{
    const item=snapshot.details.find(row=>row.cohort_id===group.cohort_id);
+   const previewId='retreat-event-preview-'+esc(group.cohort_id);
    return '<form class="panel" data-event-cohort="'+esc(group.cohort_id)+'"><h3>'+esc(group.restart_retreat_cohorts?.title || t('title'))+'</h3>'+
     '<label>'+t('date')+'<input type="date" name="event_date" value="'+esc(item?.event_date)+'"></label>'+
     fields.map(([field,key,limit])=>
      '<label>'+t(key)+'<textarea name="'+field+'" rows="3" maxlength="'+limit+'">'+esc(item?.[field])+'</textarea></label>').join('')+
     '<label class="check"><input name="visible" type="checkbox" value="yes" '+(item?.published?'checked':'')+'>'+t('visible')+'</label>'+
-    '<button type="submit" class="cta">'+t('save')+'</button><p role="status" data-event-result></p></form>';
+    '<div class="actions"><button type="submit" class="cta">'+t('save')+'</button>'+
+    '<button type="button" data-event-preview aria-expanded="false" aria-controls="'+previewId+'">'+t('preview')+'</button></div>'+
+    '<p role="status" data-event-result></p><div id="'+previewId+'" data-event-preview-panel aria-live="polite" hidden></div></form>';
   }).join('');
  }
 
@@ -133,9 +148,31 @@ export async function retreatEventDetailsPage({outlet,client,user,lang,esc,curre
  }
 
  outlet.onclick=async event=>{
-  if (!event.target.closest('[data-event-refresh]') || busy || !current()) return;
+  if (busy || !current()) return;
+  const preview=mentor?event.target.closest('[data-event-preview]'):null;
+  if (preview) {
+   const form=preview.form;
+   const group=snapshot?.groups.find(row=>row.cohort_id===form?.dataset.eventCohort);
+   if (!group) return;
+   const panel=form.querySelector('[data-event-preview-panel]');
+   if (!panel) return;
+   const open=panel.hidden;
+   panel.hidden=!open;
+   preview.setAttribute('aria-expanded',String(open));
+   panel.innerHTML=open?renderRetreatEventPreview(group,Object.fromEntries(new FormData(form)),lang,esc):'';
+   return;
+  }
+  if (!event.target.closest('[data-event-refresh]')) return;
   busy=true;
   try {await load();} finally {busy=false;}
+ };
+ if (mentor) outlet.oninput=event=>{
+  const form=event.target.closest('[data-event-cohort]');
+  const panel=form?.querySelector('[data-event-preview-panel]');
+  if (!panel || panel.hidden) return;
+  panel.hidden=true;
+  panel.replaceChildren();
+  form.querySelector('[data-event-preview]').setAttribute('aria-expanded','false');
  };
  if (mentor) outlet.onsubmit=async event=>{
   const form=event.target;
@@ -150,8 +187,9 @@ export async function retreatEventDetailsPage({outlet,client,user,lang,esc,curre
   const message=form.querySelector('[data-event-result]');
   if (!args) {message.textContent=t('invalid');return;}
   if (args.p_published && !confirm(t('confirm'))) return;
+  if (!args.p_published && detail?.published && !confirm(t('withdraw'))) return;
   busy=true;
-  const button=form.querySelector('button');
+  const button=form.querySelector('button[type=submit]');
   button.disabled=true;
   try {
    await rows(client.rpc('restart_save_retreat_event_details',args));

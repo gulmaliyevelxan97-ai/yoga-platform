@@ -1,5 +1,6 @@
+import {renderRetreatPreparation,bindRetreatPreparation} from './retreat-preparation.mjs';
 import {retreatEventDetailsPage} from './retreat-event-details.mjs';
-import {renderRetreatCard,renderRetreatExperience} from './retreat-experience.mjs';
+import {renderRetreatCard,renderRetreatExperience,retreatSection} from './retreat-experience.mjs';
 import {readRetreatUnreadTotal,retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
 import {retreatMentorTasks} from './retreat-mentor-tasks.mjs';
 import {retreatFormsPage} from './retreat-forms.mjs';
@@ -140,6 +141,7 @@ function route() {
  if (name === 'path' || name === 'journal') {
   return {name,id:/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)?id:undefined};
  }
+ if (name === 'retreat') return {name,id:retreatSection(id)};
  if (name === 'week') return {name, id:/^\d{4}-\d{2}-\d{2}$/.test(id) ? id : undefined};
  return {name: [...tabs, 'journal', 'schedule', 'mentor', 'retreat'].includes(name) ? name : 'today'};
 }
@@ -401,7 +403,10 @@ function setActive(active) {
 }
 
 const week = selectedDate => renderWeeklyProgram({lang:lang(),sessions:state().sessions,selectedDate});
-const retreat = () => renderRetreatExperience(lang(),{
+const retreat = section => renderRetreatExperience(lang(),{
+ section,
+ preparation: section==='preparation' ? renderRetreatPreparation(lang(),esc) : '',
+ reflection: section==='after' ? renderRetreatPreparation(lang(),esc,undefined,true) : '',
  signedIn: Boolean(cloud?.user && !cloud.user.is_anonymous),
  intention: !cloud?.user ? renderRetreatIntention(lang(),readRetreatIntention(),esc) : ''
 });
@@ -550,6 +555,7 @@ function render() {
    schoolPage({outlet,client:pilotClient,user:cloud.user.id,route:current,t,esc,lang:lang(),current:()=>sequence===renderSequence && !!cloud?.state && !cloud.recovery});
   } else outlet.innerHTML = '<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  }
+ bindRetreatPreparation(screen,lang());
  const retreatOutlet = document.getElementById('retreat-mentor-outlet');
  if (retreatOutlet) {
   const user = cloud?.user;

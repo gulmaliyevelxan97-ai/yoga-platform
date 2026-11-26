@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {eventDetailsSaveArgs,readRetreatEventDetails,renderRetreatEventDetails,retreatDaysUntil} from '../app/retreat-event-details.mjs';
+import {eventDetailsSaveArgs,readRetreatEventDetails,renderRetreatEventDetails,renderRetreatEventPreview,retreatDaysUntil,retreatEventDetailsPage} from '../app/retreat-event-details.mjs';
 
 test('Countdown rolls over by Baku date and omits absent, invalid or past dates',()=>{
  assert.equal(retreatDaysUntil('2026-12-01',new Date('2026-11-30T19:59:59Z')),1);
@@ -57,4 +57,39 @@ test('Participant selects published rows for own memberships; editor selects onl
  await readRetreatEventDetails(client,{id:'mentor'},true);
  assert.ok(calls.some(row=>row[0]==='eq'&&row[1]==='role'&&row[2]==='mentor'));
  assert.equal(calls.some(row=>row[1]==='published'),false);
+});
+
+test('Mentor preview uses the participant view with unsaved values and never requires publication',()=>{
+ const group={cohort_id:'cohort',restart_retreat_cohorts:{title:'Group'}};
+ const esc=value=>String(value??'').replaceAll('<','&lt;');
+ const now=new Date('2026-11-30T20:00:00Z');
+ const preview=renderRetreatEventPreview(group,{event_date:'2026-12-01',location:'<Location',packing_list:'Mat\nWater'},'en',esc,now);
+ assert.match(preview,/Changes have not been saved/);
+ assert.match(preview,/The retreat is today/);
+ assert.match(preview,/&lt;Location/);
+ assert.match(preview,/Mat<br>Water/);
+ assert.doesNotMatch(renderRetreatEventPreview(group,{event_date:'2026-02-30'},'en',esc,now),/<article/);
+ assert.match(renderRetreatEventPreview(group,{},'en',esc,now),/Fill in at least one field/);
+});
+
+test('The authenticated mentor editor has a preview button without exposing a draft to participant rendering',async()=>{
+ const group={cohort_id:'cohort',restart_retreat_cohorts:{title:'Group'}};
+ const detail={cohort_id:'cohort',location:'Unpublished venue',published:false,revision:1};
+ const client={from(table){
+  let publishesOnly=false;
+  const query={
+   select(){return query;},in(){return query;},order(){return query;},
+   eq(key,value){if (key==='published'&&value) publishesOnly=true;return query;},
+   then(resolve){resolve({data:table==='restart_retreat_members'?[group]:publishesOnly?[]:[detail]});}
+  };
+  return query;
+ }};
+ const context={client,user:{id:'account'},lang:'en',esc:value=>String(value??''),current:()=>true};
+ const mentor={};
+ const participant={};
+ await retreatEventDetailsPage({...context,outlet:mentor,mentor:true});
+ await retreatEventDetailsPage({...context,outlet:participant});
+ assert.match(mentor.innerHTML,/type="button" data-event-preview aria-expanded="false"/);
+ assert.match(mentor.innerHTML,/Unpublished venue/);
+ assert.doesNotMatch(participant.innerHTML,/Unpublished venue|data-event-preview/);
 });
