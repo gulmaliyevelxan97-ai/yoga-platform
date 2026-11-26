@@ -64,7 +64,8 @@ test('packaged pilot precaches the SDK and every shell resource exists', async (
   assert(requests.includes(scope+'supabase-sdk.mjs'));
   for (const url of requests) {
    assert.equal(new URL(url).origin,new URL(scope).origin);
-   await readFile(path.join(dir,'dist',new URL(url).pathname));
+   const pathname = new URL(url).pathname;
+   await readFile(path.join(dir,'dist',pathname.endsWith('/') ? pathname+'index.html' : pathname));
   }
   const guest = {...stage,env:{...stage.env,RESTART_PILOT_OUTPUT:'dist-guest'}};
   execFileSync(process.execPath,['scripts/build-cloud-pilot.mjs','--guest'],guest);
