@@ -253,3 +253,19 @@ html{scroll-padding-block-end:var(--nav-clearance)}
 .practice-steps li[aria-current=step]{background:var(--active-surface);border-inline-start-color:var(--gold);border-radius:var(--radius-control)}
 
 .reminder-links{margin-block-start:.5rem}
+
+.retreat-feature {
+ display:grid;
+ gap:.45rem;
+ margin-block: .75rem 1rem;
+ padding:clamp(1rem,4vw,1.5rem);
+ border:1px solid #b69b61;
+ border-radius:var(--radius-control);
+ background:linear-gradient(130deg,#12372e,#0e2621);
+ color:#fff6df;
+ text-decoration:none;
+}
+.retreat-feature .eyebrow,.retreat-feature>span:last-child{color:#eac982}
+.retreat-feature strong{font-size:clamp(1.4rem,6vw,2rem);letter-spacing:.035em}
+.retreat-feature h1,.retreat-feature p{margin:0;color:inherit}
+.retreat-details{padding-inline-start:1.3rem;line-height:1.64}

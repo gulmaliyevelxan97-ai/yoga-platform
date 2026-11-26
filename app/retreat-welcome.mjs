@@ -14,6 +14,7 @@ const copy = {
   'İştirak könüllüdür. İstədiyin məşqi seçə və istənilən vaxt dayana bilərsən.',
   'Taking part is voluntary. Choose any practice and stop whenever you like.'
  ],
+ storage:['Хранение данных','Məlumatların saxlanması','Data storage'],
  privacy:[
   'В гостевом режиме записи и прогресс хранятся только в браузере на этом устройстве. Облачная синхронизация в гостевом режиме недоступна. Очистка данных браузера удалит их. Не добавляй в дневник чувствительные личные сведения.',
   'Qonaq rejimində qeydlər və irəliləyiş yalnız bu cihazdakı brauzerdə saxlanılır. Qonaq rejimində bulud sinxronizasiyası mövcud deyil. Brauzer məlumatlarını təmizləsən, onlar silinəcək. Gündəliyə həssas şəxsi məlumat yazma.',
@@ -40,7 +41,7 @@ export function renderRetreatWelcome(lang) {
  <p class="retreat-welcome-lead">${copy.path[index]}</p>
  <h2 id="retreat-welcome-title">${copy.access[index]}</h2>
  <p>${copy.voluntary[index]}</p>
- <p class="muted">${copy.privacy[index]}</p>
+ <details><summary>${copy.storage[index]}</summary><p class="muted">${copy.privacy[index]}</p></details>
  <div class="retreat-shortcuts">${routes.map(([href,labels])=>`<a class="button" href="${href}">${labels[index]}</a>`).join('')}</div>
  </section>`;
 }

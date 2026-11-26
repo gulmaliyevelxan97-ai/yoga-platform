@@ -1,3 +1,4 @@
+import {renderRetreatCard,renderRetreatExperience} from './retreat-experience.mjs';
 import {readRetreatUnreadTotal,retreatConnectTitle,retreatConnectPage} from './retreat-connect.mjs';
 import {retreatMentorTasks} from './retreat-mentor-tasks.mjs';
 import {retreatFormsPage} from './retreat-forms.mjs';
@@ -65,6 +66,7 @@ const state = () => cloud?.state || repo.read();
 const lang = () => languages.includes(state().lang) ? state().lang : 'ru';
 const tr = triple => triple[languages.indexOf(lang())];
 const mobileStrings = {
+ retreat:['RESTART RETREAT','RESTART RETREAT','RESTART RETREAT'],
  'retreat-mentor':retreatAdmissionTitle,
  'retreat-connect':retreatConnectTitle,
  'retreat-forms':['Анкеты ретрита','Retrit anketləri','Retreat forms'],
@@ -138,7 +140,7 @@ function route() {
   return {name,id:/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)?id:undefined};
  }
  if (name === 'week') return {name, id:/^\d{4}-\d{2}-\d{2}$/.test(id) ? id : undefined};
- return {name: [...tabs, 'journal', 'schedule', 'mentor'].includes(name) ? name : 'today'};
+ return {name: [...tabs, 'journal', 'schedule', 'mentor', 'retreat'].includes(name) ? name : 'today'};
 }
 
 function sampleClass(date) {
@@ -168,8 +170,8 @@ function today() {
  <div class="today-heading"><div><p class="eyebrow">${esc(dateText(now,{weekday:'long',day:'numeric',month:'long'}))}</p>
  <h1>${retreatWelcomeTitle(lang())}</h1></div>
  <a class="today-avatar" href="#profile" aria-label="${t('profile')}">${avatar}</a></div>
+ ${renderRetreatCard(lang())}
  ${renderRetreatWelcome(lang())}
- ${!cloud?.user ? renderRetreatIntention(lang(),readRetreatIntention(),esc) : ''}
  <article class="today-practice practice-cover-${suggested.id}"><div class="today-copy">
  <p class="eyebrow">${t('daily')} · ${category(suggested.id)} · ${suggested.minutes} ${t('min')}</p>
  <h2>${title(suggested)}</h2>
@@ -398,7 +400,11 @@ function setActive(active) {
 }
 
 const week = selectedDate => renderWeeklyProgram({lang:lang(),sessions:state().sessions,selectedDate});
-const screens = {today, practices, practice, path, journal, schedule, profile, mentor, account, academy, week};
+const retreat = () => renderRetreatExperience(lang(),{
+ signedIn: Boolean(cloud?.user && !cloud.user.is_anonymous),
+ intention: !cloud?.user ? renderRetreatIntention(lang(),readRetreatIntention(),esc) : ''
+});
+const screens = {retreat, today, practices, practice, path, journal, schedule, profile, mentor, account, academy, week};
 
 function refreshBanner() {
  const current = state();
@@ -516,7 +522,7 @@ function render() {
  if (['schedule','classes'].includes(current.name)) calendar.setAttribute('aria-current','page');
  else calendar.removeAttribute('aria-current');
  $('#mode').textContent = t(cloud?.user ? 'cloudMode' : cloudConfig ? 'cloudLocal' : 'demo');
- const activeTab = {practice:'practices',journal:'profile',account:'profile','retreat-mentor':'profile','retreat-programme':'profile','retreat-request':'profile','retreat-forms':'profile','retreat-tasks':'today','retreat-connect':'today',week:'today'}[current.name] || current.name;
+ const activeTab = {practice:'practices',journal:'profile',account:'profile','retreat-mentor':'profile','retreat-programme':'profile','retreat-request':'profile','retreat-forms':'profile','retreat-tasks':'today','retreat-connect':'today',week:'today',retreat:'today'}[current.name] || current.name;
  const tabLabel = name => t({path:'pathTab',academy:'academyTab'}[name] || name);
  $('#tabs').innerHTML = tabs.map(name=>`<a href="#${name}" ${activeTab===name?'aria-current="page"':''}>${icon(name)}<span>${tabLabel(name)}</span></a>`).join('');
  document.title = 'RESTART · '+tabLabel(current.name==='practice'?'practices':current.name);
