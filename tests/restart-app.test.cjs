@@ -74,15 +74,72 @@ test('Manifest and worker use the app scope, use existing RESTART assets and exc
   assert(captures.includes(scope+'index.html'));
   const portraits = [...read('index.html').matchAll(/assets\/brand\/restart-\d+\.webp/g)];
   assert.equal(new Set(portraits.map(match=>match[0])).size,2);
-  for (const [portrait] of portraits) assert(captures.includes(new URL('../'+portrait,scope).href));
+  for (const [portrait] of portraits) {
+   assert(existsSync(resolve(__dirname,'..',portrait)));
+   assert(!captures.includes(new URL('../'+portrait,scope).href));
+  }
+  for (const file of ['swipe-navigation.mjs','retreat-welcome.mjs']) assert(captures.includes(scope+file));
   assert(!captures.includes(new URL('../assets/hero.webp',scope).href));
   assert(captures.every(url=>url.startsWith(scope)||url.startsWith('https://example.test/yoga-platform/assets/')));
   let response;
-  handlers.fetch({request:{method:'GET',mode:'navigate',url:scope},respondWith:value=>{response=value;}});
+  handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:scope},respondWith:value=>{response=value;}});
   assert.equal(await response,'offline-shell');
   for (const external of ['../about.html','../releases/week/content.js','../week-one.html']) {
-   handlers.fetch({request:{method:'GET',mode:'navigate',url:new URL(external,scope).href},respondWith:()=>assert.fail(external)});
+   handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:new URL(external,scope).href},respondWith:()=>assert.fail(external)});
   }
+  handlers.fetch({request:new Request(scope+'index.html',{headers:{Range:'bytes=0-12'}}),
+   respondWith:()=>assert.fail('Range requests require an origin response')});
+  handlers.fetch({request:new Request(scope+'rest/v1/restart_journal'),
+   respondWith:()=>assert.fail('The worker must bypass private data routes')});
   assert.doesNotMatch(read('app/index.html')+read('app/ui.mjs'),/gtag|googletagmanager|google-analytics/i);
  });
+});
+
+test('Only app windows can activate a waiting app worker', async () => {
+ const handlers = {};
+ const scope = 'https://example.test/yoga-platform/app/';
+ let updates=0;
+ runInNewContext(read('app/sw.js'),{
+  URL, self:{registration:{scope},skipWaiting:async()=>{updates++;},
+  addEventListener:(name,handler)=>{handlers[name]=handler;}}
+ });
+ const post=(source,type='ACTIVATE')=>{
+  let pending;
+  handlers.message({data:{type},source,waitUntil:promise=>{pending=promise;}});
+  return pending;
+ };
+ await post(null);
+ await post({type:'worker',url:scope});
+ await post({type:'window',url:'https://example.test/yoga-platform/'});
+ await post({type:'window',url:'https://other.example/yoga-platform/app/'});
+ await post({type:'window',url:scope},'OTHER');
+ assert.equal(updates,0);
+ await post({type:'window',url:scope+'#journal'});
+ assert.equal(updates,1);
+ await post({type:'window',url:scope+'index.html?code=fixture#account'});
+ assert.equal(updates,2);
+});
+
+test('Push receiver uses built-in copy, a stable tag and fixed in-scope navigation', async () => {
+ const handlers={};
+ const scope='https://example.test/app/';
+ const shown=[];
+ const opened=[];
+ runInNewContext(read('app/sw.js'),{URL,self:{
+  registration:{scope,showNotification:async(title,options)=>shown.push({title,options})},
+  clients:{matchAll:async()=>[],openWindow:async url=>opened.push(url)},
+  addEventListener:(name,handler)=>{handlers[name]=handler;}
+ }});
+ function run(handler,fields) {
+  let pending;
+  handler({...fields,waitUntil:value=>{pending=value;}});
+  return pending;
+ }
+ await run(handlers.push,{data:{json:()=>({period:'invalid',day:'2026-11-21'})}});
+ assert.equal(shown.length,0);
+ await run(handlers.push,{data:{json:()=>({period:'morning',day:'2026-11-21',locale:'en',body:'untrusted',url:'https://example.invalid/'})}});
+ assert.equal(shown[0].options.body,'Start your morning with breathing.');
+ assert.equal(shown[0].options.tag,'restart-2026-11-21-morning');
+ await run(handlers.notificationclick,{notification:{tag:shown[0].options.tag,close(){}}});
+ assert.deepEqual(opened,[scope+'#today']);
 });

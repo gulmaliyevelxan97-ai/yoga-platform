@@ -1,0 +1,117 @@
+.week-days {
+ list-style:none;
+ padding:0;
+ margin:0;
+}
+.week-day[aria-current=date] {
+ border-inline-start:3px solid var(--gold);
+}
+.week-day h2,.week-day p {
+ margin:0;
+}
+.week-day-date {
+ display:flex;
+ flex-wrap:wrap;
+ gap:.3rem .7rem;
+ align-items:center;
+ font-size:.875rem;
+}
+.week-day time:first-letter {
+ text-transform:uppercase;
+}
+.week-day-marker {
+ color:var(--gold);
+ font-weight:650;
+}
+.week-day h2 {
+ margin-block:.18rem .25rem;
+}
+.week-progress label,.week-progress progress {
+ margin-block-end:0;
+}
+.week-jump {
+ display:grid;
+ grid-template-columns:repeat(7,minmax(44px,1fr));
+ gap:.3rem;
+ margin-block:0 .85rem;
+}
+.week-jump a {
+ display:grid;
+ place-content:center;
+ min-height:48px;
+ border:1px solid var(--line);
+ border-radius:var(--radius-control,10px);
+ background:var(--button-surface,var(--surface));
+ text-align:center;
+ color:var(--muted);
+ font-size:.75rem;
+ line-height:1.2;
+}
+.week-jump a strong {
+ font-size:.975rem;
+ color:var(--paper);
+}
+.week-jump a[aria-current=date] {
+ border-color:var(--gold);
+ background:var(--active-surface,var(--surface));
+ color:var(--paper);
+}
+.week-day {
+ scroll-margin-block-start:1rem;
+}
+@media (max-width:390px) {
+ .week-jump {grid-template-columns:repeat(4,minmax(44px,1fr))}
+}
+.week-jump a {
+ position:relative;
+}
+.week-jump-check {
+ position:absolute;
+ inset-block-start:.24rem;
+ inset-inline-end:.3rem;
+ color:var(--gold);
+}
+.week-day[data-selected] {
+ border-color:var(--gold);
+ background:var(--active-surface,var(--surface));
+}
+@media (hover:hover) {
+ .week-jump a:hover {
+  border-color:var(--gold);
+  color:var(--paper);
+ }
+}
+@media (prefers-reduced-motion:no-preference) {
+ .week-jump a {transition:background-color .16s ease,border-color .16s ease}
+ .week-day[data-selected] {animation:week-day-arrival .2s ease-out}
+ @keyframes week-day-arrival {from {transform:translateY(3px)}}
+}
+.week-phases {
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:.7rem;
+ margin-block-start:.9rem;
+}
+.week-phase {
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:.45rem;
+ padding:.7rem;
+ border:1px solid var(--line);
+ border-radius:var(--radius-control,10px);
+}
+.week-phase-main {
+ border-inline-start:3px solid var(--gold);
+}
+.week-phase h3 {
+ font-family:var(--sans);
+ font-size:.94rem;
+ font-weight:650;
+}
+.week-phase :is(.button,.link) {
+ margin-block-start:auto;
+}
+@media (max-width:600px) {
+ .week-phases {grid-template-columns:1fr}
+}

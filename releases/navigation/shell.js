@@ -12,6 +12,9 @@ const restartPages = {
  journal:['journal.html','Дневник','Gündəlik','Journal'],
  progress:['progress.html','Мой прогресс','İrəliləyişim','My progress'],
  signup:['participation.html','Участие','İştirak','Participation'],
+ academy:['practices.html#courses','Академия','Akademiya','Academy'],
+ schedule:['practices.html#live','Расписание','Cədvəl','Schedule'],
+ app:['app/','Приложение RESTART','RESTART tətbiqi','RESTART app'],
  activity:['activity.html','История и избранное','Tarixçə və seçilmişlər','History and favourites']
 };
 const restartPage = document.body.dataset.page;
@@ -20,7 +23,7 @@ function pageUrl(key){return './'+restartPages[key][0]}
 function buildShell(locale){
  const i=Math.max(0,['ru','az','en'].indexOf(locale));
  const n=(key,caption)=>'<a href="'+pageUrl(key)+'"'+(restartPage===key?' aria-current="page"':'')+'>'+(caption||restartPages[key][i+1])+'</a>';
- navRoot.querySelector('.top-links').innerHTML=['about','method','programme','practices'].map(key=>n(key)).join('');
+ navRoot.querySelector('.top-links').innerHTML=['about','founder','practices','academy','schedule'].map(key=>n(key,key==='founder'?['Основатель','Təsisçi','Founder'][i]:null)).join('');
  navRoot.querySelector('.dock').innerHTML=['home','path','practices','progress'].map(key=>n(key)).join('');
  navRoot.querySelector('.all-links').innerHTML=Object.keys(restartPages).map(key=>n(key)).join('');
  navRoot.querySelector('.all-menu summary').textContent=['Разделы','Bölmələr','Sections'][i];
@@ -31,7 +34,7 @@ function buildShell(locale){
  const skip=document.querySelector('.school-skip');
  if(skip) skip.textContent=['К содержанию','Məzmuna keç','Skip to content'][i];
  const footer=document.querySelector('[data-school-footer]');
- if(footer)footer.innerHTML='<a href="./">RESTART</a><div>'+['code','journal','signup'].map(key=>n(key)).join('')+'<a href="./assets/brand/yoga-space-archive.jpg">'+['Фотоархив','Fotoarxiv','Photo archive'][i]+'</a></div>';
+ if(footer)footer.innerHTML='<a href="./">RESTART</a><div>'+['founder','code','journal','signup','app'].map(key=>n(key)).join('')+'<a href="./assets/brand/yoga-space-archive.jpg">'+['Фотоархив','Fotoarxiv','Photo archive'][i]+'</a></div>';
 }
 const programmeHashes=new Set(['restart56']);
 const aboutHashes=new Set(['philosophy','foundations','ph-mind','ph-body','ph-nutrition','ph-life','directions']);
@@ -45,7 +48,13 @@ function legacyRoute(hash){
  if(practiceHashes.has(section))return pageUrl('practices')+hash;
  return '';
 }
-if(restartPage==='home'&&legacyRoute(location.hash))location.replace(legacyRoute(location.hash));
+function openLegacyHomeRoute(){
+ if(restartPage!=='home')return;
+ const destination=['#founder','#teacher-elxan'].includes(location.hash)?pageUrl('founder'):legacyRoute(location.hash);
+ if(destination)location.replace(destination);
+}
+openLegacyHomeRoute();
+if(restartPage==='home')window.addEventListener('hashchange',openLegacyHomeRoute);
 const allMenu=navRoot.querySelector('.all-menu');
 document.addEventListener('keydown',event=>{
  if(event.key!=='Escape'||!allMenu.open)return;
@@ -56,7 +65,7 @@ document.addEventListener('click',event=>{
  if(allMenu.open&&!allMenu.contains(event.target)) allMenu.open=false;
  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
  const anchor=event.target.closest('a[href^="#"]');
- if(!anchor||!['practices','activity'].includes(restartPage))return;
+ if(!anchor||anchor.classList.contains('school-skip')||!['practices','activity'].includes(restartPage))return;
  const href=anchor.getAttribute('href');
  const destination=href==='#directions'&&restartPage==='practices'?'':href==='#top'?'./':legacyRoute(href);
  if(destination&&!destination.startsWith(pageUrl(restartPage))){event.preventDefault();location.assign(destination)}

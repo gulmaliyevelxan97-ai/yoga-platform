@@ -1,0 +1,86 @@
+:root {
+ --ink:#141b22;
+ --surface:#202a33;
+ --paper:#f8f1e4;
+ --muted:#bac5ca;
+ --line:#485762;
+ --gold:#e1c391;
+ --on-accent:#202014;
+ --pine:#1a232c;
+ --nav-surface:var(--pine);
+ --button-surface:#2a3741;
+ --active-surface:#37434b;
+ --focus:#a6d8ea;
+ --warning-surface:#342d23;
+ --warning-text:#f5d9a7;
+ --warning-line:#88724b;
+ --success:#b3d2b5;
+ --danger:#ffc1bf;
+ --space-1:.25rem;
+ --space-2:.5rem;
+ --space-3:.75rem;
+ --space-4:1rem;
+ --space-6:1.5rem;
+ --radius-control:.65rem;
+ --radius-card:1rem;
+ --shadow-card:0 12px 28px rgb(0 0 0 / .16);
+ --serif:Georgia,'Times New Roman',serif;
+ --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+ --app-width:60rem;
+ --control-size:44px;
+ color-scheme:dark;
+}
+@media (prefers-color-scheme:light) {
+ :root:not([data-theme]) {
+  color-scheme:light;
+  --ink:#f7f2e9;
+  --surface:#fffcf5;
+  --paper:#253235;
+  --muted:#53635f;
+  --line:#b5bfb7;
+  --gold:#73511d;
+  --on-accent:#fff8ea;
+  --pine:#f1eee3;
+  --button-surface:#f0eee5;
+  --active-surface:#e8e5d6;
+  --focus:#146881;
+  --warning-surface:#f7eddb;
+  --warning-text:#684519;
+  --warning-line:#ac8d61;
+  --success:#386746;
+  --danger:#942f37;
+  --shadow-card:0 12px 28px rgb(54 49 33 / .08);
+ }
+}
+:root[data-theme=light] {
+ color-scheme:light;
+ --ink:#f7f2e9;
+ --surface:#fffcf5;
+ --paper:#253235;
+ --muted:#53635f;
+ --line:#b5bfb7;
+ --gold:#73511d;
+ --on-accent:#fff8ea;
+ --pine:#f1eee3;
+ --button-surface:#f0eee5;
+ --active-surface:#e8e5d6;
+ --focus:#146881;
+ --warning-surface:#f7eddb;
+ --warning-text:#684519;
+ --warning-line:#ac8d61;
+ --success:#386746;
+ --danger:#942f37;
+ --shadow-card:0 12px 28px rgb(54 49 33 / .08);
+}
+.milestone-list{list-style:none;display:flex;flex-wrap:wrap;gap:var(--space-2);padding:0;margin:var(--space-3) 0 0}
+.milestone-list li{display:inline-flex;gap:var(--space-2);align-items:center;border:1px solid var(--line);border-radius:var(--radius-control);padding:var(--space-2) var(--space-3)}
+.milestone-list svg{flex:none;color:var(--gold)}
+.practice-trend meter{align-self:center;inline-size:min(42%,16rem);accent-color:var(--success)}
+
+/* State surfaces use the same semantic colors as their text. */
+:root {
+ --status-success:color-mix(in srgb,var(--success) 11%,var(--surface));
+ --status-danger:color-mix(in srgb,var(--danger) 11%,var(--surface));
+ --status-neutral:var(--active-surface);
+ --nav-clearance:calc(6rem + env(safe-area-inset-bottom,0px));
+}

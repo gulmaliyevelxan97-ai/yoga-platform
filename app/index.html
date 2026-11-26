@@ -11,16 +11,19 @@
 <link rel="apple-touch-icon" href="../assets/pwa/restart-apple.png">
 <title>RESTART App</title>
 <link rel="stylesheet" href="./style.css">
+<script src="./theme.js" defer></script>
 <script type="module" src="./ui.mjs"></script>
 </head>
 <body>
 <div class="app">
+<button id="skip-to-content" class="skip-to-content" type="button">К содержанию</button>
 <header class="top">
 <a class="brand" href="#today" aria-label="RESTART"><img src="../assets/pwa/restart-192.png" alt="" width="32" height="32">RESTART</a>
 <div class="top-actions"><a id="schedule-link" class="icon-button" href="#schedule" aria-label="Расписание"></a><select id="language" aria-label="Язык / Dil / Language"><option value="ru">RU</option><option value="az">AZ</option><option value="en">EN</option></select></div>
 </header>
 <p id="mode" class="mode"></p>
-<p id="reminder" class="banner" hidden></p>
+<div id="reminder" class="banner" aria-live="polite" hidden></div>
+<p id="cloud-status" class="banner" role="status" hidden></p>
 <main id="screen" tabindex="-1"><noscript>Для работы приложения включите JavaScript. Enable JavaScript to use the app.</noscript></main>
 <p id="status" class="sr-only" role="status"></p>
 <nav id="tabs" class="tabs" aria-label="RESTART"></nav>
