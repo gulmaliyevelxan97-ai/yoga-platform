@@ -55,6 +55,9 @@ try {
  const o=await signIn(outsider);
  step='submit, approve and publish';
  const request=ok(await p.rpc('restart_submit_retreat_admission',{p_cohort_id:fixture,p_full_name:'Synthetic participant'}));
+ const ownRequest=ok(await p.from('restart_retreat_admissions').select('status').eq('id',request).single());
+ if (ownRequest.status!=='pending') throw new Error('Approval must be pending');
+ if (ok(await o.from('restart_retreat_admissions').select('id').eq('id',request)).length!==0) throw new Error('Outsider saw admission');
  ok(await m.rpc('restart_approve_retreat_admission',{p_request_id:request}));
  const event=ok(await m.rpc('restart_save_retreat_programme_item',{
   p_cohort_id:fixture,p_item_id:null,p_expected_revision:null,p_title:'Synthetic event',
@@ -68,7 +71,22 @@ try {
  p=await signIn(participant);
  const selectEvent=client=>client.from('restart_retreat_programme_items').select('id').eq('id',event.id);
  if (ok(await selectEvent(p)).length!==1 || ok(await selectEvent(o)).length!==0) throw new Error('Publication visibility mismatch');
- console.log('Password sign-in, approval, publication, repeat sign-in and outsider isolation passed.');
+ step='sync a direct message from another session';
+ const message=ok(await m.rpc('restart_send_retreat_message',{
+  p_cohort_id:fixture,p_recipient_id:participant.id,p_body:'Synthetic QA message'
+ }));
+ if (ok(await p.rpc('restart_retreat_unread_count',{p_cohort_id:fixture}))!==1) {
+  throw new Error('Unread message was not visible');
+ }
+ if (ok(await o.from('restart_retreat_messages').select('id').eq('id',message)).length!==0) {
+  throw new Error('Outsider saw a direct message');
+ }
+ ok(await p.rpc('restart_mark_retreat_message_read',{p_message_id:message}));
+ const secondDevice=await signIn(participant);
+ if (ok(await secondDevice.rpc('restart_retreat_unread_count',{p_cohort_id:fixture}))!==0) {
+  throw new Error('Read receipt did not sync');
+ }
+ console.log('Password sign-in, approval, publication, repeat sign-in, outsider isolation and receipt sync passed.');
 } catch (error) {
  console.error('Staging smoke stopped at '+step+': '+(error instanceof Error && error.message.startsWith('Supabase rejected') ? error.message : 'unexpected test failure'));
  process.exitCode=1;
