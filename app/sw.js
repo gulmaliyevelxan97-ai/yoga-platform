@@ -1,11 +1,13 @@
 /* The app has an independent scope and cache. Bump VERSION when shell assets change. */
-const VERSION = '2.3.16';
+const VERSION = '2.3.22';
 const base = new URL(self.registration.scope);
 const prefix = 'restart-app:' + base.pathname + ':';
 const name = prefix + VERSION;
-const shell = new URL('./index.html',base).href;
+// Directory hosting can redirect index.html to the app start URL.
+const shell = base.href;
+const indexPath = new URL('./index.html',base).pathname;
 const resources = new Set([
- './swipe-navigation.mjs','./retreat-welcome.mjs','./retreat-intention.mjs','./practice-guide.mjs','./week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./index.html','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
+ './swipe-navigation.mjs','./retreat-welcome.mjs','./retreat-intention.mjs','./retreat-mentor-admissions.mjs','./retreat-admission-request.mjs','./retreat-programme-editor.mjs','./retreat-programme.mjs','./practice-guide.mjs','./week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
  '../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
  '../assets/pwa/restart-maskable.png','../assets/pwa/restart-apple.png'
 ].map(path=>new URL(path,base).href));
@@ -22,7 +24,7 @@ self.addEventListener('activate',event=>{
  })());
 });
 function isAppPage(url) {
- return url.origin===base.origin && (url.pathname===base.pathname || url.pathname===new URL(shell).pathname);
+ return url.origin===base.origin && (url.pathname===base.pathname || url.pathname===indexPath);
 }
 
 self.addEventListener('message',event=>{

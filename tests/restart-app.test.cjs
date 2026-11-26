@@ -71,7 +71,8 @@ test('Manifest and worker use the app scope, use existing RESTART assets and exc
   caches:{open: async()=>cache,match: async()=> 'offline-shell'}
  });
  return new Promise(resolve=>handlers.install({waitUntil:resolve})).then(async ()=>{
-  assert(captures.includes(scope+'index.html'));
+  assert(captures.includes(scope));
+  assert(!captures.includes(scope+'index.html'));
   const portraits = [...read('index.html').matchAll(/assets\/brand\/restart-\d+\.webp/g)];
   assert.equal(new Set(portraits.map(match=>match[0])).size,2);
   for (const [portrait] of portraits) {
@@ -83,6 +84,9 @@ test('Manifest and worker use the app scope, use existing RESTART assets and exc
   assert(captures.every(url=>url.startsWith(scope)||url.startsWith('https://example.test/yoga-platform/assets/')));
   let response;
   handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:scope},respondWith:value=>{response=value;}});
+  assert.equal(await response,'offline-shell');
+  response = undefined;
+  handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:scope+'index.html'},respondWith:value=>{response=value;}});
   assert.equal(await response,'offline-shell');
   for (const external of ['../about.html','../releases/week/content.js','../week-one.html']) {
    handlers.fetch({request:{method:'GET',headers:new Headers(),mode:'navigate',url:new URL(external,scope).href},respondWith:()=>assert.fail(external)});
