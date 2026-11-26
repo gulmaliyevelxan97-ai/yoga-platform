@@ -9,6 +9,13 @@ const copy = {
  empty:['Нет заявок на рассмотрении.','Baxılmalı müraciət yoxdur.','There are no pending applications.'],
  participants:['Одобренные заявки','Təsdiqlənmiş müraciətlər','Approved applications'],
  nameSearch:['Поиск по имени','Ada görə axtarış','Search by name'],
+ interactions:['Взаимодействия','Sizinlə əlaqə','Interactions'],
+ interactionLoading:['Загружаем сведения…','Məlumat yüklənir…','Loading summary…'],
+ interactionUnavailable:['Сведения недоступны.','Məlumat əlçatan deyil.','Summary unavailable.'],
+ sharedResponses:['Переданные ответы на анкеты','Paylaşılmış anket cavabları','Shared form responses'],
+ submittedTasks:['Задания на проверке','Yoxlamada olan tapşırıqlar','Assignments awaiting review'],
+ reviewedTasks:['Проверенные задания','Yoxlanılmış tapşırıqlar','Reviewed assignments'],
+ directMessages:['Сообщения в вашем диалоге','Sizin dialoqunuzdakı mesajlar','Messages in your conversation'],
  approvedOn:['Дата одобрения','Təsdiq tarixi','Approved on'],
  noParticipants:['Одобренных заявок пока нет.','Hələ təsdiqlənmiş müraciət yoxdur.','No applications have been approved yet.'],
  noMatches:['Совпадений нет.','Uyğun nəticə yoxdur.','No matching names.'],
@@ -44,7 +51,7 @@ export async function loadMentorAdmissions(client, user, {search='', group='', p
  const select=(fields,status)=>client.from('restart_retreat_admissions')
   .select(fields+',restart_retreat_cohorts(title)').in('cohort_id',cohorts).eq('status',status);
  const selectedGroup=cohorts.includes(group)?group:'';
- let approvedQuery=select('full_name,approved_at','approved');
+ let approvedQuery=select('id,cohort_id,full_name,approved_at','approved');
  if (selectedGroup) approvedQuery=approvedQuery.eq('cohort_id',selectedGroup);
  const name=search.trim().slice(0,160);
  // PostgREST encodes the filter value as one query parameter. Escape PostgreSQL regex metacharacters.
@@ -55,6 +62,33 @@ export async function loadMentorAdmissions(client, user, {search='', group='', p
   rows(approvedQuery.order('approved_at',{ascending:false}).order('id').range(start,start+approvedPageSize))
  ]);
  return {pending,approved:approved.slice(0,approvedPageSize),hasNext:approved.length>approvedPageSize,memberships,selectedGroup};
+}
+
+async function countRows(query) {
+ const {count,error}=await query;
+ if (error || !Number.isSafeInteger(count) || count<0) throw error ?? new Error('Count unavailable');
+ return count;
+}
+
+export async function readParticipantInteractions(client,user,admission) {
+ if (!user?.id || user.is_anonymous || !uuid.test(admission?.id ?? '') || !uuid.test(admission?.cohort_id ?? '')) return null;
+ const cohort=admission.cohort_id;
+ const mentor=await rows(client.from('restart_retreat_members').select('cohort_id')
+  .eq('cohort_id',cohort).eq('user_id',user.id).eq('role','mentor').maybeSingle());
+ if (!mentor) return null;
+ const approved=await rows(client.from('restart_retreat_admissions').select('applicant_id')
+  .eq('id',admission.id).eq('cohort_id',cohort).eq('status','approved').maybeSingle());
+ if (!uuid.test(approved?.applicant_id ?? '')) return null;
+ const participant=approved.applicant_id;
+ const count=table=>client.from(table).select('id',{count:'exact',head:true}).eq('cohort_id',cohort);
+ const submissions=status=>count('restart_retreat_assignment_submissions').eq('participant_id',participant).eq('status',status);
+ const messages=(sender,recipient)=>count('restart_retreat_messages').eq('sender_id',sender).eq('recipient_id',recipient);
+ const [sharedResponses,submittedTasks,reviewedTasks,sent,received]=await Promise.all([
+  countRows(count('restart_retreat_responses').eq('participant_id',participant).eq('share_with_mentor',true)),
+  countRows(submissions('submitted')),countRows(submissions('reviewed')),
+  countRows(messages(user.id,participant)),countRows(messages(participant,user.id))
+ ]);
+ return {sharedResponses,submittedTasks,reviewedTasks,directMessages:sent+received};
 }
 
 export async function decideRetreatAdmission(client,id,action) {
@@ -73,7 +107,9 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
  const approvedList=()=>{
   const participants=queue.approved;
   return participants.length?'<ul class="history">'+participants.map(row=>'<li><div><strong>'+
-   esc(row.full_name)+'</strong><small>'+esc(row.restart_retreat_cohorts?.title)+'</small></div><small>'+
+   esc(row.full_name)+'</strong><small>'+esc(row.restart_retreat_cohorts?.title)+'</small>'+
+   '<button type="button" data-admission-action="interactions" data-request="'+esc(row.id)+'">'+t('interactions')+'</button>'+
+   '<div data-participant-interactions aria-live="polite"></div></div><small>'+
    t('approvedOn')+': '+esc(date.format(new Date(row.approved_at)))+'</small></li>').join('')+'</ul>':
    '<p>'+t(search || group ? 'noMatches':'noParticipants')+'</p>';
  };
@@ -135,6 +171,27 @@ export async function retreatMentorAdmissions({outlet,client,user,lang,esc,curre
    page=action==='previous'?page-1:action==='next'?page+1:0;
    busy=true;
    try { await load(); } finally { busy=false; }
+   return;
+  }
+  if (action==='interactions') {
+   const admission=queue?.approved.find(row=>row.id===id);
+   const summary=button.closest('li')?.querySelector('[data-participant-interactions]');
+   if (!admission || !summary) return;
+   busy=true;
+   button.disabled=true;
+   summary.textContent=t('interactionLoading');
+   try {
+    const counts=await readParticipantInteractions(client,user,admission);
+    if (!current()) return;
+    if (counts) summary.innerHTML='<dl>'+Object.entries(counts).map(([key,count])=>
+     '<dt>'+t(key)+'</dt><dd>'+count+'</dd>').join('')+'</dl>';
+    else summary.textContent=t('interactionUnavailable');
+   } catch {
+    if (current()) summary.textContent=t('interactionUnavailable');
+   } finally {
+    busy=false;
+    button.disabled=false;
+   }
    return;
   }
   if (!queue?.pending.some(row=>row.id===id)) return;

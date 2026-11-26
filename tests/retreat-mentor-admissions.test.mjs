@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {decideRetreatAdmission,loadMentorAdmissions,retreatMentorAdmissions} from '../app/retreat-mentor-admissions.mjs';
+import {decideRetreatAdmission,loadMentorAdmissions,retreatMentorAdmissions,readParticipantInteractions} from '../app/retreat-mentor-admissions.mjs';
 
 const request = {id:'7c59a9af-f851-4a46-b8a6-e20f69a86aa8',full_name:'<Test Name>',
  submitted_at:'2026-11-26T13:00:00Z',restart_retreat_cohorts:{title:'Test retreat'}};
 
-const approved = {full_name:'İlkin Test',approved_at:'2026-11-26T13:00:00Z',restart_retreat_cohorts:{title:'Test retreat'}};
+const approved = {id:'0a8e8be9-df9a-45cb-b418-263191086888',cohort_id:'f1f12c0e-9cd3-4b05-8eaf-7365c6c4c272',full_name:'İlkin Test',approved_at:'2026-11-26T13:00:00Z',restart_retreat_cohorts:{title:'Test retreat'}};
 
 function fixture(mentor=true) {
  const calls = [];
@@ -86,4 +86,46 @@ test('Approved filtering escapes regex, selects a verified group and uses a boun
  const queue=await loadMentorAdmissions(other.client,{id:'mentor'},{group:'unrelated',page:0});
  assert.equal(queue.selectedGroup,'');
  assert.equal(other.calls.some(call=>call[0]==='eq' && call[1]==='cohort_id'),false);
+});
+
+test('Participant summaries query only counts for verified cohort, shared responses and the mentor’s own conversation',async()=>{
+ const participant='170ad418-d61f-4eff-978a-8bee3a4cbc9e';
+ const mentor='f06a95df-744d-4b9f-9b27-dd58dafc7220';
+ const calls=[];
+ let authorized=true;
+
+ const client={from(table) {
+  const call={table,filters:[]};
+  calls.push(call);
+  const query={
+   select(fields,options){call.fields=fields;call.options=options;return query;},
+   eq(key,value){call.filters.push([key,value]);return query;},
+   maybeSingle(){return query;},
+   then(resolve){
+    const data=table==='restart_retreat_members' ? (authorized?{cohort_id:approved.cohort_id}:null) :
+     table==='restart_retreat_admissions' ? {applicant_id:participant} : null;
+    resolve({data,count:table==='restart_retreat_messages'?2:1,error:null});
+   }
+  };
+  return query;
+ }};
+ assert.deepEqual(await readParticipantInteractions(client,{id:mentor},approved),
+  {sharedResponses:1,submittedTasks:1,reviewedTasks:1,directMessages:4});
+ const [membership,application,forms,submitted,reviewed,sent,received]=calls;
+ assert.deepEqual(membership.filters,[['cohort_id',approved.cohort_id],['user_id',mentor],['role','mentor']]);
+ assert.deepEqual(application.filters,[['id',approved.id],['cohort_id',approved.cohort_id],['status','approved']]);
+ for (const call of [forms,submitted,reviewed,sent,received]) {
+  assert.equal(call.fields,'id');
+  assert.deepEqual(call.options,{count:'exact',head:true});
+  assert.deepEqual(call.filters[0],['cohort_id',approved.cohort_id]);
+ }
+ assert.deepEqual(forms.filters.slice(1),[['participant_id',participant],['share_with_mentor',true]]);
+ assert.deepEqual(submitted.filters.slice(1),[['participant_id',participant],['status','submitted']]);
+ assert.deepEqual(reviewed.filters.slice(1),[['participant_id',participant],['status','reviewed']]);
+ assert.deepEqual(sent.filters.slice(1),[['sender_id',mentor],['recipient_id',participant]]);
+ assert.deepEqual(received.filters.slice(1),[['sender_id',participant],['recipient_id',mentor]]);
+ authorized=false;
+ calls.length=0;
+ assert.equal(await readParticipantInteractions(client,{id:mentor},approved),null);
+ assert.deepEqual(calls.map(row=>row.table),['restart_retreat_members']);
 });
