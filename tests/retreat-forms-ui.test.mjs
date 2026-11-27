@@ -127,3 +127,11 @@ test('Mentor preview validates draft rows and escapes input without publishing',
   '<h5>&lt;title></h5><ol><li>First</li><li>&lt;script></li></ol>');
  assert.throws(()=>retreatFormPreview({title:'Draft',questions:''},esc),/invalid/);
 });
+
+test('Copying a published form omits identity, publication and response data',async()=>{
+ const {retreatFormDuplicate}=await import('../app/retreat-forms.mjs');
+ assert.deepEqual(retreatFormDuplicate({id:'original',cohort_id:'source',published:true,
+  title:'Тест',questions:[{text:' Вопрос '}],answers:{q1:'Private'}}),
+  {title:'Тест',questions:[{text:'Вопрос'}]});
+ assert.throws(()=>retreatFormDuplicate({title:'Invalid',questions:[{text:'Question',type:'unknown'}]}),/invalid/);
+});
