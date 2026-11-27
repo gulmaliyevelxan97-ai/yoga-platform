@@ -18,6 +18,8 @@ const copy = {
  immerse:['Погружение','Dərinləşmə','Immersion'],
  awareness:['Осознание','Dərk etmə','Awareness'],
  integration:['Интеграция','Gündəlik həyata dönüş','Integration'],
+ journal:['Мой дневник','Gündəliyim','My journal'],
+ nextStep:['Продолжить путь','Yola davam et','Continue the journey'],
  letter:['Письмо себе','Özümə məktub','Letter to myself'],
  overview:['Обзор','İcmal','Overview'],
  preparation:['Подготовка','Hazırlıq','Preparation'],
@@ -93,7 +95,7 @@ export function renderRetreatExperience(lang,{section='',signedIn=false,intentio
   intention:()=>signedIn?panel('intention',link('retreat-forms','intention')):intention,
   mentor:()=>panel('mentor',signedIn?'<div class="actions">'+link('retreat-tasks','tasks')+link('retreat-connect','connect')+'</div>':restricted),
   letter:()=>letter,
-  after:()=>panel('after','<p>'+t('afterIntro')+'</p>'+link('retreat/intention','myIntention')+link('retreat/letter','letter')+reflection,
+  after:()=>panel('after','<p>'+t('afterIntro')+'</p>'+link('retreat/intention','myIntention')+link('retreat/letter','letter')+reflection+'<div class="retreat-next-step"><h3>'+t('nextStep')+'</h3><div class="actions">'+link('journal','journal')+link('practice/meditation','meditate')+'</div></div>'+
     (signedIn?'<div class="actions">'+link('retreat-forms','intention')+link('retreat-connect','connect')+'</div>':''))
  };
  return '<a class="link" href="#today">'+t('back')+'</a><header class="retreat-feature retreat-hero">'+

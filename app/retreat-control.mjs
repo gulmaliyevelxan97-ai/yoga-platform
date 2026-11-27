@@ -6,7 +6,8 @@ const sections = {
  programme: ['Программа','Proqram','Programme'],
  forms: ['Анкеты','Anketlər','Forms'],
  tasks: ['Задания','Tapşırıqlar','Assignments'],
- messages: ['Сообщения и объявления','Mesajlar və elanlar','Messages and announcements']
+ messages: ['Сообщения и объявления','Mesajlar və elanlar','Messages and announcements'],
+ analytics: ['Сводка','İcmal','Overview']
 };
 const copy = {
  title: ['Управление ретритами','Retritlərin idarə edilməsi','Retreat Control Center'],
