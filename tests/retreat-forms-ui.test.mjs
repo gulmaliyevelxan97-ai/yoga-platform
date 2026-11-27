@@ -119,3 +119,11 @@ test('Participant can skip sensitive questions before submitting an answer',asyn
  assert.match(outlet.innerHTML,/<textarea name="q1" maxlength="400">/);
  assert.doesNotMatch(outlet.innerHTML,/textarea[^>]*required/);
 });
+
+test('Mentor preview validates draft rows and escapes input without publishing',async()=>{
+ const {retreatFormPreview}=await import('../app/retreat-forms.mjs');
+ const esc=value=>value.replaceAll('<','&lt;');
+ assert.equal(retreatFormPreview({title:'<title>',questions:'First\n<script>'},esc),
+  '<h5>&lt;title></h5><ol><li>First</li><li>&lt;script></li></ol>');
+ assert.throws(()=>retreatFormPreview({title:'Draft',questions:''},esc),/invalid/);
+});

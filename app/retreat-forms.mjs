@@ -13,6 +13,8 @@ const labels = {
  draft:['Черновик','Qaralama','Draft'],
  published:['Опубликована','Dərc olunub','Published'],
  save:['Сохранить черновик','Qaralamanı saxla','Save draft'],
+ preview:['Предпросмотр анкеты','Anketin önizləməsi','Preview form'],
+ previewHint:['Так участники увидят вопросы.','İştirakçılar sualları belə görəcəklər.','Participants will see the questions like this.'],
  publish:['Опубликовать','Dərc et','Publish'],
  publishPrompt:['Опубликовать анкету для участников группы? После публикации вопросы фиксируются.','Anket qrup iştirakçılarına göstərilsin? Dərc edildikdən sonra suallar dəyişdirilə bilməz.','Publish the form for this cohort? Questions will be fixed after publication.'],
  submit:['Сохранить ответ только для себя','Cavabı yalnız özün üçün saxla','Save answer for yourself'],
@@ -54,6 +56,11 @@ export function retreatFormDraft(values,publish=false) {
  if (!lengthWithin(title,160) || rows.length>maxQuestions || (publish && !rows.length) ||
      rows.some(text=>!lengthWithin(text,maxQuestionLength))) throw new Error('invalid');
  return {title,questions:rows.map(text=>({text}))};
+}
+
+export function retreatFormPreview(values,esc) {
+ const draft=retreatFormDraft(values,true);
+ return '<h5>'+esc(draft.title)+'</h5><ol>'+draft.questions.map(({text})=>'<li>'+esc(text)+'</li>').join('')+'</ol>';
 }
 
 export function retreatFormAnswers(questions,values) {
@@ -101,9 +108,9 @@ export async function retreatFormsPage({outlet,client,user,lang,esc,current,conf
    '<h4>'+esc(formTitle||t('newForm'))+'</h4><p>'+t('draft')+'</p>'+
    '<label>'+t('name')+'<input name="title" required maxlength="160" value="'+esc(formTitle)+'"></label>'+
    '<label>'+t('questions')+'<textarea name="questions" maxlength="2900">\n'+esc(prompts.map(row=>row.text).join('\n'))+'</textarea></label>'+
-   '<div class="actions"><button type="submit" value="save">'+t('save')+'</button>'+
+   '<div class="actions"><button type="button" data-retreat-form-preview aria-expanded="false">'+t('preview')+'</button><button type="submit" value="save">'+t('save')+'</button>'+
    (form?'<button type="submit" value="publish">'+t('publish')+'</button>':'')+
-   '</div><p role="status" data-retreat-form-message></p></form>';
+   '</div><div data-retreat-preview-body hidden></div><p role="status" data-retreat-form-message></p></form>';
  }
 
  function answers(questions,response) {
@@ -162,7 +169,21 @@ export async function retreatFormsPage({outlet,client,user,lang,esc,current,conf
  }
 
  outlet.onclick=async event=>{
-  if (busy || !current() || !event.target.closest('[data-retreat-form-refresh]')) return;
+  if (busy || !current()) return;
+  const preview=event.target.closest('[data-retreat-form-preview]');
+  if (preview) {
+   const target=preview.form.querySelector('[data-retreat-preview-body]');
+   if (!target.hidden) {target.hidden=true;preview.setAttribute('aria-expanded','false');return;}
+   try {
+    target.innerHTML='<p>'+t('previewHint')+'</p>'+retreatFormPreview(Object.fromEntries(new FormData(preview.form)),esc);
+   } catch {
+    target.textContent=t('invalid');
+   }
+   target.hidden=false;
+   preview.setAttribute('aria-expanded','true');
+   return;
+  }
+  if (!event.target.closest('[data-retreat-form-refresh]')) return;
   busy=true;
   try {await load();} finally {busy=false;}
  };
