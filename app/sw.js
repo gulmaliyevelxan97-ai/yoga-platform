@@ -1,5 +1,5 @@
 /* The app has an independent scope and cache. Bump VERSION when shell assets change. */
-const VERSION = '2.3.32';
+const VERSION = '2.3.33';
 const base = new URL(self.registration.scope);
 const prefix = 'restart-app:' + base.pathname + ':';
 const name = prefix + VERSION;
@@ -7,7 +7,7 @@ const name = prefix + VERSION;
 const shell = base.href;
 const indexPath = new URL('./index.html',base).pathname;
 const resources = new Set([
- './swipe-navigation.mjs','./retreat-connect.mjs','./retreat-tasks.mjs','./retreat-mentor-tasks.mjs','./retreat-forms.mjs','./retreat-experience.mjs','./retreat-letter.mjs','./retreat-control.mjs','./retreat-analytics.mjs','./retreat-preparation.mjs','./retreat-event-details.mjs','./retreat-welcome.mjs','./retreat-intention.mjs','./retreat-opening.mjs','./retreat-mentor-admissions.mjs','./retreat-admission-request.mjs','./retreat-programme-editor.mjs','./retreat-programme.mjs','./practice-guide.mjs','./week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
+ './swipe-navigation.mjs','./retreat-connect.mjs','./retreat-tasks.mjs','./retreat-mentor-tasks.mjs','./retreat-forms.mjs','./retreat-experience.mjs','./retreat-letter.mjs','./retreat-control.mjs','./retreat-analytics.mjs','./retreat-preparation.mjs','./retreat-event-details.mjs','./retreat-welcome.mjs','./retreat-intention.mjs','./retreat-opening.mjs','./retreat-official.mjs','./retreat-mentor-admissions.mjs','./retreat-admission-request.mjs','./retreat-programme-editor.mjs','./retreat-programme.mjs','./practice-guide.mjs','./week.css','./week.mjs','./notification-plan.mjs','./premium.css','./theme.js','./academy-programs.mjs','./booking-calendar.mjs','./personal-plan.mjs','./progress-view.mjs','./school.mjs','./school-notices.mjs','./cloud-config.mjs','./cloud-auth.mjs','./cloud-copy.mjs','./cloud-data.mjs','./','./style.css','./ui.mjs','./content.mjs','./state.mjs','./manifest.webmanifest',
  '../assets/pwa/restart-192.png','../assets/pwa/restart-512.png',
  '../assets/pwa/restart-maskable.png','../assets/pwa/restart-apple.png'
 ].map(path=>new URL(path,base).href));

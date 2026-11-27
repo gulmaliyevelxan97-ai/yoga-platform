@@ -44,3 +44,10 @@ test('Programme editor queries items only when assigned mentor cohorts exist',as
  assert.deepEqual(await readMentorProgramme(client,{id:'mentor'}),{memberships,items:[]});
  assert.ok(calls.some(call=>Array.isArray(call) && call[0]==='in' && call[2][0]==='assigned'));
 });
+
+test('Suggested end time respects Baku calendar rollover',async()=>{
+ const {suggestedProgrammeEnd}=await import('../app/retreat-programme-editor.mjs');
+ assert.equal(suggestedProgrammeEnd('2026-11-28T23:45'),'2026-11-29T00:15');
+ assert.equal(suggestedProgrammeEnd(''),'');
+ assert.equal(suggestedProgrammeEnd('invalid'),'');
+});

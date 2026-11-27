@@ -49,12 +49,21 @@ export function writeRetreatLetter(value,storage) {
  } catch {return false;}
 }
 
-export function retreatLetterReady(revisit,now=new Date()) {
- const valid=dateValue(revisit);
- if (!valid) return false;
+function bakuDate(now) {
  const date=new Intl.DateTimeFormat('en',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:schoolTimeZone});
  const parts=Object.fromEntries(date.formatToParts(now).map(({type,value})=>[type,value]));
- return valid<=parts.year+'-'+parts.month+'-'+parts.day;
+ return parts.year+'-'+parts.month+'-'+parts.day;
+}
+
+export function futureLetterDate(now=new Date()) {
+ const day=new Date(bakuDate(now)+'T00:00:00Z');
+ day.setUTCDate(day.getUTCDate()+30);
+ return day.toISOString().slice(0,10);
+}
+
+export function retreatLetterReady(revisit,now=new Date()) {
+ const valid=dateValue(revisit);
+ return Boolean(valid && valid<=bakuDate(now));
 }
 
 const index=lang=>Math.max(0,languages.indexOf(lang));
@@ -67,7 +76,7 @@ export function renderRetreatLetter(lang,esc,storage,now=new Date()) {
   '</p><p data-letter-due'+(due?'':' hidden')+'>'+t('due')+'</p><details><summary data-letter-summary>'+
   t(current.text?'open':'write')+'</summary><form data-letter-form><label>'+t('text')+
   '<textarea name="text" rows="6" maxlength="'+limit+'" required>'+esc(current.text)+'</textarea></label>'+
-  '<label>'+t('revisit')+'<input type="date" name="revisit" value="'+esc(current.revisit)+'"></label>'+
+  '<label>'+t('revisit')+'<input type="date" name="revisit" value="'+esc(current.text?current.revisit:futureLetterDate(now))+'"></label>'+
   '<div class="actions"><button type="submit">'+t('save')+'</button>'+
   '<button type="button" data-letter-remove'+(current.text?'':' hidden')+'>'+t('remove')+'</button></div>'+
   '</form></details><p role="status" data-letter-status></p></section>';

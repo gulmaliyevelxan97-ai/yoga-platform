@@ -41,3 +41,9 @@ test('Saved letter starts folded, restores text safely, and displays labels in a
   assert.doesNotMatch(html,/https?:\/\//);
  }
 });
+
+test('A new letter suggests thirty calendar days from the current Baku date',async()=>{
+ const {futureLetterDate}=await import('../app/retreat-letter.mjs');
+ assert.equal(futureLetterDate(new Date('2026-11-28T20:00:00Z')),'2026-12-29');
+ assert.equal(futureLetterDate(new Date('2026-11-28T19:59:59Z')),'2026-12-28');
+});
