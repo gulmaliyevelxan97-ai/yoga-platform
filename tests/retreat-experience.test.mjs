@@ -13,7 +13,7 @@ test('Guest retreat sections provide useful preparation without cloud links or i
    assert.match(overview,new RegExp('href="#retreat/'+section+'"'));
    const view=renderRetreatExperience(lang,{section,intention:'<form id="retreat-intention-form"></form>'});
    assert.match(view,new RegExp('href="#retreat/'+section+'" aria-current="page"'));
-   assert.doesNotMatch(view,/href="#retreat-(programme|forms|tasks|connect)"|<time[ >]/);
+   assert.doesNotMatch(view,/href="#retreat-(programme|forms|tasks|connect)"/);
    if (section==='preparation') assert.match(view,/href="#practice\/breathing".*href="#practice\/meditation"/);
    if (section==='intention') assert.match(view,/id="retreat-intention-form"/);
   }

@@ -34,7 +34,7 @@ for (const appendFlowId of [false,true]) {
   globalThis.history={replaceState:(_a,_b,path)=>{globalThis.location.href=new URL(path,url).href;}};
   try {
    const guest=setup();
-   assert.equal(await guest.action('register',{email:user.email,password:'fixture-pass-one',firstName:'Test',lastName:'Participant'}),true);
+   assert.equal(await guest.action('register',{email:user.email,password:'fixture-pass-one',firstName:'Test',lastName:'Participant',passwordConfirmation:'fixture-pass-one',registrationConsent:'yes'}),true);
    assert.equal(guest.user,null);
    for(const kind of ['confirmation','recovery']){
     if(kind==='recovery') assert.equal(await guest.action('reset',{email:user.email}),true);

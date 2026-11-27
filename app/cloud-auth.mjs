@@ -15,6 +15,26 @@ export function registrationName(fields) {
  return fullName.length<=160 ? fullName : null;
 }
 
+export const registrationGenderOptions = Object.freeze(['woman','man','another','prefer_not_to_say']);
+
+export function registrationDetails(fields) {
+ const fullName=registrationName(fields);
+ if (!fullName) return {notice:'cloudRegistrationName'};
+ const password=fields.password;
+ if (typeof password!=='string' || Array.from(password).length<12 || new TextEncoder().encode(password).length>72)
+  return {notice:'cloudRegistrationPassword'};
+ if (password!==fields.passwordConfirmation) return {notice:'cloudPasswordMismatch'};
+ if (fields.registrationConsent!=='yes') return {notice:'cloudRegistrationConsentRequired'};
+ const gender=fields.gender;
+ if (gender && !registrationGenderOptions.includes(gender)) return {notice:'cloudRegistrationPreferenceInvalid'};
+ const variant=fields.contentVariant || 'universal';
+ if (!['universal','woman','man'].includes(variant)) return {notice:'cloudRegistrationPreferenceInvalid'};
+ const data={full_name:fullName,registration_data_consent_version:1};
+ if (variant!=='universal') data.retreat_content_variant=variant;
+ if (gender && gender!=='prefer_not_to_say') data.gender_preference=gender;
+ return {data};
+}
+
 function authNotice(error, kind) {
  if (error?.status === 429) return 'cloudRateLimited';
  if (kind === 'login' && error?.code === 'invalid_credentials') return 'cloudLoginInvalid';
@@ -127,10 +147,13 @@ export function cloudAccount(client, onChange, guestLocale) {
   try {
    let response;
    if (kind==='register') {
-    const fullName = registrationName(fields);
-    if (!fullName) throw new Error('Invalid registration name');
+    const registration=registrationDetails(fields);
+    if (registration.notice) {
+     notice=registration.notice;
+     return false;
+    }
     response = await auth.signUp({email:fields.email,password:fields.password,
-     options:{emailRedirectTo:redirectTo,data:{full_name:fullName}}});
+     options:{emailRedirectTo:redirectTo,data:registration.data}});
    } else if (kind==='reset') {
     response = await auth.resetPasswordForEmail(fields.email,{redirectTo});
    } else if (kind==='login') {

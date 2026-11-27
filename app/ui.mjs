@@ -1,3 +1,4 @@
+import {bindRetreatOfficial} from './retreat-official.mjs';
 import {bindRetreatOpening} from './retreat-opening.mjs';
 import {retreatAnalyticsPage} from './retreat-analytics.mjs';
 import {renderRetreatLetter,bindRetreatLetter} from './retreat-letter.mjs';
@@ -139,7 +140,9 @@ let applyingUpdate = false;
 
 function route() {
  const [name, id] = location.hash.slice(1).split('/');
- if (cloud && (name === 'account' || cloud.recovery)) return {name:'account'};
+ if (cloud && (name === 'account' || cloud.recovery)) return {
+  name:'account',id:!cloud.recovery && id==='register' ? id:undefined
+ };
  if (cloudConfig && ['academy','classes','staff','retreat-mentor','retreat-programme','retreat-request','retreat-forms','retreat-tasks','retreat-connect'].includes(name)) return {name,id};
  if (name === 'practice' && itemFor(id)) return {name, id};
  if (name === 'path' || name === 'journal') {
@@ -374,18 +377,33 @@ function importCounts(counts) {
  return t('cloudCounts').replace('{j}',counts.journal).replace('{p}',counts.practices);
 }
 
-function account() {
+function account(section) {
  const local = repo.read();
  const email = `<label>${t('cloudEmail')}<input name="email" type="email" autocomplete="email" maxlength="254" required></label>`;
  const registrationNames = `<label>${t('cloudFirstName')}<input name="firstName" autocomplete="given-name" maxlength="80" required></label>
   <label>${t('cloudLastName')}<input name="lastName" autocomplete="family-name" maxlength="80" required></label>`;
  const password = kind => `<label>${t('cloudPassword')}<input name="password" type="password"
    autocomplete="${kind==='login'?'current-password':'new-password'}" ${kind==='login'?'':'minlength="12"'} maxlength="72" required></label>`;
+ const registrationOptions = `<label>${t('cloudPasswordConfirmation')}<input name="passwordConfirmation" type="password"
+  autocomplete="new-password" minlength="12" maxlength="72" required></label>
+  <label>${t('cloudRegistrationGender')}<select name="gender">
+   <option value="">${t('cloudGenderUnselected')}</option><option value="woman">${t('cloudGenderWoman')}</option>
+   <option value="man">${t('cloudGenderMan')}</option><option value="another">${t('cloudGenderAnother')}</option>
+   <option value="prefer_not_to_say">${t('cloudGenderPreferNotToSay')}</option>
+  </select></label>
+  <label>${t('cloudContentVariant')}<select name="contentVariant">
+   <option value="universal">${t('cloudContentUniversal')}</option>
+   <option value="woman">${t('cloudContentWoman')}</option><option value="man">${t('cloudContentMan')}</option>
+  </select></label>
+  <label class="check"><input name="registrationConsent" type="checkbox" required value="yes">${t('cloudRegistrationConsent')}</label>`;
  const form = (kind,label,fields) => `<form class="panel" data-cloud-auth="${kind}">
   <h2>${t(label)}</h2>${fields}<button class="cta">${t(label)}</button></form>`;
  if (cloud.recovery) return heading('account')+form('password','cloudNewPassword',password('password'));
+ if (!cloud.user && section==='register') return heading('account')+
+  form('register','cloudRegister',registrationNames+email+password('register')+registrationOptions)+
+  '<a class="button" href="#account">'+t('cloudLogin')+'</a>';
  if (!cloud.user) return heading('account')+form('login','cloudLogin',email+password('login'))+
-  form('register','cloudRegister',registrationNames+email+password('register'))+form('reset','cloudReset',email);
+  '<p><a class="button" href="#account/register">'+t('cloudRegister')+'</a></p>'+form('reset','cloudReset',email);
  return heading('account')+`<div class="panel"><p>${esc(cloud.user.email)}</p><p>${t('cloudNetworkNote')}</p>
   <div class="actions"><button data-action="cloud-refresh">${t('cloudSync')}</button>
   <button data-action="cloud-logout">${t('cloudLogout')}</button></div></div>
@@ -565,6 +583,7 @@ function render() {
  bindRetreatPreparation(screen,lang());
  bindRetreatLetter(screen,lang());
  bindRetreatOpening(screen);
+ bindRetreatOfficial(screen,lang());
  const retreatOutlet = document.getElementById('retreat-mentor-outlet');
  if (retreatOutlet) {
   const user = cloud?.user;

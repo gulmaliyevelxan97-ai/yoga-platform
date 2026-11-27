@@ -366,3 +366,9 @@ html{scroll-padding-block-end:var(--nav-clearance)}
 .retreat-metrics dd {margin:0; font-variant-numeric:tabular-nums; font-weight:700;}
 .retreat-next-step {border-block-start:1px solid #a98b5366; margin-block-start:1rem; padding-block-start:1rem;}
 .retreat-next-step h3 {margin-block-start:0;}
+
+.retreat-date-fields label,.retreat-date-fields input {min-width:0;}
+.retreat-date-fields input {max-width:100%; width:100%; box-sizing:border-box;}
+@media (max-width: 480px) {
+ .retreat-date-fields {grid-template-columns:minmax(0,1fr);}
+}

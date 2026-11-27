@@ -10,6 +10,7 @@ const copy = {
  name:['Название','Ad','Title'],
  description:['Описание','Təsvir','Description'],
  start:['Начало (Баку)','Başlanğıc (Bakı)','Start (Baku)'],
+ suggest:['Предложить 30 минут','30 dəqiqə təklif et','Suggest 30 minutes'],
  end:['Окончание (Баку)','Son (Bakı)','End (Baku)'],
  save:['Сохранить','Yadda saxla','Save'],
  publish:['Опубликовать','Dərc et','Publish'],
@@ -42,6 +43,15 @@ export async function readMentorProgramme(client,user) {
 }
 
 const timeValue = instant => instant ? classTimeInput(instant) : '';
+
+export function suggestedProgrammeEnd(start) {
+ if (!start) return '';
+ try {
+  return classTimeInput(new Date(Date.parse(classTimeInstant(start))+30*60000).toISOString());
+ } catch {
+  return '';
+ }
+}
 
 export function programmeSaveArgs(data, cohort, item) {
  const date = (value,original) => !value ? null :
@@ -83,9 +93,9 @@ export async function mentorProgrammeEditor({outlet,client,user,lang,esc,current
    '<h3>'+esc(item?.title ?? t('create'))+'</h3>'+(item?'<p>'+t(item.published?'published':'draft')+'</p>':'')+
    '<label>'+t('name')+'<input name="title" required maxlength="160" value="'+esc(item?.title)+'"'+readonly+'></label>'+
    '<label>'+t('description')+'<textarea name="description" maxlength="4000"'+readonly+'>'+esc(item?.description)+'</textarea></label>'+
-   '<div class="field-row"><label>'+t('start')+'<input name="start" type="datetime-local" value="'+esc(timeValue(item?.starts_at))+'"></label>'+
+   '<div class="field-row retreat-date-fields"><label>'+t('start')+'<input name="start" type="datetime-local" value="'+esc(timeValue(item?.starts_at))+'"></label>'+
    '<label>'+t('end')+'<input name="end" type="datetime-local" value="'+esc(timeValue(item?.ends_at))+'"></label></div>'+
-   '<div class="actions"><button type="submit" value="save">'+t('save')+'</button>'+
+   '<div class="actions"><button type="button" data-programme-suggest>'+t('suggest')+'</button><button type="submit" value="save">'+t('save')+'</button>'+
    (item&&!item.published?'<button type="submit" value="publish">'+t('publish')+'</button>':'')+
    '</div><p role="status" data-programme-message></p></form>';
  }
@@ -110,7 +120,16 @@ export async function mentorProgrammeEditor({outlet,client,user,lang,esc,current
  }
 
  outlet.onclick=async event=>{
-  if (!event.target.closest('[data-programme-refresh]') || busy || !current()) return;
+  if (busy || !current()) return;
+  const suggestion=event.target.closest('[data-programme-suggest]');
+  if (suggestion) {
+   const form=suggestion.form;
+   const end=suggestedProgrammeEnd(form.elements.start.value);
+   if (end) form.elements.end.value=end;
+   else form.elements.start.focus();
+   return;
+  }
+  if (!event.target.closest('[data-programme-refresh]')) return;
   busy=true;
   try {await load();} finally {busy=false;}
  };

@@ -1,3 +1,4 @@
+import {renderRetreatOfficial} from './retreat-official.mjs';
 import {languages} from './state.mjs';
 
 import {renderRetreatOpening} from './retreat-opening.mjs';
@@ -109,8 +110,8 @@ export function renderRetreatExperience(lang,{section='',signedIn=false,intentio
   '<details class="retreat-white"><summary>WHITE EXPERIENCE</summary><p>'+t('white')+'</p></details>'+
   '<details class="retreat-black"><summary>BLACK EXPERIENCE</summary><p>'+t('black')+'</p></details></div>');
  const content={
-  '':()=>panel('welcome','<p>'+t('philosophy')+'</p>'+link('retreat/programme','programme'))+ (signedIn?'<div id="retreat-event-details-outlet"></div>':'') +journey+concept,
-  programme:()=>panel('programme',signedIn?link('retreat-programme','programme'):pending)+concept,
+  '':()=>panel('welcome','<p>'+t('philosophy')+'</p>'+link('retreat/programme','programme'))+ (signedIn?'<div id="retreat-event-details-outlet"></div>':'') +renderRetreatOfficial(lang,{summaryOnly:true})+journey+concept,
+  programme:()=>renderRetreatOfficial(lang)+(signedIn?panel('programme',link('retreat-programme','programme')):'')+concept,
   opening:()=>renderRetreatOpening(lang),
   preparation:()=>panel('mentorWelcome',welcomeMessage[Math.max(0,languages.indexOf(lang))].map(line=>'<p>'+line+'</p>').join(''))+panel('preparation',(signedIn?'<div id="retreat-event-details-outlet"></div>':
     '<dl class="retreat-logistics">'+['date','location','dress','packing'].map(key=>'<div><dt>'+t(key)+'</dt></div>').join('')+'</dl>'+pending)+preparation)+
