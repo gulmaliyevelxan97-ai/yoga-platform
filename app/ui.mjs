@@ -1,3 +1,4 @@
+import {retreatAnalyticsPage} from './retreat-analytics.mjs';
 import {renderRetreatLetter,bindRetreatLetter} from './retreat-letter.mjs';
 import {retreatControlTitle,retreatControlSection,retreatControlPage} from './retreat-control.mjs';
 import {renderRetreatPreparation,bindRetreatPreparation} from './retreat-preparation.mjs';
@@ -568,7 +569,7 @@ function render() {
     current:()=>sequence===renderSequence && cloud?.user?.id===user.id && !cloud.recovery};
    const pages={events:options=>retreatEventDetailsPage({...options,mentor:true}),
     participants:retreatMentorAdmissions,programme:mentorProgrammeEditor,forms:retreatFormsPage,
-    tasks:retreatMentorTasks,messages:retreatConnectPage};
+    tasks:retreatMentorTasks,messages:retreatConnectPage,analytics:retreatAnalyticsPage};
    retreatControlPage({outlet:retreatOutlet,...context,section:retreatControlSection(current.id),
     mount:(page,outlet)=>pages[page]({outlet,...context})});
   } else retreatOutlet.innerHTML='<a class="button" href="#account">'+t('cloudLogin')+'</a>';
