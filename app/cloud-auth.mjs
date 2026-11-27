@@ -8,6 +8,13 @@ export const createPilotClient = (createClient, config) => createClient(config.u
  auth:{flowType:'pkce',detectSessionInUrl:false,storageKey:'restart.cloud.auth.v1'}
 });
 
+export function registrationName(fields) {
+ const names = [fields.firstName,fields.lastName].map(value=>String(value ?? '').trim());
+ if (names.some(name=>!name || name.length>80 || /[\u0000-\u001f\u007f-\u009f]/u.test(name))) return null;
+ const fullName = names.join(' ');
+ return fullName.length<=160 ? fullName : null;
+}
+
 function authNotice(error, kind) {
  if (error?.status === 429) return 'cloudRateLimited';
  if (kind === 'login' && error?.code === 'invalid_credentials') return 'cloudLoginInvalid';
@@ -120,7 +127,10 @@ export function cloudAccount(client, onChange, guestLocale) {
   try {
    let response;
    if (kind==='register') {
-    response = await auth.signUp({email:fields.email,password:fields.password,options:{emailRedirectTo:redirectTo}});
+    const fullName = registrationName(fields);
+    if (!fullName) throw new Error('Invalid registration name');
+    response = await auth.signUp({email:fields.email,password:fields.password,
+     options:{emailRedirectTo:redirectTo,data:{full_name:fullName}}});
    } else if (kind==='reset') {
     response = await auth.resetPasswordForEmail(fields.email,{redirectTo});
    } else if (kind==='login') {

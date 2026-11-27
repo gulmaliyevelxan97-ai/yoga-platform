@@ -376,13 +376,15 @@ function importCounts(counts) {
 function account() {
  const local = repo.read();
  const email = `<label>${t('cloudEmail')}<input name="email" type="email" autocomplete="email" maxlength="254" required></label>`;
+ const registrationNames = `<label>${t('cloudFirstName')}<input name="firstName" autocomplete="given-name" maxlength="80" required></label>
+  <label>${t('cloudLastName')}<input name="lastName" autocomplete="family-name" maxlength="80" required></label>`;
  const password = kind => `<label>${t('cloudPassword')}<input name="password" type="password"
    autocomplete="${kind==='login'?'current-password':'new-password'}" ${kind==='login'?'':'minlength="12"'} maxlength="72" required></label>`;
  const form = (kind,label,fields) => `<form class="panel" data-cloud-auth="${kind}">
   <h2>${t(label)}</h2>${fields}<button class="cta">${t(label)}</button></form>`;
  if (cloud.recovery) return heading('account')+form('password','cloudNewPassword',password('password'));
  if (!cloud.user) return heading('account')+form('login','cloudLogin',email+password('login'))+
-  form('register','cloudRegister',email+password('register'))+form('reset','cloudReset',email);
+  form('register','cloudRegister',registrationNames+email+password('register'))+form('reset','cloudReset',email);
  return heading('account')+`<div class="panel"><p>${esc(cloud.user.email)}</p><p>${t('cloudNetworkNote')}</p>
   <div class="actions"><button data-action="cloud-refresh">${t('cloudSync')}</button>
   <button data-action="cloud-logout">${t('cloudLogout')}</button></div></div>

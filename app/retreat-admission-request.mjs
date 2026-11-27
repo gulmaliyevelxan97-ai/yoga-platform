@@ -44,6 +44,11 @@ export function admissionRequestArgs(values) {
  return {p_cohort_id:code,p_full_name:name};
 }
 
+export function admissionDefaultName(metadata) {
+ const name = metadata?.full_name;
+ return typeof name==='string' && name.length<=160 && !/[\u0000-\u001f\u007f-\u009f]/u.test(name) ? name : '';
+}
+
 export async function retreatAdmissionRequestPage({outlet,client,user,lang,esc,current}) {
  if (!current() || !user?.id || user.is_anonymous) return;
  const t=key=>copy[key][Math.max(0,languages.indexOf(lang))];
@@ -51,7 +56,7 @@ export async function retreatAdmissionRequestPage({outlet,client,user,lang,esc,c
  let busy=false;
  outlet.innerHTML='<form class="panel" data-retreat-request>'+
   '<label>'+t('invitation')+'<input name="invitation" required maxlength="36" autocapitalize="none" autocomplete="off" spellcheck="false"></label>'+
-  '<label>'+t('name')+'<input name="name" required maxlength="160" autocomplete="name"></label>'+
+  '<label>'+t('name')+'<input name="name" required maxlength="160" autocomplete="name" value="'+esc(admissionDefaultName(user.user_metadata))+'"></label>'+
   '<label class="check"><input type="checkbox" name="consent" value="yes" required>'+t('consent')+'</label>'+
   '<button class="cta" type="submit">'+t('send')+'</button><p role="status" data-request-result></p></form>'+
   '<section class="panel"><h2>'+t('history')+'</h2><div data-request-history aria-live="polite"></div>'+
