@@ -1,5 +1,7 @@
 import {languages} from './state.mjs';
 
+import {renderRetreatOpening} from './retreat-opening.mjs';
+
 const title = 'RESTART RETREAT';
 const copy = {
  entry:['Открыть раздел ретрита','Retrit bölməsini aç','Explore the retreat'],
@@ -22,6 +24,8 @@ const copy = {
  nextStep:['Продолжить путь','Yola davam et','Continue the journey'],
  letter:['Письмо себе','Özümə məktub','Letter to myself'],
  overview:['Обзор','İcmal','Overview'],
+ mentorWelcome:['Приветствие наставника','Mentorun salamı','A welcome from your mentor'],
+ opening:['Начало пути','Yolun başlanğıcı','The beginning of the journey'],
  preparation:['Подготовка','Hazırlıq','Preparation'],
  after:['После ретрита','Retritdən sonra','After the retreat'],
  myIntention:['Моё намерение','Niyyətim','My intention'],
@@ -56,9 +60,27 @@ export function renderRetreatCard(lang) {
   '<strong>'+title+'</strong><span>'+t('entry')+' <span aria-hidden="true">→</span></span></a>';
 }
 
+const welcomeMessage = [
+ [`Дорогие мои,`,`Впереди у нас два особенных дня. Два дня, посвящённых не внешнему миру, а нашему внутреннему пространству.`,
+  `Мы будем двигаться, чувствовать, познавать себя, встречаться со своими эмоциями, светом и тенью.`,
+  `Здесь вам не нужно никому ничего доказывать. Позвольте себе быть настоящими.`,
+  `Приходите с открытым сердцем, доверием к себе и готовностью услышать свой внутренний голос.`,
+  `Я буду рядом с вами на этом пути.`,`С любовью и уважением, ваш наставник.`],
+ [`Əzizlərim,`,`Qarşıda bizi iki xüsusi gün gözləyir. Bu iki günü xarici dünyaya deyil, daxili aləmimizə həsr edəcəyik.`,
+  `Hərəkət edəcəyik, hiss edəcəyik, özümüzü tanıyacaq, duyğularımızla, işığımızla və kölgəmizlə üzləşəcəyik.`,
+  `Burada heç kimə heç nə sübut etməli deyilsiniz. Özünüz kimi olmağa icazə verin.`,
+  `Açıq ürəklə, özünüzə güvənərək və daxili səsinizi eşitməyə hazır olaraq gəlin.`,
+  `Bu yolda yanınızda olacağam.`,`Sevgi və hörmətlə, mentorunuz.`],
+ [`Dear friends,`,`Two special days lie ahead. Two days devoted to our inner world rather than the world outside.`,
+  `We will move, feel, get to know ourselves, and meet our emotions, our light and our shadow.`,
+  `Here, you have nothing to prove to anyone. Give yourself permission to be who you are.`,
+  `Come with an open heart, trust in yourself and a willingness to hear your inner voice.`,
+  `I will be alongside you on this journey.`,`With love and respect, your mentor.`]
+];
+
 const sections = [
  ['', 'overview'], ['programme','programme'], ['preparation','preparation'],
- ['intention','myIntention'], ['mentor','mentor'], ['after','after'], ['letter','letter']
+ ['intention','myIntention'], ['mentor','mentor'], ['after','after'], ['letter','letter'], ['opening','opening']
 ];
 
 export function retreatSection(id) {
@@ -74,7 +96,7 @@ export function renderRetreatExperience(lang,{section='',signedIn=false,intentio
  const nav=sections.map(([id,label])=>'<a href="#retreat'+(id?'/'+id:'')+'"'+
   (id===section?' aria-current="page"':'')+'>'+t(label)+'</a>').join('');
  const journeyGroups=[
-  ['before',[['awaken','practice/breathing'],['myIntention','retreat/intention'],['preparation','retreat/preparation']]],
+  ['before',[['awaken','retreat/opening'],['myIntention','retreat/intention'],['preparation','retreat/preparation']]],
   ['live',[['immerse','retreat/programme']]],
   ['integrate',[['awareness','retreat/after'],['integration','retreat/letter']]]
  ];
@@ -89,9 +111,10 @@ export function renderRetreatExperience(lang,{section='',signedIn=false,intentio
  const content={
   '':()=>panel('welcome','<p>'+t('philosophy')+'</p>'+link('retreat/programme','programme'))+ (signedIn?'<div id="retreat-event-details-outlet"></div>':'') +journey+concept,
   programme:()=>panel('programme',signedIn?link('retreat-programme','programme'):pending)+concept,
-  preparation:()=>panel('preparation',(signedIn?'<div id="retreat-event-details-outlet"></div>':
+  opening:()=>renderRetreatOpening(lang),
+  preparation:()=>panel('mentorWelcome',welcomeMessage[Math.max(0,languages.indexOf(lang))].map(line=>'<p>'+line+'</p>').join(''))+panel('preparation',(signedIn?'<div id="retreat-event-details-outlet"></div>':
     '<dl class="retreat-logistics">'+['date','location','dress','packing'].map(key=>'<div><dt>'+t(key)+'</dt></div>').join('')+'</dl>'+pending)+preparation)+
-    panel('prepare','<div class="actions">'+link('practice/breathing','breathe')+link('practice/meditation','meditate')+'</div>'),
+    panel('prepare','<div class="actions">'+link('retreat/opening','opening')+link('practice/breathing','breathe')+link('practice/meditation','meditate')+'</div>'),
   intention:()=>signedIn?panel('intention',link('retreat-forms','intention')):intention,
   mentor:()=>panel('mentor',signedIn?'<div class="actions">'+link('retreat-tasks','tasks')+link('retreat-connect','connect')+'</div>':restricted),
   letter:()=>letter,
