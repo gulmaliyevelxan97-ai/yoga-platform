@@ -13,6 +13,8 @@ const labels = {
  draft:['Черновик','Qaralama','Draft'],
  published:['Опубликована','Dərc olunub','Published'],
  save:['Сохранить черновик','Qaralamanı saxla','Save draft'],
+ duplicate:['Скопировать в черновик','Qaralamaya köçür','Copy to draft'],
+ copied:['Копия создана как черновик.','Surət qaralama kimi yaradıldı.','A draft copy was created.'],
  preview:['Предпросмотр анкеты','Anketin önizləməsi','Preview form'],
  previewHint:['Так участники увидят вопросы.','İştirakçılar sualları belə görəcəklər.','Participants will see the questions like this.'],
  publish:['Опубликовать','Dərc et','Publish'],
@@ -56,6 +58,12 @@ export function retreatFormDraft(values,publish=false) {
  if (!lengthWithin(title,160) || rows.length>maxQuestions || (publish && !rows.length) ||
      rows.some(text=>!lengthWithin(text,maxQuestionLength))) throw new Error('invalid');
  return {title,questions:rows.map(text=>({text}))};
+}
+
+export function retreatFormDuplicate(form) {
+ const questions=parseRetreatQuestions(form?.questions);
+ if (!questions) throw new Error('invalid');
+ return retreatFormDraft({title:form.title,questions:questions.join('\n')},true);
 }
 
 export function retreatFormPreview(values,esc) {
@@ -136,7 +144,9 @@ export async function retreatFormsPage({outlet,client,user,lang,esc,current,conf
   const body=!questions?'<p>'+t('unknownQuestions')+'</p>':mentor?
    '<p>'+t('published')+'</p><details><summary>'+t('sharedAnswers')+'</summary>'+
     snapshot.shared.filter(row=>row.cohort_id===form.cohort_id && row.form_id===form.id && row.share_with_mentor)
-     .map(row=>answers(questions,row)).join('')+'</details>':participantForm(form,questions);
+     .map(row=>answers(questions,row)).join('')+'</details>'+
+    '<form data-retreat-action="duplicate" data-cohort="'+esc(form.cohort_id)+'" data-form="'+esc(form.id)+'">'+
+    '<button type="submit">'+t('duplicate')+'</button><p role="status" data-retreat-form-message></p></form>':participantForm(form,questions);
   return '<section class="panel"><h4>'+esc(form.title)+'</h4>'+body+'</section>';
  }
 
@@ -211,6 +221,11 @@ export async function retreatFormsPage({outlet,client,user,lang,esc,current,conf
     const write=form?table.update({...payload,published:publish}).eq('cohort_id',cohort).eq('id',id).eq('published',false):
      table.insert({...payload,cohort_id:cohort});
     await result(write.select('id').single());
+   } else if (action==='duplicate' && membership.role==='mentor' && form?.published) {
+    const draft=retreatFormDuplicate(form);
+    await result(client.from('restart_retreat_forms').insert({...draft,cohort_id:cohort}).select('id').single());
+    await load('copied');
+    return;
    } else if (membership.role==='participant' && form?.published) {
     const own=snapshot.own.find(row=>row.form_id===id && row.cohort_id===cohort);
     if (action==='response' && !own) {
