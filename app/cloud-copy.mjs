@@ -3,6 +3,8 @@ export const cloudStrings = {
  cloudPilot:['Закрытый облачный пилот','Qapalı bulud sınağı','Private cloud pilot'],
  cloudLocal:['Локальный режим · данные на этом устройстве','Yerli rejim · məlumatlar bu cihazdadır','Local mode · data on this device'],
  cloudMode:['Данные этого аккаунта · облако','Bu hesabın məlumatları · bulud','This account’s data · cloud'],
+ cloudFirstName:['Имя','Ad','First name'],
+ cloudLastName:['Фамилия','Soyad','Last name'],
  cloudEmail:['Email','E-poçt','Email'],
  cloudPassword:['Пароль','Şifrə','Password'],
  cloudLogin:['Войти','Daxil ol','Sign in'],
